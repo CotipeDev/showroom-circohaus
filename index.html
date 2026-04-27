@@ -1145,10 +1145,15 @@ async function iniciarVentas(){
   setFechaHoy('vta-fecha');
   try{
     const[dataMp,dataCuentas,dataCli,dataVta]=await Promise.all([apiGet('getMediosPago'),apiGet('getCuentas'),apiGet('getClientes'),apiGet('getVentas')]);
-    mediosPagoData=dataMp.slice(1);cuentasData=dataCuentas.slice(1);clientesData=dataCli.slice(1);ventasHistData=dataVta.slice(1);
+    mediosPagoData=dataMp.slice(1);
+    cuentasData=dataCuentas.slice(1);
+    clientesData=dataCli.slice(1);
+    ventasHistData=dataVta.slice(1);
     llenarSelectClientes();
     renderHistorialVentas(ventasHistData);
-    if(!vtaPagosFila.length)agregarPagoVenta();
+    // Inicializar fila de pago DESPUÉS de tener mediosPagoData cargado
+    vtaPagosFila=[];
+    agregarPagoVenta();
   }catch(e){showToast('Error al cargar datos de ventas','error')}
 }
 

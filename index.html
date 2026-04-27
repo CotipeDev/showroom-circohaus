@@ -509,7 +509,7 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
           <input type="month" id="mov-filtro-mes" onchange="filtrarMovimientos()" style="background:var(--off-white);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:13px;outline:none">
         </div>
         <div id="mov-loading" class="spinner-wrap"><div class="spinner"></div> Cargando...</div>
-        <table id="mov-table" style="display:none"><thead><tr><th>Fecha</th><th>Cuenta</th><th>Tipo</th><th>Categoría</th><th>Descripción</th><th style="text-align:right">Monto</th></tr></thead><tbody id="mov-body"></tbody></table>
+        <table id="mov-table" style="display:none"><thead><tr><th>Fecha</th><th>Cuenta</th><th>Tipo</th><th>Categoría</th><th>Descripción</th><th>Acreditación</th><th>Estado</th><th style="text-align:right">Monto</th></tr></thead><tbody id="mov-body"></tbody></table>
       </div>
     </div>
 
@@ -650,7 +650,7 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
 </div>
 
 <script>
-const API_URL='https://script.google.com/macros/s/AKfycbwcoqR7o84_fk2uhLOpNpOSkrKjR2WT7iv3eevn53BJmxRooxCVS_EXxCWfywelFV3L/exec';
+const API_URL='https://script.google.com/macros/s/AKfycbyoO1Ox8yjZK78W4UFAf9vB0U_9DpbtCSZHjB_mru3TNDlO041ZFs1kYKAEWnAe1pOo/exec';
 let productosData=[],proveedoresData=[],categoriasData=[],itemsIngreso=[],ingProductoSel=null,stockData=[],prodTablaData=[];
 
 // Cola de cambios de costo pendientes
@@ -1029,6 +1029,14 @@ async function iniciarCuentas(){
   }catch(e){showToast('Error al cargar cuentas','error')}
 }
 
+function fechaStr(val){
+  // Normaliza cualquier valor de fecha a string YYYY-MM-DD
+  if(!val)return'';
+  if(typeof val==='string')return val.substring(0,10);
+  if(val instanceof Date)return val.toISOString().split('T')[0];
+  return String(val).substring(0,10);
+}
+
 function renderCuentasCards(){
   const grid=document.getElementById('cuentas-grid');
   if(!cuentasData.length){grid.innerHTML='<p style="color:var(--text-mid);font-size:13px">No hay cuentas registradas.</p>';return}
@@ -1036,12 +1044,20 @@ function renderCuentasCards(){
   grid.innerHTML=cuentasData.filter(c=>c[4]===true||c[4]==='TRUE').map(c=>{
     const saldoInicial=Number(c[3])||0;
     const movsCuenta=movimientosData.filter(m=>String(m[2])===String(c[0]));
-    // Saldo disponible: movimientos cuya fecha_acreditacion (col 9) <= hoy, o egresos
-    const totalIngDisp=movsCuenta.filter(m=>m[3]==='ingreso'&&(m[9]||m[1])<=hoy).reduce((s,m)=>s+Number(m[5]),0);
+    // Saldo disponible: ingresos cuya fecha_acreditacion <= hoy
+    const totalIngDisp=movsCuenta.filter(m=>{
+      if(m[3]!=='ingreso')return false;
+      const fa=fechaStr(m[9])||fechaStr(m[1]);
+      return fa<=hoy;
+    }).reduce((s,m)=>s+Number(m[5]),0);
     const totalEgr=movsCuenta.filter(m=>m[3]==='egreso').reduce((s,m)=>s+Number(m[5]),0);
     const saldoDisp=saldoInicial+totalIngDisp-totalEgr;
     // En camino: ingresos con fecha_acreditacion > hoy
-    const enCamino=movsCuenta.filter(m=>m[3]==='ingreso'&&m[9]&&m[9]>hoy).reduce((s,m)=>s+Number(m[5]),0);
+    const enCamino=movsCuenta.filter(m=>{
+      if(m[3]!=='ingreso')return false;
+      const fa=fechaStr(m[9]);
+      return fa&&fa>hoy;
+    }).reduce((s,m)=>s+Number(m[5]),0);
     const clsSaldo=saldoDisp>=0?'positivo':'negativo';
     return`<div class="cuenta-card">
       <div class="cuenta-card-nombre">${c[1]}</div>
@@ -1087,19 +1103,32 @@ async function registrarMovimiento(){
 
 function renderMovimientos(rows){
   const cuentaNombre=id=>{const c=cuentasData.find(x=>String(x[0])===String(id));return c?c[1]:id||'—'};
-  const sorted=[...rows].sort((a,b)=>new Date(b[1])-new Date(a[1])).slice(0,100);
+  const hoy=new Date().toISOString().split('T')[0];
+  const sorted=[...rows].sort((a,b)=>new Date(fechaStr(b[1]))-new Date(fechaStr(a[1]))).slice(0,100);
   document.getElementById('mov-body').innerHTML=sorted.length===0
-    ?'<tr><td colspan="6" style="text-align:center;color:var(--text-mid);padding:20px">No hay movimientos</td></tr>'
-    :sorted.map(m=>`<tr>
-      <td>${m[1]||'—'}</td>
-      <td>${cuentaNombre(m[2])}</td>
-      <td><span class="badge ${m[3]==='ingreso'?'badge-ok':'badge-zero'}">${m[3]==='ingreso'?'↑ Ingreso':'↓ Egreso'}</span></td>
-      <td>${m[4]||'—'}</td>
-      <td style="color:var(--text-mid)">${m[6]||'—'}</td>
-      <td style="text-align:right;font-weight:600;color:${m[3]==='ingreso'?'var(--success)':'var(--error)'}">
-        ${m[3]==='ingreso'?'+':'−'}${formatPeso(m[5])}
-      </td>
-    </tr>`).join('');
+    ?'<tr><td colspan="8" style="text-align:center;color:var(--text-mid);padding:20px">No hay movimientos</td></tr>'
+    :sorted.map(m=>{
+      const fa=fechaStr(m[9])||fechaStr(m[1]);
+      const esIngreso=m[3]==='ingreso';
+      const acreditado=!esIngreso||fa<=hoy;
+      const estadoBadge=!esIngreso
+        ?'<span style="color:var(--text-light);font-size:12px">—</span>'
+        :acreditado
+          ?'<span class="badge badge-ok">Acreditado</span>'
+          :`<span class="badge badge-low">En camino</span>`;
+      return`<tr>
+        <td>${fechaStr(m[1])||'—'}</td>
+        <td>${cuentaNombre(m[2])}</td>
+        <td><span class="badge ${esIngreso?'badge-ok':'badge-zero'}">${esIngreso?'↑ Ingreso':'↓ Egreso'}</span></td>
+        <td>${m[4]||'—'}</td>
+        <td style="color:var(--text-mid)">${m[6]||'—'}</td>
+        <td style="font-size:12px;color:var(--text-mid)">${esIngreso?fa:'—'}</td>
+        <td>${estadoBadge}</td>
+        <td style="text-align:right;font-weight:600;color:${esIngreso?'var(--success)':'var(--error)'}">
+          ${esIngreso?'+':'−'}${formatPeso(m[5])}
+        </td>
+      </tr>`;
+    }).join('');
 }
 
 function filtrarMovimientos(){

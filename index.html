@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CircoHaus – Sistema de Gestión</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --pearl:#D8DBE2;--blue-mist:#A9BCD0;--teal:#58A4B0;--teal-dark:#3d8a96;
+  --navy:#485472;--navy-dark:#353d55;--rose:#DAA49A;--rose-dark:#c48a80;
+  --white:#FFFFFF;--off-white:#F7F8FA;--text-main:#2C2C2C;--text-mid:#5a5a6a;
+  --text-light:#8a8a9a;--border:#cdd2dc;--success:#5A8C6E;--error:#C44F4F;
+  --cream:var(--pearl);--warm-white:var(--off-white);--terracotta:var(--teal);
+  --terracotta-dark:var(--teal-dark);--charcoal:var(--navy);--mid-gray:var(--text-mid);--light-gray:var(--border);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:'DM Sans',sans-serif;background:var(--pearl);color:var(--text-main)}
+
+/* HOME */
+#home{min-height:100vh;background:var(--pearl);display:flex;flex-direction:column}
+#home.hidden{display:none}
+.home-header{background:var(--navy);padding:0 32px;height:80px;display:flex;align-items:center;justify-content:space-between;position:relative;flex-shrink:0}
+.home-header-left{display:flex;flex-direction:column;justify-content:center}
+.home-header-left h2{font-family:'Playfair Display',serif;color:#F7F8FA;font-size:17px;font-weight:600;line-height:1.2}
+.home-header-left p{font-size:11px;color:var(--blue-mist);margin-top:2px}
+.home-logo{position:absolute;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:4px}
+.home-logo-text{font-family:'Playfair Display',serif;color:#F7F8FA;font-size:20px;letter-spacing:.03em;line-height:1;text-align:center}
+.home-logo-text span{color:var(--rose)}
+.home-logo-sub{font-size:9px;color:var(--blue-mist);letter-spacing:.2em;text-transform:uppercase}
+.home-header-right{display:flex;align-items:center;gap:8px}
+
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;max-width:920px;margin:-24px auto 0;padding:0 24px;position:relative;z-index:10}
+.kpi-card{background:var(--white);border-radius:12px;padding:20px 24px;box-shadow:0 4px 20px rgba(72,84,114,.1);border:1.5px solid var(--border);transition:transform .2s}
+.kpi-card:hover{transform:translateY(-2px)}
+.kpi-card.alerta{border-color:var(--rose)}
+.kpi-card.alerta .kpi-value{color:var(--rose-dark)}
+.kpi-label{font-size:11px;font-weight:500;color:var(--text-mid);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px}
+.kpi-value{font-family:'Playfair Display',serif;font-size:36px;color:var(--navy);line-height:1}
+.kpi-sub{font-size:11px;color:var(--text-light);margin-top:4px}
+
+.modulos-wrap{max-width:920px;margin:40px auto;padding:0 24px 60px;width:100%}
+.modulos-titulo{font-family:'Playfair Display',serif;font-size:18px;color:var(--navy);margin-bottom:20px}
+.modulos-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.modulo-card{background:var(--white);border-radius:14px;padding:28px 24px;box-shadow:0 2px 12px rgba(72,84,114,.07);border:1.5px solid var(--border);cursor:pointer;transition:all .2s;text-align:left}
+.modulo-card:hover{transform:translateY(-3px);box-shadow:0 8px 28px rgba(72,84,114,.13);border-color:var(--teal)}
+.modulo-card.instructivos:hover{border-color:var(--rose)}
+.modulo-icon{font-size:32px;margin-bottom:14px;display:block}
+.modulo-nombre{font-family:'Playfair Display',serif;font-size:16px;font-weight:600;color:var(--navy);margin-bottom:6px}
+.modulo-desc{font-size:12px;color:var(--text-mid);line-height:1.5}
+.modulo-arrow{display:inline-block;margin-top:14px;font-size:12px;color:var(--teal);font-weight:500}
+.modulo-card.instructivos .modulo-arrow{color:var(--rose)}
+
+/* APP */
+#app-main{display:none;flex-direction:column;height:100vh}
+#app-main.visible{display:flex}
+.app-header{background:var(--navy);padding:0 24px;height:52px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.app-header-left{display:flex;align-items:center;gap:16px}
+.app-logo{font-family:'Playfair Display',serif;color:#F7F8FA;font-size:16px;display:flex;align-items:center;gap:8px}
+.app-logo span{color:var(--rose)}
+.app-logo-sub{font-size:8px;color:var(--blue-mist);letter-spacing:.15em;text-transform:uppercase;display:block;margin-top:1px}
+.btn-home{background:none;border:1px solid rgba(255,255,255,.25);color:#ccc;font-family:'DM Sans',sans-serif;font-size:12px;padding:5px 12px;border-radius:6px;cursor:pointer;transition:all .2s}
+.btn-home:hover{background:rgba(255,255,255,.1);color:white}
+.app-header-right{display:flex;align-items:center;gap:8px}
+
+.tabs{display:flex;background:var(--pearl);flex-shrink:0;border-bottom:2px solid var(--border)}
+.tab{flex:1;background:none;border:none;border-bottom:3px solid transparent;color:var(--text-mid);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;padding:13px 8px;cursor:pointer;transition:all .2s;text-align:center}
+.tab:hover{color:var(--navy)}
+.tab.active{color:var(--teal);border-bottom-color:var(--teal);font-weight:600}
+.content{flex:1;overflow-y:auto;padding:24px 20px;background:var(--pearl)}
+.panel{display:none}.panel.active{display:block}
+.section-title{font-family:'Playfair Display',serif;font-size:22px;margin-bottom:4px;color:var(--navy)}
+.section-sub{color:var(--text-mid);font-size:13px;margin-bottom:20px}
+
+.card{background:var(--white);border-radius:12px;padding:20px;margin-bottom:16px;box-shadow:0 2px 12px rgba(72,84,114,.08);border:1px solid var(--border)}
+.card-title{font-size:11px;font-weight:600;margin-bottom:16px;color:var(--text-mid);text-transform:uppercase;letter-spacing:.08em;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.form-grid.cols-3{grid-template-columns:1fr 1fr 1fr}
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:11px;font-weight:500;color:var(--text-mid);text-transform:uppercase;letter-spacing:.06em}
+.field input,.field select{background:var(--off-white);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text-main);outline:none;transition:border-color .2s;width:100%}
+.field input:focus,.field select:focus{border-color:var(--teal)}
+.field input.readonly{background:var(--pearl);color:var(--text-mid)}
+.form-actions{margin-top:20px;display:flex;gap:10px;flex-wrap:wrap}
+.btn{font-family:'DM Sans',sans-serif;font-weight:500;font-size:14px;padding:10px 20px;border-radius:8px;border:none;cursor:pointer;transition:all .2s}
+.btn-primary{background:var(--teal);color:white}.btn-primary:hover{background:var(--teal-dark)}
+.btn-secondary{background:var(--pearl);color:var(--navy);border:1px solid var(--border)}.btn-secondary:hover{background:var(--blue-mist)}
+.btn-warning{background:var(--rose);color:white;padding:5px 10px;font-size:12px;border-radius:6px;border:none;cursor:pointer}
+.btn-danger{background:none;color:var(--error);border:1px solid var(--error);padding:5px 10px;font-size:12px;border-radius:6px;cursor:pointer}
+.btn-danger:hover{background:var(--error);color:white}
+.search-wrap{margin-bottom:16px}
+.search-wrap input{width:100%;background:var(--off-white);border:1.5px solid var(--border);border-radius:8px;padding:10px 14px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--text-main);outline:none;transition:border-color .2s}
+.search-wrap input:focus{border-color:var(--teal)}
+.autocomplete-wrap{position:relative}
+.autocomplete-list{position:absolute;top:100%;left:0;right:0;background:white;border:1.5px solid var(--border);border-radius:8px;z-index:50;max-height:200px;overflow-y:auto;box-shadow:0 4px 16px rgba(72,84,114,.12)}
+.autocomplete-item{padding:10px 14px;font-size:13px;cursor:pointer;border-bottom:1px solid var(--border)}
+.autocomplete-item:last-child{border-bottom:none}
+.autocomplete-item:hover{background:var(--pearl)}
+.autocomplete-item code{color:var(--teal);font-size:11px}
+.add-item-row{display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:10px;align-items:end;margin-top:12px}
+.items-list{display:flex;flex-direction:column;gap:8px;margin:12px 0}
+.item-row{display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:10px;align-items:center;background:var(--pearl);border-radius:8px;padding:10px 12px;border:1px solid var(--border);font-size:13px}
+.items-empty{text-align:center;color:var(--text-mid);font-size:13px;padding:20px;border:1.5px dashed var(--border);border-radius:8px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:9px 12px;font-size:11px;font-weight:500;letter-spacing:.07em;text-transform:uppercase;color:var(--text-mid);border-bottom:1.5px solid var(--border)}
+td{padding:11px 12px;border-bottom:1px solid var(--border)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--pearl)}
+.badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:500}
+.badge-ok{background:#E8F3ED;color:var(--success)}
+.badge-low{background:#fdf0ed;color:var(--rose-dark)}
+.badge-zero{background:#fde8e8;color:var(--error)}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(72,84,114,.35);z-index:200;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:var(--white);border-radius:14px;padding:28px;width:100%;max-width:520px;box-shadow:0 12px 40px rgba(72,84,114,.2);margin:16px}
+.modal-title{font-family:'Playfair Display',serif;font-size:18px;margin-bottom:20px;color:var(--navy)}
+.modal-actions{margin-top:20px;display:flex;gap:10px}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--navy);color:white;padding:12px 18px;border-radius:10px;font-size:14px;box-shadow:0 8px 24px rgba(72,84,114,.25);transform:translateY(60px);opacity:0;transition:all .3s;z-index:999;max-width:320px}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.success{border-left:4px solid var(--teal)}
+.toast.error{border-left:4px solid var(--error)}
+.spinner-wrap{display:flex;align-items:center;gap:10px;color:var(--text-mid);font-size:13px;padding:12px 0}
+.spinner{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--teal);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+hr{border:none;border-top:1px solid var(--border);margin:16px 0}
+
+/* NOTIF */
+.notif-btn{background:none;border:none;cursor:pointer;color:#ccc;font-size:13px;padding:6px 10px;position:relative;display:flex;align-items:center;gap:6px;font-family:'DM Sans',sans-serif}
+.notif-panel{display:none;position:absolute;right:0;top:44px;width:300px;background:var(--white);border-radius:12px;box-shadow:0 8px 32px rgba(72,84,114,.18);z-index:300;overflow:hidden;border:1px solid var(--border)}
+.notif-panel-title{padding:14px 18px;border-bottom:1px solid var(--border);font-family:'Playfair Display',serif;font-size:15px;color:var(--navy)}
+
+/* INSTRUCTIVOS */
+.instructivos-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:8px}
+.manual-card{background:var(--white);border-radius:12px;padding:24px;border:1.5px solid var(--border);display:flex;align-items:center;gap:16px;transition:all .2s;text-decoration:none}
+.manual-card:hover{border-color:var(--rose);box-shadow:0 4px 16px rgba(72,84,114,.1);transform:translateY(-2px)}
+.manual-card.disabled{opacity:.5;cursor:default;pointer-events:none}
+.manual-icon{font-size:36px;flex-shrink:0}
+.manual-nombre{font-family:'Playfair Display',serif;font-size:15px;color:var(--navy);margin-bottom:4px}
+.manual-desc{font-size:12px;color:var(--text-mid);line-height:1.5}
+.manual-download{font-size:12px;color:var(--rose);font-weight:500;margin-top:8px;display:block}
+
+/* RESPONSIVE */
+@media(max-width:768px){
+  .home-header{height:auto;padding:16px 20px;flex-direction:column;align-items:flex-start;gap:12px}
+  .home-logo{position:static;transform:none;align-self:center}
+  .kpis{grid-template-columns:1fr;padding:0 16px}
+  .modulos-grid{grid-template-columns:1fr 1fr;gap:12px}
+  .modulos-wrap{padding:0 16px 40px}
+  .form-grid{grid-template-columns:1fr}
+  .form-grid.cols-3{grid-template-columns:1fr}
+  .add-item-row{grid-template-columns:1fr 1fr}
+  .tabs .tab{font-size:11px;padding:10px 4px}
+  .instructivos-grid{grid-template-columns:1fr}
+}
+@media(max-width:480px){
+  .modulos-grid{grid-template-columns:1fr}
+  .kpi-value{font-size:28px}
+}
+</style>
+</head>
+<body>
+
+<!-- HOME -->
+<div id="home">
+  <div class="home-header">
+    <div class="home-header-left">
+      <h2>Bienvenidxs a Circo Haus</h2>
+      <p>Gestioná tu showroom desde un solo lugar</p>
+    </div>
+    <div class="home-logo">
+      <svg width="44" height="46" viewBox="0 0 40 44" fill="none">
+        <path d="M3 20 L20 4 L37 20" stroke="#DAA49A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M20 38 C20 38 11 30 11 23 C11 19.5 13.8 17 17 17 C18.6 17 19.8 18.2 20 18.5 C20.2 18.2 21.4 17 23 17 C26.2 17 29 19.5 29 23 C29 30 20 38 20 38Z" fill="#DAA49A"/>
+      </svg>
+      <div class="home-logo-text">Circo<span>Haus</span></div>
+      <div class="home-logo-sub">Casa Atelier</div>
+    </div>
+    <div class="home-header-right" style="position:relative">
+      <button class="notif-btn" onclick="toggleNotif('home')">
+        🔔 <span style="display:none" id="nb1"></span>
+      </button>
+      <div class="notif-panel" id="np1">
+        <div class="notif-panel-title">Alertas de stock</div>
+        <div id="nl1" style="max-height:280px;overflow-y:auto;padding:8px 0"></div>
+      </div>
+    </div>
+  </div>
+
+  <div style="background:var(--navy);padding:24px 0 48px"></div>
+
+  <div class="kpis">
+    <div class="kpi-card" id="kpi-alertas-wrap">
+      <div class="kpi-label">Alertas de stock</div>
+      <div class="kpi-value" id="kpi-alertas">—</div>
+      <div class="kpi-sub">productos con stock bajo o agotado</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Total productos</div>
+      <div class="kpi-value" id="kpi-productos">—</div>
+      <div class="kpi-sub">productos en el catálogo</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Proveedores</div>
+      <div class="kpi-value" id="kpi-proveedores">—</div>
+      <div class="kpi-sub">proveedores registrados</div>
+    </div>
+  </div>
+
+  <div class="modulos-wrap">
+    <div class="modulos-titulo">¿Qué querés hacer hoy?</div>
+    <div class="modulos-grid">
+      <div class="modulo-card" onclick="irA('ingresos')"><span class="modulo-icon">📦</span><div class="modulo-nombre">Ingresos</div><div class="modulo-desc">Registrá la entrada de mercadería de tus proveedores y actualizá el stock automáticamente.</div><span class="modulo-arrow">Ir al módulo →</span></div>
+      <div class="modulo-card" onclick="irA('stock')"><span class="modulo-icon">📊</span><div class="modulo-nombre">Stock</div><div class="modulo-desc">Visualizá el inventario completo, filtrá por categoría y detectá productos con stock bajo.</div><span class="modulo-arrow">Ir al módulo →</span></div>
+      <div class="modulo-card" onclick="irA('productos')"><span class="modulo-icon">🏷️</span><div class="modulo-nombre">Productos</div><div class="modulo-desc">Cargá nuevos productos, editá precios y márgenes, y organizá tu catálogo por categoría.</div><span class="modulo-arrow">Ir al módulo →</span></div>
+      <div class="modulo-card" onclick="irA('proveedores')"><span class="modulo-icon">🤝</span><div class="modulo-nombre">Proveedores</div><div class="modulo-desc">Administrá los datos de tus proveedores y sus códigos de identificación.</div><span class="modulo-arrow">Ir al módulo →</span></div>
+      <div class="modulo-card" onclick="irA('categorias')"><span class="modulo-icon">🗂️</span><div class="modulo-nombre">Categorías</div><div class="modulo-desc">Creá y gestioná las categorías para organizar mejor tu catálogo de productos.</div><span class="modulo-arrow">Ir al módulo →</span></div>
+      <div class="modulo-card instructivos" onclick="irA('instructivos')"><span class="modulo-icon">📚</span><div class="modulo-nombre">Instructivos</div><div class="modulo-desc">Descargá los manuales de uso del sistema para vos y tu equipo.</div><span class="modulo-arrow">Ver manuales →</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- APP MAIN -->
+<div id="app-main">
+  <div class="app-header">
+    <div class="app-header-left">
+      <div class="app-logo">
+        <svg width="28" height="30" viewBox="0 0 40 44" fill="none">
+          <path d="M3 20 L20 4 L37 20" stroke="#DAA49A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M20 38 C20 38 11 30 11 23 C11 19.5 13.8 17 17 17 C18.6 17 19.8 18.2 20 18.5 C20.2 18.2 21.4 17 23 17 C26.2 17 29 19.5 29 23 C29 30 20 38 20 38Z" fill="#DAA49A"/>
+        </svg>
+        <div>Circo<span>Haus</span><div class="app-logo-sub">Casa Atelier</div></div>
+      </div>
+      <button class="btn-home" onclick="volverHome()">← Inicio</button>
+    </div>
+    <div class="app-header-right" style="position:relative">
+      <button class="notif-btn" onclick="toggleNotif('app')">
+        🔔 <span style="display:none" id="nb2"></span>
+      </button>
+      <div class="notif-panel" id="np2">
+        <div class="notif-panel-title">Alertas de stock</div>
+        <div id="nl2" style="max-height:280px;overflow-y:auto;padding:8px 0"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-panel="ingresos" onclick="showPanel('ingresos',this)">📦 Ingresos</button>
+    <button class="tab" data-panel="stock" onclick="showPanel('stock',this)">📊 Stock</button>
+    <button class="tab" data-panel="productos" onclick="showPanel('productos',this)">🏷️ Productos</button>
+    <button class="tab" data-panel="proveedores" onclick="showPanel('proveedores',this)">🤝 Proveedores</button>
+    <button class="tab" data-panel="categorias" onclick="showPanel('categorias',this)">🗂️ Categorías</button>
+    <button class="tab" data-panel="instructivos" onclick="showPanel('instructivos',this)">📚 Instructivos</button>
+  </div>
+
+  <div class="content">
+
+    <div id="panel-ingresos" class="panel active">
+      <div class="section-title">Ingreso de mercadería</div>
+      <div class="section-sub">Registrá la entrada de productos de un proveedor</div>
+      <div class="card">
+        <div class="card-title">Datos del ingreso</div>
+        <div class="form-grid cols-3">
+          <div class="field"><label>Fecha</label><input type="date" id="ing-fecha"></div>
+          <div class="field"><label>Proveedor</label><select id="ing-proveedor"><option value="">Cargando...</option></select></div>
+          <div class="field"><label>Nº Remito (opcional)</label><input type="text" id="ing-remito" placeholder="R-00123"></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Productos del ingreso</div>
+        <div id="items-lista" class="items-list"><div class="items-empty">Todavía no agregaste productos</div></div>
+        <hr>
+        <div style="font-size:11px;font-weight:600;color:var(--text-mid);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">Agregar producto</div>
+        <div class="add-item-row">
+          <div class="field"><label>Buscar producto</label><div class="autocomplete-wrap"><input type="text" id="ing-buscar" placeholder="Escribí código o nombre..." oninput="filtrarProductosIngreso()" autocomplete="off"><div id="ing-autocomplete" class="autocomplete-list" style="display:none"></div></div></div>
+          <div class="field"><label>Cantidad</label><input type="number" id="ing-cantidad" min="1" placeholder="0"></div>
+          <div class="field"><label>Precio costo ($)</label><input type="number" id="ing-costo" min="0" placeholder="0"></div>
+          <button class="btn btn-secondary" onclick="agregarItemIngreso()">+ Agregar</button>
+        </div>
+        <div id="ing-producto-seleccionado" style="display:none;margin-top:8px;font-size:12px;color:var(--success)">✓ Seleccionado: <span id="ing-prod-nombre"></span></div>
+        <div class="form-actions">
+          <button class="btn btn-primary" onclick="confirmarIngreso()">Confirmar ingreso</button>
+          <button class="btn btn-secondary" onclick="limpiarIngreso()">Limpiar</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="panel-stock" class="panel">
+      <div class="section-title">Stock actual</div>
+      <div class="section-sub">Estado de inventario de todos los productos</div>
+      <div class="card">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+          <div class="search-wrap" style="margin:0"><input type="text" id="stock-buscar" placeholder="🔍 Buscar..." oninput="filtrarStock()"></div>
+          <select id="stock-filtro-cat" onchange="filtrarStock()" style="background:var(--off-white);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none;color:var(--text-main)"><option value="">Todas las categorías</option></select>
+        </div>
+        <div id="stock-loading" class="spinner-wrap"><div class="spinner"></div> Cargando...</div>
+        <table id="stock-table" style="display:none"><thead><tr><th>Código</th><th>Descripción</th><th>Categoría</th><th>Precio venta</th><th>Stock</th><th>Mínimo</th></tr></thead><tbody id="stock-body"></tbody></table>
+      </div>
+    </div>
+
+    <div id="panel-productos" class="panel">
+      <div class="section-title">Productos</div>
+      <div class="section-sub">Agregá o editá productos del catálogo</div>
+      <div class="card">
+        <div class="card-title">Nuevo producto</div>
+        <div class="form-grid">
+          <div class="field"><label>Código</label><input type="text" id="prod-codigo" placeholder="PQY-0001"></div>
+          <div class="field"><label>Descripción</label><input type="text" id="prod-desc" placeholder="Copa cristal violeta"></div>
+          <div class="field"><label>Proveedor</label><select id="prod-proveedor"><option value="">Seleccioná...</option></select></div>
+          <div class="field"><label>Categoría</label><select id="prod-categoria"><option value="">Seleccioná...</option></select></div>
+          <div class="field"><label>Precio costo ($)</label><input type="number" id="prod-pcosto" min="0" placeholder="0" oninput="calcularPrecioVenta()"></div>
+          <div class="field"><label>Margen (%)</label><input type="number" id="prod-margen" min="0" placeholder="Ej: 50" oninput="calcularPrecioVenta()"></div>
+          <div class="field"><label>Precio venta ($)</label><input type="number" id="prod-pventa" readonly class="readonly" placeholder="Se calcula solo"></div>
+          <div class="field"><label>Stock inicial</label><input type="number" id="prod-stock" min="0" placeholder="0"></div>
+          <div class="field"><label>Stock mínimo</label><input type="number" id="prod-stock-min" min="0" placeholder="Ej: 3"></div>
+        </div>
+        <div class="form-actions"><button class="btn btn-primary" onclick="agregarProducto()">Guardar producto</button></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Productos registrados</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+          <div class="search-wrap" style="margin:0"><input type="text" id="prod-buscar" placeholder="🔍 Buscar..." oninput="filtrarTablaProductos()"></div>
+          <select id="prod-filtro-cat" onchange="filtrarTablaProductos()" style="background:var(--off-white);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none;color:var(--text-main)"><option value="">Todas las categorías</option></select>
+        </div>
+        <div id="prod-loading" class="spinner-wrap"><div class="spinner"></div> Cargando...</div>
+        <table id="prod-table" style="display:none"><thead><tr><th>Código</th><th>Descripción</th><th>Categoría</th><th>P. Venta</th><th>Stock</th><th></th></tr></thead><tbody id="prod-body"></tbody></table>
+      </div>
+    </div>
+
+    <div id="panel-proveedores" class="panel">
+      <div class="section-title">Proveedores</div>
+      <div class="section-sub">Gestioná tus proveedores</div>
+      <div class="card">
+        <div class="card-title">Nuevo proveedor</div>
+        <div class="form-grid cols-3">
+          <div class="field"><label>Código</label><input type="text" id="prov-codigo" placeholder="PQY"></div>
+          <div class="field"><label>Nombre</label><input type="text" id="prov-nombre" placeholder="Nombre del proveedor"></div>
+          <div class="field"><label>Contacto</label><input type="text" id="prov-contacto" placeholder="Teléfono o email"></div>
+        </div>
+        <div class="form-actions"><button class="btn btn-primary" onclick="agregarProveedor()">Guardar proveedor</button></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Proveedores registrados</div>
+        <div id="prov-loading" class="spinner-wrap"><div class="spinner"></div> Cargando...</div>
+        <table id="prov-table" style="display:none"><thead><tr><th>Código</th><th>Nombre</th><th>Contacto</th></tr></thead><tbody id="prov-body"></tbody></table>
+      </div>
+    </div>
+
+    <div id="panel-categorias" class="panel">
+      <div class="section-title">Categorías</div>
+      <div class="section-sub">Gestioná las categorías de tus productos</div>
+      <div class="card">
+        <div class="card-title">Nueva categoría</div>
+        <div class="form-grid cols-3">
+          <div class="field"><label>Nombre</label><input type="text" id="cat-nombre" placeholder="Ej: Aromas"></div>
+        </div>
+        <div class="form-actions"><button class="btn btn-primary" onclick="agregarCategoria()">Guardar categoría</button></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Categorías registradas</div>
+        <div id="cat-loading" class="spinner-wrap"><div class="spinner"></div> Cargando...</div>
+        <table id="cat-table" style="display:none"><thead><tr><th>Nombre</th></tr></thead><tbody id="cat-body"></tbody></table>
+      </div>
+    </div>
+
+    <div id="panel-instructivos" class="panel">
+      <div class="section-title">Instructivos</div>
+      <div class="section-sub">Descargá los manuales de uso del sistema</div>
+      <div class="instructivos-grid">
+        <a href="docs/manual_circohauss.pdf" download class="manual-card">
+          <span class="manual-icon">📋</span>
+          <div>
+            <div class="manual-nombre">Manual general del sistema</div>
+            <div class="manual-desc">Guía completa de todos los módulos: ingresos, stock, productos, proveedores y categorías.</div>
+            <span class="manual-download">↓ Descargar PDF</span>
+          </div>
+        </a>
+        <div class="manual-card disabled">
+          <span class="manual-icon">📦</span>
+          <div>
+            <div class="manual-nombre">Manual de ventas</div>
+            <div class="manual-desc">Guía del módulo de ventas. Disponible próximamente.</div>
+            <span class="manual-download" style="color:var(--text-light)">Próximamente</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MODAL -->
+<div id="modal-editar" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-title">Editar producto</div>
+    <div class="form-grid">
+      <div class="field"><label>Código</label><input type="text" id="edit-codigo" readonly class="readonly"></div>
+      <div class="field"><label>Descripción</label><input type="text" id="edit-desc"></div>
+      <div class="field"><label>Proveedor</label><select id="edit-proveedor"><option value="">Seleccioná...</option></select></div>
+      <div class="field"><label>Categoría</label><select id="edit-categoria"><option value="">Seleccioná...</option></select></div>
+      <div class="field"><label>Precio costo ($)</label><input type="number" id="edit-pcosto" min="0" oninput="calcularPrecioVentaEdit()"></div>
+      <div class="field"><label>Margen (%)</label><input type="number" id="edit-margen" min="0" oninput="calcularPrecioVentaEdit()"></div>
+      <div class="field"><label>Precio venta ($)</label><input type="number" id="edit-pventa" readonly class="readonly"></div>
+      <div class="field"><label>Stock mínimo</label><input type="number" id="edit-stock-min" min="0" placeholder="0"></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" onclick="guardarEdicion()">Guardar cambios</button>
+      <button class="btn btn-secondary" onclick="cerrarModal()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+const API_URL='https://script.google.com/macros/s/AKfycbyy3IwcOoKFq_8LjAo5Me3MvOQe1pMRyVIU15E77DdnMYvndAHTK6W7Jm26rSmtU7bu/exec';
+let productosData=[],proveedoresData=[],categoriasData=[],itemsIngreso=[],ingProductoSeleccionado=null,stockData=[],prodTablaData=[];
+
+async function apiGet(a){const r=await fetch(`${API_URL}?action=${a}`);return r.json()}
+async function apiPost(a,b){await fetch(`${API_URL}?action=${a}`,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(b)});return{ok:true}}
+
+function showToast(m,t='success'){const el=document.getElementById('toast');el.textContent=m;el.className=`toast ${t} show`;setTimeout(()=>el.className='toast',3500)}
+function formatPeso(n){return'$'+Number(n).toLocaleString('es-AR')}
+function setFechaHoy(id){document.getElementById(id).value=new Date().toISOString().split('T')[0]}
+
+function irA(nombre){
+  document.getElementById('home').style.display='none';
+  document.getElementById('app-main').style.display='flex';
+  const btn=document.querySelector(`.tab[data-panel="${nombre}"]`);
+  if(btn)showPanel(nombre,btn);
+}
+function volverHome(){
+  document.getElementById('home').style.display='';
+  document.getElementById('app-main').style.display='none';
+  iniciarHome();
+}
+function showPanel(name,btn){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+  btn.classList.add('active');
+  if(name==='stock')iniciarStock();
+  if(name==='proveedores')iniciarProveedores();
+  if(name==='productos')iniciarProductos();
+  if(name==='categorias')iniciarCategorias();
+}
+
+async function iniciarHome(){
+  try{
+    const[p,pr]=await Promise.all([apiGet('getProductos'),apiGet('getProveedores')]);
+    const rows=p.slice(1),provRows=pr.slice(1);
+    let al=0;rows.forEach(r=>{const s=Number(r[5])||0,m=Number(r[6])||0;if(s===0||(m>0&&s<=m))al++});
+    document.getElementById('kpi-productos').textContent=rows.length;
+    document.getElementById('kpi-alertas').textContent=al;
+    document.getElementById('kpi-proveedores').textContent=provRows.length;
+    if(al>0)document.getElementById('kpi-alertas-wrap').classList.add('alerta');
+    actualizarBadges(al);
+  }catch(e){}
+}
+
+function actualizarBadges(n){
+  ['nb1','nb2'].forEach(id=>{const el=document.getElementById(id);if(el){el.textContent=n;el.style.display=n>0?'inline-block':'none'}});
+}
+
+async function cargarNotificaciones(){
+  try{
+    const data=await apiGet('getProductos');
+    const alertas=data.slice(1).filter(p=>{const s=Number(p[5])||0,m=Number(p[6])||0;return s===0||(m>0&&s<=m)}).map(p=>({tipo:Number(p[5])===0?'zero':'low',nombre:p[1],codigo:p[0],stock:Number(p[5])||0,minimo:Number(p[6])||0}));
+    const html=alertas.length===0
+      ?`<div style="padding:20px;text-align:center;color:var(--text-mid);font-size:13px">✅ Todo el stock está en orden</div>`
+      :alertas.map(a=>`<div style="padding:12px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px"><span>${a.tipo==='zero'?'🔴':'🟠'}</span><div><div style="font-size:13px;font-weight:500;color:var(--navy)">${a.nombre}</div><div style="font-size:11px;color:${a.tipo==='zero'?'var(--error)':'var(--rose-dark)'};margin-top:2px">${a.tipo==='zero'?'Sin stock':`${a.stock} unid. (mín: ${a.minimo})`}</div></div></div>`).join('');
+    ['nl1','nl2'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=html});
+    actualizarBadges(alertas.length);
+  }catch(e){}
+}
+
+function toggleNotif(origen){
+  const id=origen==='home'?'np1':'np2';
+  const p=document.getElementById(id);
+  const abierto=p.style.display==='block';
+  document.querySelectorAll('.notif-panel').forEach(x=>x.style.display='none');
+  if(!abierto){p.style.display='block';cargarNotificaciones()}
+}
+
+async function cargarProveedores(){
+  try{
+    const data=await apiGet('getProveedores');
+    proveedoresData=data.slice(1);
+    ['ing-proveedor','prod-proveedor','edit-proveedor'].forEach(id=>{
+      const sel=document.getElementById(id);if(!sel)return;
+      sel.innerHTML='<option value="">Seleccioná proveedor...</option>';
+      proveedoresData.forEach(p=>sel.innerHTML+=`<option value="${p[0]}">${p[1]}</option>`);
+    });
+  }catch(e){}
+}
+
+async function iniciarProveedores(){
+  document.getElementById('prov-loading').style.display='flex';
+  document.getElementById('prov-table').style.display='none';
+  try{
+    const data=await apiGet('getProveedores');
+    const rows=data.slice(1);
+    document.getElementById('prov-body').innerHTML=rows.length===0?'<tr><td colspan="3" style="text-align:center;color:var(--text-mid);padding:20px">No hay proveedores</td></tr>':rows.map(p=>`<tr><td><code style="color:var(--teal);font-size:12px">${p[0]}</code></td><td>${p[1]}</td><td>${p[2]||'—'}</td></tr>`).join('');
+    document.getElementById('prov-loading').style.display='none';
+    document.getElementById('prov-table').style.display='table';
+  }catch(e){showToast('Error al cargar proveedores','error')}
+}
+
+async function agregarProveedor(){
+  const c=document.getElementById('prov-codigo').value.trim(),n=document.getElementById('prov-nombre').value.trim(),ct=document.getElementById('prov-contacto').value.trim();
+  if(!c||!n){showToast('Completá código y nombre','error');return}
+  try{await apiPost('agregarProveedor',{codigo:c,nombre:n,contacto:ct});showToast('Proveedor guardado correctamente');['prov-codigo','prov-nombre','prov-contacto'].forEach(id=>document.getElementById(id).value='');setTimeout(()=>{cargarProveedores();iniciarProveedores()},1500)}catch(e){showToast('Error al guardar proveedor','error')}
+}
+
+async function cargarCategorias(){
+  try{
+    const data=await apiGet('getCategorias');
+    categoriasData=data.slice(1).map(c=>c[0]).filter(Boolean);
+    ['prod-categoria','edit-categoria','stock-filtro-cat','prod-filtro-cat'].forEach(id=>{
+      const sel=document.getElementById(id);if(!sel)return;
+      const primera=sel.options[0]?.text||'Todas';
+      sel.innerHTML=`<option value="">${primera}</option>`;
+      categoriasData.forEach(c=>sel.innerHTML+=`<option value="${c}">${c}</option>`);
+    });
+  }catch(e){}
+}
+
+async function iniciarCategorias(){
+  document.getElementById('cat-loading').style.display='flex';
+  document.getElementById('cat-table').style.display='none';
+  try{
+    const data=await apiGet('getCategorias');
+    const rows=data.slice(1).filter(r=>r[0]);
+    document.getElementById('cat-body').innerHTML=rows.length===0?'<tr><td style="text-align:center;color:var(--text-mid);padding:20px">No hay categorías</td></tr>':rows.map(c=>`<tr><td>${c[0]}</td></tr>`).join('');
+    document.getElementById('cat-loading').style.display='none';
+    document.getElementById('cat-table').style.display='table';
+  }catch(e){showToast('Error al cargar categorías','error')}
+}
+
+async function agregarCategoria(){
+  const n=document.getElementById('cat-nombre').value.trim();
+  if(!n){showToast('Ingresá el nombre de la categoría','error');return}
+  if(categoriasData.map(c=>c.toLowerCase()).includes(n.toLowerCase())){showToast('Esa categoría ya existe','error');return}
+  try{await apiPost('agregarCategoria',{nombre:n});showToast('Categoría guardada correctamente');document.getElementById('cat-nombre').value='';setTimeout(()=>{cargarCategorias();iniciarCategorias()},1500)}catch(e){showToast('Error al guardar categoría','error')}
+}
+
+async function cargarProductos(){
+  try{const data=await apiGet('getProductos');productosData=data.slice(1)}catch(e){}
+}
+
+async function iniciarProductos(){
+  document.getElementById('prod-loading').style.display='flex';
+  document.getElementById('prod-table').style.display='none';
+  try{
+    const data=await apiGet('getProductos');
+    prodTablaData=data.slice(1);
+    renderTablaProductos(prodTablaData);
+    document.getElementById('prod-loading').style.display='none';
+    document.getElementById('prod-table').style.display='table';
+  }catch(e){showToast('Error al cargar productos','error')}
+}
+
+function renderTablaProductos(rows){
+  document.getElementById('prod-body').innerHTML=rows.length===0?'<tr><td colspan="6" style="text-align:center;color:var(--text-mid);padding:20px">No hay productos</td></tr>':rows.map(p=>`<tr><td><code style="color:var(--teal);font-size:12px">${p[0]}</code></td><td>${p[1]}</td><td>${p[7]||'—'}</td><td>${formatPeso(p[3])}</td><td>${p[5]||0}</td><td style="display:flex;gap:6px"><button class="btn-warning" onclick="abrirEditar('${p[0]}')">✏️</button><button class="btn-danger" onclick="eliminarProducto('${p[0]}')">🗑️</button></td></tr>`).join('');
+}
+
+function filtrarTablaProductos(){
+  const q=document.getElementById('prod-buscar').value.toLowerCase();
+  const cat=document.getElementById('prod-filtro-cat').value;
+  renderTablaProductos(prodTablaData.filter(p=>(p[0].toString().toLowerCase().includes(q)||p[1].toString().toLowerCase().includes(q))&&(!cat||p[7]===cat)));
+}
+
+function calcularPrecioVenta(){
+  const c=Number(document.getElementById('prod-pcosto').value),m=Number(document.getElementById('prod-margen').value);
+  document.getElementById('prod-pventa').value=(c>0&&m>0)?Math.round(c*(1+m/100)):'';
+}
+
+async function agregarProducto(){
+  const codigo=document.getElementById('prod-codigo').value.trim(),descripcion=document.getElementById('prod-desc').value.trim(),proveedor=document.getElementById('prod-proveedor').value,categoria=document.getElementById('prod-categoria').value,precio_costo=Number(document.getElementById('prod-pcosto').value),precio_venta=Number(document.getElementById('prod-pventa').value),stock=Number(document.getElementById('prod-stock').value)||0,stock_minimo=Number(document.getElementById('prod-stock-min').value)||0;
+  if(!codigo||!descripcion){showToast('Completá código y descripción','error');return}
+  if(!precio_costo){showToast('Ingresá el precio de costo','error');return}
+  try{const data=await apiGet('getProductos');if(data.slice(1).some(p=>p[0].toString().trim().toLowerCase()===codigo.toLowerCase())){showToast(`El código ${codigo} ya existe`,'error');return}}catch(e){showToast('No se pudo verificar el código','error');return}
+  try{await apiPost('agregarProducto',{codigo,descripcion,proveedor,precio_venta,precio_costo,stock,stock_minimo,categoria});showToast('Producto guardado correctamente');['prod-codigo','prod-desc','prod-pcosto','prod-margen','prod-pventa','prod-stock','prod-stock-min'].forEach(id=>document.getElementById(id).value='');document.getElementById('prod-proveedor').value='';document.getElementById('prod-categoria').value='';setTimeout(()=>{cargarProductos();iniciarProductos()},1500)}catch(e){showToast('Error al guardar producto','error')}
+}
+
+async function eliminarProducto(codigo){
+  if(!confirm(`¿Seguro que querés eliminar ${codigo}?`))return;
+  try{await apiPost('eliminarProducto',{codigo});showToast('Producto eliminado');setTimeout(()=>{cargarProductos();iniciarProductos()},1500)}catch(e){showToast('Error al eliminar','error')}
+}
+
+function abrirEditar(codigo){
+  const p=prodTablaData.find(x=>x[0].toString()===codigo.toString());if(!p)return;
+  document.getElementById('edit-codigo').value=p[0];document.getElementById('edit-desc').value=p[1];document.getElementById('edit-proveedor').value=p[2]||'';document.getElementById('edit-pcosto').value=p[4]||'';document.getElementById('edit-pventa').value=p[3]||'';document.getElementById('edit-stock-min').value=p[6]||'';document.getElementById('edit-categoria').value=p[7]||'';document.getElementById('edit-margen').value=(p[4]>0&&p[3]>0)?Math.round(((p[3]/p[4])-1)*100):'';
+  document.getElementById('modal-editar').classList.add('open');
+}
+function cerrarModal(){document.getElementById('modal-editar').classList.remove('open')}
+function calcularPrecioVentaEdit(){const c=Number(document.getElementById('edit-pcosto').value),m=Number(document.getElementById('edit-margen').value);document.getElementById('edit-pventa').value=(c>0&&m>0)?Math.round(c*(1+m/100)):''}
+async function guardarEdicion(){
+  const codigo=document.getElementById('edit-codigo').value.trim(),descripcion=document.getElementById('edit-desc').value.trim(),proveedor=document.getElementById('edit-proveedor').value,categoria=document.getElementById('edit-categoria').value,precio_costo=Number(document.getElementById('edit-pcosto').value),precio_venta=Number(document.getElementById('edit-pventa').value),stock_minimo=Number(document.getElementById('edit-stock-min').value)||0;
+  if(!descripcion){showToast('Completá la descripción','error');return}
+  try{await apiPost('editarProducto',{codigo,descripcion,proveedor,precio_venta,precio_costo,stock_minimo,categoria});showToast('Producto actualizado');cerrarModal();setTimeout(()=>{cargarProductos();iniciarProductos()},1500)}catch(e){showToast('Error al actualizar','error')}
+}
+
+async function iniciarStock(){
+  document.getElementById('stock-loading').style.display='flex';document.getElementById('stock-table').style.display='none';
+  try{const data=await apiGet('getProductos');stockData=data.slice(1);renderStock(stockData);document.getElementById('stock-loading').style.display='none';document.getElementById('stock-table').style.display='table'}catch(e){showToast('Error al cargar stock','error')}
+}
+function renderStock(rows){
+  document.getElementById('stock-body').innerHTML=rows.length===0?'<tr><td colspan="6" style="text-align:center;color:var(--text-mid);padding:20px">No hay productos</td></tr>':rows.map(p=>{const s=Number(p[5])||0,m=Number(p[6])||0;const badge=s===0?`<span class="badge badge-zero">Sin stock</span>`:(m>0&&s<=m)?`<span class="badge badge-low">${s} ⚠️</span>`:`<span class="badge badge-ok">${s}</span>`;return`<tr><td><code style="color:var(--teal);font-size:12px">${p[0]}</code></td><td>${p[1]}</td><td>${p[7]||'—'}</td><td>${formatPeso(p[3])}</td><td>${badge}</td><td style="color:var(--text-mid);font-size:12px">${m>0?'Mín: '+m:'—'}</td></tr>`}).join('');
+}
+function filtrarStock(){
+  const q=document.getElementById('stock-buscar').value.toLowerCase(),cat=document.getElementById('stock-filtro-cat').value;
+  renderStock(stockData.filter(p=>(p[0].toString().toLowerCase().includes(q)||p[1].toString().toLowerCase().includes(q))&&(!cat||p[7]===cat)));
+}
+
+let ingProductoSel=null;
+function filtrarProductosIngreso(){
+  const q=document.getElementById('ing-buscar').value.toLowerCase(),lista=document.getElementById('ing-autocomplete');
+  ingProductoSel=null;document.getElementById('ing-producto-seleccionado').style.display='none';
+  if(!q){lista.style.display='none';return}
+  const f=productosData.filter(p=>p[0].toString().toLowerCase().includes(q)||p[1].toString().toLowerCase().includes(q)).slice(0,8);
+  if(!f.length){lista.style.display='none';return}
+  lista.innerHTML=f.map(p=>`<div class="autocomplete-item" onclick="selProd('${p[0]}','${p[1].replace(/'/g,"\\'")}')"><code>${p[0]}</code> — ${p[1]}</div>`).join('');
+  lista.style.display='block';
+}
+function selProd(codigo,desc){
+  ingProductoSel={codigo,desc};
+  document.getElementById('ing-buscar').value=`${codigo} — ${desc}`;
+  document.getElementById('ing-autocomplete').style.display='none';
+  document.getElementById('ing-prod-nombre').textContent=`${codigo} — ${desc}`;
+  document.getElementById('ing-producto-seleccionado').style.display='block';
+}
+function agregarItemIngreso(){
+  if(!ingProductoSel){showToast('Seleccioná un producto','error');return}
+  const cantidad=Number(document.getElementById('ing-cantidad').value),costo=Number(document.getElementById('ing-costo').value);
+  if(!cantidad||cantidad<1){showToast('Ingresá una cantidad válida','error');return}
+  itemsIngreso.push({codigo:ingProductoSel.codigo,desc:ingProductoSel.desc,cantidad,precio_costo:costo});
+  renderItemsIngreso();
+  document.getElementById('ing-cantidad').value='';document.getElementById('ing-costo').value='';document.getElementById('ing-buscar').value='';document.getElementById('ing-producto-seleccionado').style.display='none';ingProductoSel=null;
+}
+function renderItemsIngreso(){
+  const l=document.getElementById('items-lista');
+  if(!itemsIngreso.length){l.innerHTML='<div class="items-empty">Todavía no agregaste productos</div>';return}
+  l.innerHTML=itemsIngreso.map((item,i)=>`<div class="item-row"><span><code style="color:var(--teal);font-size:11px">${item.codigo}</code> ${item.desc}</span><span>${item.cantidad} unid.</span><span>${item.precio_costo?formatPeso(item.precio_costo):'—'}</span><button class="btn-danger" onclick="quitarItemIngreso(${i})">✕</button></div>`).join('');
+}
+function quitarItemIngreso(i){itemsIngreso.splice(i,1);renderItemsIngreso()}
+async function confirmarIngreso(){
+  const fecha=document.getElementById('ing-fecha').value,proveedor=document.getElementById('ing-proveedor').value,nro_remito=document.getElementById('ing-remito').value.trim();
+  if(!fecha){showToast('Seleccioná una fecha','error');return}
+  if(!proveedor){showToast('Seleccioná un proveedor','error');return}
+  if(!itemsIngreso.length){showToast('Agregá al menos un producto','error');return}
+  try{await apiPost('registrarIngreso',{fecha,proveedor,nro_remito,items:itemsIngreso});showToast('Ingreso registrado. Stock actualizado.');limpiarIngreso();setTimeout(()=>cargarProductos(),2000)}catch(e){showToast('Error al registrar el ingreso','error')}
+}
+function limpiarIngreso(){
+  itemsIngreso=[];renderItemsIngreso();
+  document.getElementById('ing-remito').value='';document.getElementById('ing-proveedor').value='';document.getElementById('ing-buscar').value='';document.getElementById('ing-producto-seleccionado').style.display='none';ingProductoSel=null;setFechaHoy('ing-fecha');
+}
+
+document.addEventListener('click',function(e){
+  if(!e.target.closest('.notif-btn')&&!e.target.closest('.notif-panel'))document.querySelectorAll('.notif-panel').forEach(p=>p.style.display='none');
+  if(!e.target.closest('.autocomplete-wrap')){const ac=document.getElementById('ing-autocomplete');if(ac)ac.style.display='none'}
+  if(!e.target.closest('.modal')&&!e.target.closest('.btn-warning'))document.getElementById('modal-editar').classList.remove('open');
+});
+
+setFechaHoy('ing-fecha');
+cargarProveedores();
+cargarProductos();
+cargarCategorias();
+iniciarHome();
+</script>
+</body>
+</html>

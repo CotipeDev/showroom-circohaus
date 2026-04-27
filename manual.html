@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Manual de Gestión — CircoHaus</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy:#485472; --teal:#58A4B0; --teal-dark:#3d8a96;
+    --rose:#DAA49A; --pearl:#D8DBE2; --blue-mist:#A9BCD0;
+    --white:#fff; --off-white:#F7F8FA;
+    --text:#2C2C2C; --text-mid:#5a5a6a; --text-light:#8a8a9a;
+    --success:#5A8C6E; --border:#cdd2dc;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--pearl); color: var(--text); }
+
+  /* TOPBAR */
+  .topbar {
+    position: sticky; top: 0; z-index: 100;
+    background: var(--navy);
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 32px; height: 56px;
+  }
+  .topbar-left { display: flex; align-items: center; gap: 16px; }
+  .topbar-logo { font-family: 'Playfair Display', serif; color: #F7F8FA; font-size: 17px; }
+  .topbar-logo span { color: var(--rose); }
+  .topbar-title { color: var(--blue-mist); font-size: 13px; }
+  .btn-back { background: none; border: 1px solid rgba(255,255,255,.25); color: #ccc; font-family: 'DM Sans', sans-serif; font-size: 12px; padding: 5px 12px; border-radius: 6px; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; transition: all .2s; }
+  .btn-back:hover { background: rgba(255,255,255,.1); color: white; }
+  .btn-download { background: var(--rose); color: white; border: none; font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; padding: 8px 18px; border-radius: 8px; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; transition: all .2s; }
+  .btn-download:hover { background: #c48a80; }
+
+  /* HERO */
+  .hero {
+    background: var(--navy);
+    padding: 40px 0 60px;
+    text-align: center;
+  }
+  .hero svg { margin-bottom: 16px; }
+  .hero h1 { font-family: 'Playfair Display', serif; font-size: 28px; color: white; margin-bottom: 4px; }
+  .hero h1 span { color: var(--rose); }
+  .hero-sub { font-size: 10px; color: var(--blue-mist); letter-spacing: .2em; text-transform: uppercase; margin-bottom: 16px; }
+  .hero-titulo { font-family: 'Playfair Display', serif; font-size: 20px; color: white; margin-bottom: 6px; }
+  .hero-chips { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-top: 16px; }
+  .hero-chip { background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.15); border-radius: 20px; padding: 4px 14px; color: var(--pearl); font-size: 12px; }
+
+  /* LAYOUT */
+  .layout { display: flex; max-width: 1100px; margin: -24px auto 0; padding: 0 24px 60px; gap: 28px; position: relative; }
+
+  /* SIDEBAR */
+  .sidebar { width: 220px; flex-shrink: 0; }
+  .sidebar-inner { position: sticky; top: 72px; background: var(--white); border-radius: 12px; padding: 16px; box-shadow: 0 2px 12px rgba(72,84,114,.08); border: 1px solid var(--border); }
+  .sidebar-title { font-size: 10px; font-weight: 600; color: var(--text-light); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 12px; }
+  .sidebar-item { display: flex; align-items: center; gap: 8px; padding: 7px 8px; border-radius: 6px; font-size: 12px; color: var(--text-mid); cursor: pointer; text-decoration: none; transition: all .15s; }
+  .sidebar-item:hover { background: var(--pearl); color: var(--navy); }
+  .sidebar-item.active { background: #EEF7F9; color: var(--teal); font-weight: 500; }
+  .sidebar-num { font-family: 'Playfair Display', serif; font-size: 14px; color: var(--teal); width: 20px; flex-shrink: 0; }
+
+  /* CONTENT */
+  .content { flex: 1; min-width: 0; }
+
+  .sec {
+    background: var(--white); border-radius: 12px; padding: 28px 32px;
+    margin-bottom: 20px; box-shadow: 0 2px 12px rgba(72,84,114,.07);
+    border: 1px solid var(--border);
+  }
+  .sec-header { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+  .sec-num { background: var(--teal); color: white; font-family: 'Playfair Display', serif; font-size: 14px; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .sec-title { font-family: 'Playfair Display', serif; font-size: 18px; color: var(--navy); }
+  .sec-line { height: 2px; background: var(--teal); opacity: .2; margin-bottom: 18px; border-radius: 2px; }
+  .sub-title { font-family: 'Playfair Display', serif; font-size: 13px; color: var(--teal); margin: 16px 0 8px; }
+  p { font-size: 14px; color: var(--text); margin-bottom: 8px; line-height: 1.65; }
+
+  .paso { display: flex; gap: 10px; margin-bottom: 7px; align-items: flex-start; }
+  .paso-num { background: var(--navy); color: white; min-width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+  .paso p { margin: 0; }
+
+  .tip { background: #EAF4F0; border-left: 3px solid var(--success); padding: 10px 14px; border-radius: 0 6px 6px 0; margin: 10px 0; font-size: 13px; color: #2d6a4f; }
+  .nota { background: #FDF5F0; border-left: 3px solid var(--rose); padding: 10px 14px; border-radius: 0 6px 6px 0; margin: 10px 0; font-size: 13px; color: #7a4030; }
+
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 13px; }
+  th { background: var(--navy); color: white; padding: 9px 12px; text-align: left; font-size: 11px; letter-spacing: .04em; text-transform: uppercase; }
+  td { padding: 9px 12px; border-bottom: 1px solid var(--pearl); vertical-align: top; line-height: 1.5; }
+  tr:nth-child(even) td { background: var(--off-white); }
+
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+  .badge-teal { background: #EEF7F9; color: var(--teal); }
+  .badge-green { background: #EAF4F0; color: var(--success); }
+  .badge-orange { background: #FDF5F0; color: #c48a80; }
+  .badge-red { background: #FDE8E8; color: #C44F4F; }
+
+  /* POPUP DEMO */
+  .popup-demo { background: var(--navy); border-radius: 10px; padding: 20px; margin: 14px 0; }
+  .popup-demo-title { font-family: 'Playfair Display', serif; font-size: 15px; color: white; margin-bottom: 3px; }
+  .popup-demo-sub { font-size: 11px; color: var(--blue-mist); margin-bottom: 14px; }
+  .popup-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: rgba(255,255,255,.06); border-radius: 6px; padding: 12px; margin-bottom: 14px; }
+  .popup-info-item label { font-size: 10px; color: var(--text-light); text-transform: uppercase; letter-spacing: .06em; display: block; }
+  .popup-info-item span { font-size: 14px; color: white; font-weight: 600; }
+  .popup-opcion { background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.15); border-radius: 6px; padding: 10px 14px; margin-bottom: 6px; }
+  .popup-opcion strong { color: var(--rose); display: block; margin-bottom: 2px; font-size: 13px; }
+  .popup-opcion span { color: var(--blue-mist); font-size: 12px; }
+
+  @media(max-width:768px) {
+    .layout { flex-direction: column; padding: 0 16px 40px; }
+    .sidebar { width: 100%; }
+    .sidebar-inner { position: static; }
+    .topbar { padding: 0 16px; }
+    .topbar-title { display: none; }
+    .hero { padding: 28px 16px 48px; }
+    .sec { padding: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-left">
+    <a href="index.html" class="btn-back">← Volver al sistema</a>
+    <span class="topbar-title">Manual de Gestión: Ingresos y Stock</span>
+  </div>
+  <a href="docs/manual_gestion_ingresos_stock.pdf" download class="btn-download">↓ Descargar PDF</a>
+</div>
+
+<div class="hero">
+  <svg width="52" height="56" viewBox="0 0 40 44" fill="none">
+    <path d="M3 20 L20 4 L37 20" stroke="#DAA49A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M20 38 C20 38 11 30 11 23 C11 19.5 13.8 17 17 17 C18.6 17 19.8 18.2 20 18.5 C20.2 18.2 21.4 17 23 17 C26.2 17 29 19.5 29 23 C29 30 20 38 20 38Z" fill="#DAA49A"/>
+  </svg>
+  <h1>Circo<span>Haus</span></h1>
+  <div class="hero-sub">Casa Atelier</div>
+  <div class="hero-titulo">Manual de Gestión del Sistema</div>
+  <div class="hero-chips">
+    <div class="hero-chip">Categorías</div>
+    <div class="hero-chip">Proveedores</div>
+    <div class="hero-chip">Productos</div>
+    <div class="hero-chip">Ingresos</div>
+    <div class="hero-chip">Stock</div>
+    <div class="hero-chip">Ventas</div>
+    <div class="hero-chip">Cuentas</div>
+    <div class="hero-chip">Medios de pago</div>
+    <div class="hero-chip">Reportes</div>
+  </div>
+</div>
+
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-inner">
+      <div class="sidebar-title">Contenido</div>
+      <a class="sidebar-item" href="#s1"><div class="sidebar-num">1</div>Acceso al sistema</a>
+      <a class="sidebar-item" href="#s2"><div class="sidebar-num">2</div>Pantalla de inicio</a>
+      <a class="sidebar-item" href="#s3"><div class="sidebar-num">3</div>Categorías</a>
+      <a class="sidebar-item" href="#s4"><div class="sidebar-num">4</div>Proveedores</a>
+      <a class="sidebar-item" href="#s5"><div class="sidebar-num">5</div>Productos</a>
+      <a class="sidebar-item" href="#s6"><div class="sidebar-num">6</div>Ingresos y costos</a>
+      <a class="sidebar-item" href="#s7"><div class="sidebar-num">7</div>Stock</a>
+      <a class="sidebar-item" href="#s8"><div class="sidebar-num">8</div>Ventas</a>
+      <a class="sidebar-item" href="#s9"><div class="sidebar-num">9</div>Cuentas</a>
+      <a class="sidebar-item" href="#s10"><div class="sidebar-num">10</div>Medios de pago</a>
+      <a class="sidebar-item" href="#s11"><div class="sidebar-num">11</div>Reportes</a>
+      <a class="sidebar-item" href="#s12"><div class="sidebar-num">12</div>Notificaciones</a>
+      <a class="sidebar-item" href="#s13"><div class="sidebar-num">13</div>Consejos generales</a>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <div class="sec" id="s1">
+      <div class="sec-header"><div class="sec-num">1</div><div class="sec-title">Acceso al sistema</div></div>
+      <div class="sec-line"></div>
+      <p>CircoHaus es una aplicación web. No necesitás instalar nada — abrís el navegador desde cualquier dispositivo y entrás a la dirección del sistema.</p>
+      <div class="sub-title">Cómo acceder</div>
+      <div class="paso"><div class="paso-num">1</div><p>Abrí Chrome, Safari o Edge en tu computadora, tablet o celular.</p></div>
+      <div class="paso"><div class="paso-num">2</div><p>Escribí la dirección web del sistema en la barra del navegador.</p></div>
+      <div class="paso"><div class="paso-num">3</div><p>La app carga automáticamente y ya podés empezar a usarla.</p></div>
+      <div class="tip">Guardá la dirección como favorito en tu navegador para acceder con un solo clic desde cualquier dispositivo.</div>
+      <div class="sub-title">Navegación</div>
+      <p>Al entrar vas a ver la pantalla de inicio con las tarjetas de cada módulo agrupadas por función. Hacés clic en la tarjeta del módulo que necesitás. Para volver al inicio usás el botón <strong>← Inicio</strong> en la barra superior izquierda. El nombre del módulo en el que estás aparece al lado del botón. En la esquina superior derecha siempre está disponible el botón de <strong>Nueva venta</strong> y la campana de notificaciones.</p>
+    </div>
+
+    <div class="sec" id="s2">
+      <div class="sec-header"><div class="sec-num">2</div><div class="sec-title">Pantalla de inicio</div></div>
+      <div class="sec-line"></div>
+      <p>La pantalla de inicio es el punto de entrada al sistema. Las tarjetas están organizadas en grupos según su función.</p>
+      <div class="sub-title">Acción rápida</div>
+      <p>Las dos tarjetas principales están destacadas arriba de todo para el uso diario:</p>
+      <table>
+        <tr><th>Tarjeta</th><th>Qué hace</th></tr>
+        <tr><td><strong>🛒 Nueva venta</strong></td><td>Abre el módulo de ventas directamente para registrar una venta.</td></tr>
+        <tr><td><strong>🔍 Consulta de precios</strong></td><td>Abre un buscador rápido para consultar precio de venta y stock de cualquier producto sin entrar a ningún módulo.</td></tr>
+      </table>
+      <div class="sub-title">Operaciones</div>
+      <table>
+        <tr><th>Tarjeta</th><th>Qué hace</th></tr>
+        <tr><td><strong>📦 Ingresos</strong></td><td>Registrá la entrada de mercadería y actualizá el stock.</td></tr>
+        <tr><td><strong>📊 Stock</strong></td><td>Visualizá el inventario completo con precios y alertas.</td></tr>
+        <tr><td><strong>📈 Reportes</strong></td><td>Analizá ventas, márgenes y estado de cuentas por período.</td></tr>
+      </table>
+      <div class="sub-title">Catálogo</div>
+      <table>
+        <tr><th>Tarjeta</th><th>Qué hace</th></tr>
+        <tr><td><strong>🏷️ Productos</strong></td><td>Cargá, editá y organizá el catálogo de productos.</td></tr>
+        <tr><td><strong>🤝 Proveedores</strong></td><td>Administrá los datos de los proveedores.</td></tr>
+        <tr><td><strong>🗂️ Categorías</strong></td><td>Creá y gestioná las categorías de productos.</td></tr>
+      </table>
+      <div class="sub-title">Finanzas</div>
+      <table>
+        <tr><th>Tarjeta</th><th>Qué hace</th></tr>
+        <tr><td><strong>💰 Cuentas</strong></td><td>Seguí el saldo de tus cuentas y registrá movimientos.</td></tr>
+        <tr><td><strong>💳 Medios de pago</strong></td><td>Configurá comisiones, descuentos y formas de cobro.</td></tr>
+      </table>
+      <div class="tip">La consulta de precios es ideal para usar durante la atención al cliente: buscás rápido por nombre, código o proveedor y ves el precio y el stock en el momento.</div>
+    </div>
+
+    <div class="sec" id="s3">
+      <div class="sec-header"><div class="sec-num">3</div><div class="sec-title">Categorías</div></div>
+      <div class="sec-line"></div>
+      <p>Las categorías organizan los productos por tipo (Aromas, Vajilla, Decoración, etc.). Conviene crearlas antes de cargar productos.</p>
+      <div class="sub-title">Agregar una categoría</div>
+      <div class="paso"><div class="paso-num">1</div><p>Clickeá la tarjeta Categorías en la home.</p></div>
+      <div class="paso"><div class="paso-num">2</div><p>Escribí el nombre en el campo Nombre.</p></div>
+      <div class="paso"><div class="paso-num">3</div><p>Clickeá Guardar categoría.</p></div>
+      <div class="paso"><div class="paso-num">4</div><p>La categoría aparece en la lista y ya está disponible al cargar productos.</p></div>
+      <div class="nota">No se pueden crear dos categorías con el mismo nombre.</div>
+      <p>Una vez creadas, las categorías aparecen como opciones al cargar o editar un producto y podés filtrar por ellas en Stock y Productos.</p>
+    </div>
+
+    <div class="sec" id="s4">
+      <div class="sec-header"><div class="sec-num">4</div><div class="sec-title">Proveedores</div></div>
+      <div class="sec-line"></div>
+      <p>Registrás los proveedores con los que trabajás. Cada proveedor tiene un código único que identifica sus productos en el sistema.</p>
+      <div class="sub-title">Campos del proveedor</div>
+      <table>
+        <tr><th>Campo</th><th>Descripción</th><th>Ejemplo</th></tr>
+        <tr><td><strong>Código</strong></td><td>Identificador corto y único</td><td>PQY</td></tr>
+        <tr><td><strong>Nombre</strong></td><td>Nombre completo del proveedor</td><td>Perfums &amp; You</td></tr>
+        <tr><td><strong>Contacto</strong></td><td>Teléfono o email (opcional)</td><td>11-1234-5678</td></tr>
+      </table>
+      <div class="sub-title">Agregar un proveedor</div>
+      <div class="paso"><div class="paso-num">1</div><p>Clickeá la tarjeta Proveedores en la home.</p></div>
+      <div class="paso"><div class="paso-num">2</div><p>Completá Código, Nombre y Contacto.</p></div>
+      <div class="paso"><div class="paso-num">3</div><p>Clickeá Guardar proveedor.</p></div>
+      <div class="paso"><div class="paso-num">4</div><p>El proveedor queda disponible en Productos e Ingresos.</p></div>
+    </div>
+
+    <div class="sec" id="s5">
+      <div class="sec-header"><div class="sec-num">5</div><div class="sec-title">Productos</div></div>
+      <div class="sec-line"></div>
+      <p>El catálogo de productos es el corazón del sistema. Cada producto tiene su código único, costo, margen y precio de venta.</p>
+      <div class="sub-title">Campos del producto</div>
+      <table>
+        <tr><th>Campo</th><th>Descripción</th><th>Ejemplo</th></tr>
+        <tr><td><strong>Código</strong></td><td>Código único, no se puede repetir</td><td>PQY-0001</td></tr>
+        <tr><td><strong>Descripción</strong></td><td>Nombre descriptivo del producto</td><td>Linen Spray 400cc - AMBER</td></tr>
+        <tr><td><strong>Proveedor</strong></td><td>Seleccioná de la lista</td><td>Perfums &amp; You</td></tr>
+        <tr><td><strong>Categoría</strong></td><td>Seleccioná de la lista</td><td>Aromas</td></tr>
+        <tr><td><strong>Precio costo ($)</strong></td><td>Lo que pagás al proveedor</td><td>$10.000</td></tr>
+        <tr><td><strong>Margen (%)</strong></td><td>Tu ganancia en porcentaje</td><td>150</td></tr>
+        <tr><td><strong>Precio venta ($)</strong></td><td>Se calcula automáticamente al poner el margen</td><td>$25.000</td></tr>
+        <tr><td><strong>Stock inicial</strong></td><td>Unidades disponibles al cargar el producto</td><td>10</td></tr>
+        <tr><td><strong>Stock mínimo</strong></td><td>Mínimo antes de recibir una alerta</td><td>3</td></tr>
+      </table>
+      <div class="tip">El precio de venta se calcula solo: costo $10.000 con margen 150% = precio de venta $25.000.</div>
+      <div class="sub-title">Tabla de productos — columnas</div>
+      <table>
+        <tr><th>Columna</th><th>Qué muestra</th></tr>
+        <tr><td><strong>Código</strong></td><td>Identificador único del producto</td></tr>
+        <tr><td><strong>Descripción</strong></td><td>Nombre del producto</td></tr>
+        <tr><td><strong>Categoría</strong></td><td>Categoría asignada</td></tr>
+        <tr><td><strong>P. Costo</strong></td><td>Precio de costo actual</td></tr>
+        <tr><td><strong>Margen</strong></td><td>Porcentaje de ganancia <span class="badge badge-teal">150%</span></td></tr>
+        <tr><td><strong>P. Venta</strong></td><td>Precio de venta al público</td></tr>
+        <tr><td><strong>Stock</strong></td><td>Unidades disponibles con indicador de color</td></tr>
+      </table>
+      <div class="sub-title">Editar un producto</div>
+      <p>Clickeá el botón naranja de edición en la fila del producto. Se abre una ventana donde podés modificar descripción, precios, margen, stock mínimo y categoría. El código no se puede cambiar.</p>
+      <div class="sub-title">Eliminar un producto</div>
+      <p>Clickeá el botón rojo de eliminar. El sistema pide confirmación antes de borrar.</p>
+      <div class="nota">Eliminar un producto es permanente y no se puede deshacer.</div>
+    </div>
+
+    <div class="sec" id="s6">
+      <div class="sec-header"><div class="sec-num">6</div><div class="sec-title">Ingresos y actualización de costos</div></div>
+      <div class="sec-line"></div>
+      <p>Cuando llega mercadería de un proveedor registrás el ingreso acá. El sistema actualiza el stock automáticamente y, si el costo cambió, te pregunta cómo ajustar el precio.</p>
+      <div class="sub-title">Registrar un ingreso</div>
+      <div class="paso"><div class="paso-num">1</div><p>Clickeá la tarjeta Ingresos en la home.</p></div>
+      <div class="paso"><div class="paso-num">2</div><p>Completá la fecha, el proveedor y el número de remito (opcional pero recomendado).</p></div>
+      <div class="paso"><div class="paso-num">3</div><p>En el buscador escribí el código o nombre del producto.</p></div>
+      <div class="paso"><div class="paso-num">4</div><p>Seleccioná el producto de la lista que aparece.</p></div>
+      <div class="paso"><div class="paso-num">5</div><p>Ingresá la cantidad y el precio de costo de este ingreso.</p></div>
+      <div class="paso"><div class="paso-num">6</div><p>Clickeá + Agregar. Repetí para cada producto del ingreso.</p></div>
+      <div class="paso"><div class="paso-num">7</div><p>Cuando terminés, clickeá Confirmar ingreso.</p></div>
+      <div class="tip">Al confirmar, el stock de cada producto se actualiza automáticamente.</div>
+      <div class="nota">El stock no se actualiza hasta que clickeás Confirmar ingreso. No cierres la pantalla sin confirmar.</div>
+      <div class="sub-title">Actualización automática de costos</div>
+      <p>Si el precio de costo que ingresaste es diferente al registrado, el sistema muestra este panel para cada producto afectado:</p>
+      <div class="popup-demo">
+        <div class="popup-demo-title">Cambio de costo detectado</div>
+        <div class="popup-demo-sub">Producto: Linen Spray 400cc - AMBER (PQY-0001) — 1 de 2</div>
+        <div class="popup-info-grid">
+          <div class="popup-info-item"><label>Costo anterior</label><span>$10.000</span></div>
+          <div class="popup-info-item"><label>Costo nuevo</label><span>$14.000</span></div>
+          <div class="popup-info-item"><label>Margen actual</label><span>150%</span></div>
+          <div class="popup-info-item"><label>Precio venta actual</label><span>$25.000</span></div>
+        </div>
+        <div class="popup-opcion"><strong>Mantener margen (150%)</strong><span>El precio de venta cambia a $35.000</span></div>
+        <div class="popup-opcion"><strong>Mantener precio de venta ($25.000)</strong><span>El margen baja a 78%</span></div>
+        <div class="popup-opcion"><strong>Definir nuevo margen</strong><span>Ingresás el porcentaje que querés y se calcula el nuevo precio</span></div>
+      </div>
+      <table>
+        <tr><th>Opción</th><th>Qué hace</th></tr>
+        <tr><td><strong>Mantener margen</strong></td><td>Conserva el % de ganancia. El precio de venta sube o baja según el nuevo costo.</td></tr>
+        <tr><td><strong>Mantener precio de venta</strong></td><td>El precio queda igual. El margen se recalcula automáticamente.</td></tr>
+        <tr><td><strong>Definir nuevo margen</strong></td><td>Vos ingresás el % y el sistema calcula el nuevo precio de venta.</td></tr>
+        <tr><td><strong>No actualizar</strong></td><td>Saltea este producto sin hacer cambios.</td></tr>
+      </table>
+      <div class="tip">Todos los cambios de costo quedan guardados en el historial con fecha, costo anterior, costo nuevo y márgenes. Esto va a ser clave para los reportes futuros.</div>
+      <div class="nota">Si hay varios productos con costo cambiado, el panel aparece uno por uno hasta procesarlos todos.</div>
+    </div>
+
+    <div class="sec" id="s7">
+      <div class="sec-header"><div class="sec-num">7</div><div class="sec-title">Stock</div></div>
+      <div class="sec-line"></div>
+      <p>Muestra el inventario completo en tiempo real con todos los datos de cada producto.</p>
+      <div class="sub-title">Columnas de la tabla</div>
+      <table>
+        <tr><th>Columna</th><th>Descripción</th></tr>
+        <tr><td><strong>Código</strong></td><td>Identificador del producto</td></tr>
+        <tr><td><strong>Descripción</strong></td><td>Nombre del producto</td></tr>
+        <tr><td><strong>Categoría</strong></td><td>Categoría asignada</td></tr>
+        <tr><td><strong>P. Costo</strong></td><td>Precio de costo actual</td></tr>
+        <tr><td><strong>Margen</strong></td><td>Porcentaje de ganancia <span class="badge badge-teal">150%</span></td></tr>
+        <tr><td><strong>P. Venta</strong></td><td>Precio de venta al público</td></tr>
+        <tr><td><strong>Stock</strong></td><td>Unidades disponibles con indicador de color</td></tr>
+        <tr><td><strong>Mínimo</strong></td><td>Stock mínimo configurado para ese producto</td></tr>
+      </table>
+      <div class="sub-title">Indicadores de stock</div>
+      <table>
+        <tr><th>Indicador</th><th>Significado</th></tr>
+        <tr><td><span class="badge badge-green">12</span></td><td>Stock normal. Hay suficientes unidades.</td></tr>
+        <tr><td><span class="badge badge-orange">2 !</span></td><td>Stock bajo. Llegó o está por debajo del mínimo configurado.</td></tr>
+        <tr><td><span class="badge badge-red">Sin stock</span></td><td>El producto está agotado.</td></tr>
+      </table>
+      <div class="sub-title">Buscar y filtrar</div>
+      <p>Podés buscar productos escribiendo el código o nombre en el buscador. También podés filtrar por categoría usando el selector al lado del buscador.</p>
+    </div>
+
+    <div class="sec" id="s8">
+      <div class="sec-header"><div class="sec-num">8</div><div class="sec-title">Ventas</div></div>
+      <div class="sec-line"></div>
+      <p>El módulo de ventas permite registrar una venta completa: agregar productos al carrito, elegir cómo se paga y confirmar. El stock se descuenta automáticamente y el movimiento queda registrado en la cuenta correspondiente.</p>
+
+      <div class="sub-title">Registrar una venta</div>
+      <div class="paso"><div class="paso-num">1</div><p>Clickeá <strong>Nueva venta</strong> desde el inicio o desde la barra superior.</p></div>
+      <div class="paso"><div class="paso-num">2</div><p>En el buscador de productos escribí el código o nombre. Seleccioná el producto de la lista.</p></div>
+      <div class="paso"><div class="paso-num">3</div><p>Ingresá la cantidad y clickeá <strong>+ Agregar</strong>. Repetí para cada producto.</p></div>
+      <div class="paso"><div class="paso-num">4</div><p>En la sección <strong>Forma de pago</strong> seleccioná el medio de pago. El sistema calcula automáticamente el precio con el descuento y las comisiones correspondientes.</p></div>
+      <div class="paso"><div class="paso-num">5</div><p>Si el cliente paga con más de un medio, podés agregar varios pagos. El sistema controla que la suma cubra el total.</p></div>
+      <div class="paso"><div class="paso-num">6</div><p>Clickeá <strong>Confirmar venta</strong>.</p></div>
+      <div class="tip">El precio se recalcula automáticamente según el medio de pago: efectivo y transferencia tienen descuento para el cliente; tarjeta y otros medios pueden tener comisiones que se descuentan del neto.</div>
+
+      <div class="sub-title">Precios por forma de pago</div>
+      <table>
+        <tr><th>Medio de pago</th><th>Precio al cliente</th><th>Lo que recibe el negocio</th></tr>
+        <tr><td>Tarjeta (precio base)</td><td>Precio de venta completo</td><td>Precio − comisión del medio</td></tr>
+        <tr><td>Transferencia</td><td>Precio con descuento (ej. −10%)</td><td>Monto cobrado (sin comisión)</td></tr>
+        <tr><td>Efectivo</td><td>Precio con descuento (ej. −15%)</td><td>Monto cobrado (sin comisión)</td></tr>
+      </table>
+      <div class="nota">Los porcentajes de descuento y comisión son configurables en el módulo Medios de pago.</div>
+
+      <div class="sub-title">Venta fiada (cuenta por cobrar)</div>
+      <p>Si el cliente se lleva la mercadería pero paga después, podés registrar la venta como <strong>fiado</strong>. El stock se descuenta igual, pero el cobro queda pendiente para registrar después.</p>
+
+      <div class="sub-title">Historial de ventas</div>
+      <p>En la parte inferior del módulo está el historial con todas las ventas registradas. Podés filtrar por fecha y por estado (cobrada, fiado pendiente, cancelada). Al hacer clic en una venta podés ver el detalle completo.</p>
+
+      <div class="sub-title">Cancelar una venta</div>
+      <p>Desde el detalle de una venta podés cancelarla. Al cancelar, el stock de los productos vuelve a su valor anterior automáticamente.</p>
+      <div class="nota">Una vez cancelada, la venta no se puede reactivar.</div>
+    </div>
+
+    <div class="sec" id="s9">
+      <div class="sec-header"><div class="sec-num">9</div><div class="sec-title">Cuentas</div></div>
+      <div class="sec-line"></div>
+      <p>El módulo de cuentas permite ver el saldo de cada cuenta del negocio (efectivo, banco, billetera virtual, etc.) y registrar movimientos de dinero manuales como gastos o retiros.</p>
+
+      <div class="sub-title">Saldo disponible vs. en camino</div>
+      <p>Cada cuenta muestra dos saldos:</p>
+      <table>
+        <tr><th>Saldo</th><th>Qué significa</th></tr>
+        <tr><td><strong>Disponible hoy</strong></td><td>Dinero que ya está acreditado en la cuenta.</td></tr>
+        <tr><td><strong>En camino</strong></td><td>Cobros de ventas con tarjeta u otros medios que todavía no se acreditaron (según los días de acreditación configurados).</td></tr>
+      </table>
+      <div class="tip">Por ejemplo, una venta con tarjeta de crédito puede demorar varios días en acreditarse. El sistema la muestra como "en camino" hasta que se acredite.</div>
+
+      <div class="sub-title">Registrar un movimiento manual</div>
+      <div class="paso"><div class="paso-num">1</div><p>Entrá al módulo Cuentas.</p></div>
+      <div class="paso"><div class="paso-num">2</div><p>En la sección <strong>Registrar movimiento</strong> elegí la cuenta, el tipo (ingreso o egreso), la categoría y el monto.</p></div>
+      <div class="paso"><div class="paso-num">3</div><p>Clickeá <strong>Guardar movimiento</strong>.</p></div>
+      <div class="nota">Los movimientos de ventas se registran automáticamente. Solo usá el registro manual para gastos, retiros u otros ingresos que no vienen de una venta.</div>
+
+      <div class="sub-title">Historial de movimientos</div>
+      <p>Muestra todos los movimientos ordenados del más reciente al más antiguo. Los ingresos aparecen en verde y los egresos en rojo. Los movimientos pendientes de acreditación se muestran con un indicador especial.</p>
+    </div>
+
+    <div class="sec" id="s10">
+      <div class="sec-header"><div class="sec-num">10</div><div class="sec-title">Medios de pago</div></div>
+      <div class="sec-line"></div>
+      <p>Acá se configuran las formas de cobro del negocio: efectivo, transferencia, tarjeta de débito, crédito, etc. Cada medio tiene sus propios parámetros que afectan el precio al cliente y el neto que recibe el negocio.</p>
+      <div class="nota">Este módulo es de configuración. Solo lo modifica quien administra el sistema, no es de uso diario.</div>
+
+      <div class="sub-title">Parámetros de cada medio de pago</div>
+      <table>
+        <tr><th>Parámetro</th><th>Qué hace</th></tr>
+        <tr><td><strong>Cuenta asociada</strong></td><td>A qué cuenta del negocio van los cobros por este medio.</td></tr>
+        <tr><td><strong>Descuento al cliente (%)</strong></td><td>El porcentaje que se descuenta del precio de venta cuando el cliente paga con este medio. Ej: 15% para efectivo.</td></tr>
+        <tr><td><strong>Comisión (%)</strong></td><td>El porcentaje que cobra el procesador de pagos (ej. la tarjeta). Se descuenta del neto.</td></tr>
+        <tr><td><strong>Costo financiero (%)</strong></td><td>Costo adicional para cuotas u otros costos financieros.</td></tr>
+        <tr><td><strong>Días de acreditación</strong></td><td>Cuántos días tarda en acreditarse el dinero en la cuenta. Ej: 0 para efectivo, 2 para débito, 10+ para crédito.</td></tr>
+      </table>
+      <div class="tip">Si cambiás los porcentajes de un medio de pago, el sistema guarda el historial del cambio con fecha para que puedas rastrear cuándo cambiaron las condiciones.</div>
+    </div>
+
+    <div class="sec" id="s11">
+      <div class="sec-header"><div class="sec-num">11</div><div class="sec-title">Reportes</div></div>
+      <div class="sec-line"></div>
+      <p>El módulo de reportes muestra un análisis del negocio para el período que elijas. Toda la información se calcula automáticamente a partir de las ventas registradas.</p>
+
+      <div class="sub-title">Seleccionar el período</div>
+      <p>Usá los botones rápidos <strong>Hoy</strong>, <strong>Semana</strong> o <strong>Mes</strong>, o ingresá fechas manualmente y clickeá <strong>Ver</strong>.</p>
+
+      <div class="sub-title">Indicadores principales</div>
+      <table>
+        <tr><th>Indicador</th><th>Qué muestra</th></tr>
+        <tr><td><strong>Ventas cobradas</strong></td><td>Cantidad de ventas confirmadas en el período (no incluye canceladas).</td></tr>
+        <tr><td><strong>Total cobrado</strong></td><td>Suma de lo que pagaron los clientes.</td></tr>
+        <tr><td><strong>Neto</strong></td><td>Lo que queda después de descontar comisiones de medios de pago.</td></tr>
+        <tr><td><strong>Ticket promedio</strong></td><td>Promedio de cada venta en el período.</td></tr>
+      </table>
+
+      <div class="sub-title">Ventas por medio de pago</div>
+      <p>Muestra cuánto se cobró y cuánto quedó neto para cada medio de pago usado en el período.</p>
+
+      <div class="sub-title">Estado de cuentas</div>
+      <p>Muestra el saldo disponible hoy y el dinero en camino (pendiente de acreditación) para cada cuenta activa.</p>
+
+      <div class="sub-title">Productos más vendidos</div>
+      <p>Top 10 de productos por unidades vendidas en el período, con el monto total recaudado por cada uno.</p>
+
+      <div class="sub-title">Margen y rentabilidad</div>
+      <table>
+        <tr><th>Columna</th><th>Qué muestra</th></tr>
+        <tr><td><strong>Vendido</strong></td><td>Unidades vendidas en el período.</td></tr>
+        <tr><td><strong>Costo hist.</strong></td><td>Costo promedio al momento de cada venta.</td></tr>
+        <tr><td><strong>Costo repo.</strong></td><td>Costo de reposición actual (lo que costaría comprarlo hoy).</td></tr>
+        <tr><td><strong>Margen neto</strong></td><td>Porcentaje de ganancia real sobre el costo histórico.</td></tr>
+        <tr><td><strong>Alerta</strong></td><td>🔴 Si el costo de reposición subió más del 5% respecto al histórico. 🟢 Si bajó.</td></tr>
+      </table>
+      <div class="tip">Si un producto muestra 🔴 "Costo subió", revisá si el precio de venta sigue siendo rentable. Puede ser momento de actualizar el precio.</div>
+    </div>
+
+    <div class="sec" id="s12">
+      <div class="sec-header"><div class="sec-num">12</div><div class="sec-title">Notificaciones</div></div>
+      <div class="sec-line"></div>
+      <p>La campana en la esquina superior derecha te avisa cuando hay productos con stock bajo o agotado. Al abrir la app el sistema revisa el stock automáticamente. Si hay alertas aparece un número rojo sobre la campana.</p>
+      <div class="sub-title">Tipos de alerta</div>
+      <table>
+        <tr><th>Tipo</th><th>Significado</th></tr>
+        <tr><td><span class="badge badge-orange">Naranja</span></td><td>El stock del producto llegó al mínimo o está por debajo.</td></tr>
+        <tr><td><span class="badge badge-red">Rojo</span></td><td>El producto está completamente sin stock.</td></tr>
+      </table>
+      <div class="tip">Las notificaciones se actualizan cada vez que abrís el panel. Hacé clic en la campana para ver el detalle completo.</div>
+    </div>
+
+    <div class="sec" id="s13">
+      <div class="sec-header"><div class="sec-num">13</div><div class="sec-title">Consejos generales</div></div>
+      <div class="sec-line"></div>
+      <div class="sub-title">Orden de carga recomendado</div>
+      <p>Al empezar a usar el sistema cargá en este orden: primero <strong>Categorías</strong>, luego <strong>Proveedores</strong>, luego <strong>Productos</strong>. Así cuando cargues un producto ya tenés disponibles todas las opciones.</p>
+      <div class="sub-title">Confirmá siempre el ingreso</div>
+      <p>El stock no se actualiza hasta que clickeás <strong>Confirmar ingreso</strong>. No cierres la pantalla sin confirmar o perdés el ingreso.</p>
+      <div class="sub-title">Usá la consulta rápida de precios</div>
+      <p>Durante la atención al cliente, la tarjeta <strong>🔍 Consulta de precios</strong> en el inicio es la forma más rápida de verificar un precio y el stock disponible sin tener que entrar a ningún módulo.</p>
+      <div class="sub-title">Aprovechá el historial de costos</div>
+      <p>Cada vez que cambia el costo de un producto, el sistema guarda el cambio con fecha. En el módulo de <strong>Reportes</strong> podés ver si el margen de tus productos sigue siendo rentable frente al costo de reposición actual.</p>
+      <div class="sub-title">Revisá los reportes regularmente</div>
+      <p>Con el módulo de Reportes podés ver rápidamente qué productos se venden más, cuánto neto queda después de comisiones y si algún costo de reposición subió y requiere ajuste de precio.</p>
+      <div class="sub-title">Usá el stock mínimo</div>
+      <p>Configurar el stock mínimo para cada producto es clave. El sistema te avisa automáticamente cuándo es momento de reponer, sin que tengas que estar revisando todo el tiempo.</p>
+      <div class="sub-title">El número de remito</div>
+      <p>Aunque es opcional, recomendamos cargarlo siempre. Si hay alguna diferencia con el proveedor, podés cruzar los datos fácilmente.</p>
+      <div class="sub-title">Acceso desde cualquier dispositivo</div>
+      <p>El sistema está adaptado para funcionar bien en computadora, tablet y celular. Guardá la dirección como favorito para acceder con un solo clic.</p>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>

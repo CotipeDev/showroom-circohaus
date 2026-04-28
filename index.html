@@ -2075,18 +2075,30 @@ async function abrirFichaCliente(idCli, abrirPago=false){
 }
 
 async function abrirFichaClientePorCpc(idCpc){
-  document.getElementById('home').style.display='none';
-  document.getElementById('app-main').style.display='flex';
-  showPanel('cxc');
-  await iniciarCxc();
-  if(cxcDataGlobal&&cxcDataGlobal.porCliente){
-    for(const[idCli,datos] of Object.entries(cxcDataGlobal.porCliente)){
-      if(datos.cpcs.some(c=>String(c[0])===String(idCpc))){
-        abrirFichaCliente(idCli,false);
-        return;
-      }
-    }
-  }
+  try{
+    const[dataCpc,dataVentas,dataClientes,dataPagos,dataMedios,dataCuentas]=await Promise.all([
+      apiGet('getCuentasPorCobrar'),apiGet('getVentas'),apiGet('getClientes'),
+      apiGet('getPagosVenta'),apiGet('getMediosPago'),apiGet('getCuentas')
+    ]);
+    const cpcs=Array.isArray(dataCpc)?dataCpc.slice(1):[];
+    const ventas=Array.isArray(dataVentas)?dataVentas.slice(1):[];
+    const clientes=Array.isArray(dataClientes)?dataClientes.slice(1):[];
+    const pagos=Array.isArray(dataPagos)?dataPagos.slice(1):[];
+    const medios=Array.isArray(dataMedios)?dataMedios.slice(1):[];
+    const nombreCliente=id=>{const c=clientes.find(x=>String(x[0])===String(id));return c?c[1]:id||'Sin nombre'};
+    const nombreMedio=id=>{const m=medios.find(x=>String(x[0])===String(id));return m?m[2]:id||'—'};
+    // Encontrar la CxC y su cliente
+    const cpc=cpcs.find(c=>String(c[0])===String(idCpc));
+    if(!cpc)return;
+    const idCli=String(cpc[2]);
+    // Armar datos del cliente igual que iniciarCxc
+    const cpcsCli=cpcs.filter(c=>String(c[2])===idCli);
+    const saldoTotal=cpcsCli.reduce((s,c)=>s+Number(c[5]),0);
+    const porCliente={[idCli]:{nombre:nombreCliente(idCli),cpcs:cpcsCli,saldoTotal,totalDeuda:saldoTotal}};
+    const hoy=new Date();
+    cxcDataGlobal={porCliente,ventas,pagos,nombreCliente,nombreMedio,hoy};
+    abrirFichaCliente(idCli,false);
+  }catch(e){showToast('Error al abrir ficha','error');}
 }
 
 function abrirCobrosDesdeModal(){

@@ -2075,18 +2075,18 @@ async function abrirFichaCliente(idCli, abrirPago=false){
 }
 
 async function abrirFichaClientePorCpc(idCpc){
-  // Si los datos de CxC ya están cargados, buscar el cliente directamente
+  // Ir al módulo CxC y esperar que se inicialice
+  irA('cxc');
+  await iniciarCxc();
+  // Buscar el cliente que tiene esta CxC
   if(cxcDataGlobal&&cxcDataGlobal.porCliente){
     for(const[idCli,datos] of Object.entries(cxcDataGlobal.porCliente)){
       if(datos.cpcs.some(c=>String(c[0])===String(idCpc))){
-        await irA("cxc");
-        setTimeout(()=>abrirFichaCliente(idCli,false),500);
+        abrirFichaCliente(idCli,false);
         return;
       }
     }
   }
-  // Si no, ir a CxC y dejar que el usuario busque
-  irA("cxc");
 }
 
 function abrirCobrosDesdeModal(){

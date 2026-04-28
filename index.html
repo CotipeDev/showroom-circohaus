@@ -916,7 +916,7 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
 </div>
 
 <script>
-const API_URL='https://script.google.com/macros/s/AKfycbynGODXKCZQnhoEg68oaALffgqoQdCcn5IoQRfds4iy7Qspqdbxsz8892eSoNKr15ay/exec';
+const API_URL='https://script.google.com/macros/s/AKfycbyXiwYclMUadTpCSPGVneDPbR7EQgEy2X-wLljjAIpLdiqIqG5WI-w3KsH0pJpckuEl/exec';
 let productosData=[],proveedoresData=[],categoriasData=[],itemsIngreso=[],ingProductoSel=null,stockData=[],prodTablaData=[];
 
 // Cola de cambios de costo pendientes
@@ -1397,7 +1397,7 @@ function renderMovimientos(rows){
         <td>${cuentaNombre(m[2])}</td>
         <td><span class="badge ${esIngreso?'badge-ok':'badge-zero'}">${esIngreso?'↑ Ingreso':'↓ Egreso'}</span></td>
         <td>${m[4]||'—'}</td>
-        <td style="color:var(--text-mid);font-size:12px">${m[7]&&String(m[7]).startsWith('VTA-')?`<span style="color:var(--teal);cursor:pointer;text-decoration:underline" onclick="verDetalleVenta('${m[7]}')">${m[7]}</span>`:m[6]||'—'}</td>
+        <td style="color:var(--text-mid);font-size:12px">${m[9]==='cobro_cpc'?`<span style="color:var(--teal);cursor:pointer;text-decoration:underline" onclick="abrirFichaClientePorCpc('${m[7]}')">${m[6]||'Cobro cuenta'}</span>`:m[7]&&String(m[7]).startsWith('VTA-')?`<span style="color:var(--teal);cursor:pointer;text-decoration:underline" onclick="verDetalleVenta('${m[7]}')">${m[7]}</span>`:m[6]||'—'}</td>
         <td style="font-size:12px;color:var(--text-mid)">${esIngreso?fa:'—'}</td>
         <td>${estadoBadge}</td>
         <td style="text-align:right;font-weight:600;color:${esIngreso?'var(--success)':'var(--error)'}">
@@ -2072,6 +2072,21 @@ async function abrirFichaCliente(idCli, abrirPago=false){
       },100);
     }
   }
+}
+
+async function abrirFichaClientePorCpc(idCpc){
+  // Si los datos de CxC ya están cargados, buscar el cliente directamente
+  if(cxcDataGlobal&&cxcDataGlobal.porCliente){
+    for(const[idCli,datos] of Object.entries(cxcDataGlobal.porCliente)){
+      if(datos.cpcs.some(c=>String(c[0])===String(idCpc))){
+        await irA("cxc");
+        setTimeout(()=>abrirFichaCliente(idCli,false),500);
+        return;
+      }
+    }
+  }
+  // Si no, ir a CxC y dejar que el usuario busque
+  irA("cxc");
 }
 
 function abrirCobrosDesdeModal(){

@@ -919,6 +919,23 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
 const API_URL='https://script.google.com/macros/s/AKfycbyXiwYclMUadTpCSPGVneDPbR7EQgEy2X-wLljjAIpLdiqIqG5WI-w3KsH0pJpckuEl/exec';
 let productosData=[],proveedoresData=[],categoriasData=[],itemsIngreso=[],ingProductoSel=null,stockData=[],prodTablaData=[];
 
+// ── CACHE GLOBAL ──
+const cache={
+  data:{},
+  ts:{},
+  ttl:5*60*1000, // 5 minutos
+  async get(key){
+    if(this.data[key]&&(Date.now()-this.ts[key])<this.ttl)return this.data[key];
+    const d=await apiGet(key);
+    this.data[key]=d;this.ts[key]=Date.now();
+    return d;
+  },
+  invalidar(...keys){keys.forEach(k=>{delete this.data[k];delete this.ts[k];})},
+  set(key,data){this.data[key]=data;this.ts[key]=Date.now();}
+};
+async function cacheGet(key){return cache.get(key);}
+function cacheInvalidar(...keys){cache.invalidar(...keys);}
+
 // Cola de cambios de costo pendientes
 let colaActualizaciones=[], indexActual=0, fechaIngreso='';
 
@@ -944,7 +961,7 @@ function cerrarModal(id){document.getElementById(id).classList.remove('open')}
 
 async function iniciarHome(){
   try{
-    const[p,pr]=await Promise.all([apiGet('getProductos'),apiGet('getProveedores')]);
+    const[p,pr]=await Promise.all([cacheGet('getProductos'),apiGet('getProveedores')]);
     const rows=p.slice(1),provRows=pr.slice(1);
     let al=0;rows.forEach(r=>{const s=Number(r[5])||0,m=Number(r[6])||0;if(s===0||(m>0&&s<=m))al++});
     document.getElementById('kpi-productos').textContent=rows.length;
@@ -958,7 +975,7 @@ function actualizarBadges(n){['nb1','nb2'].forEach(id=>{const el=document.getEle
 
 async function cargarNotificaciones(){
   try{
-    const data=await apiGet('getProductos');
+    const data=await cacheGet('getProductos');
     const alertas=data.slice(1).filter(p=>{const s=Number(p[5])||0,m=Number(p[6])||0;return s===0||(m>0&&s<=m)}).map(p=>({tipo:Number(p[5])===0?'zero':'low',nombre:p[1],codigo:p[0],stock:Number(p[5])||0,minimo:Number(p[6])||0}));
     const html=alertas.length===0?`<div style="padding:20px;text-align:center;color:var(--text-mid);font-size:13px">✅ Todo el stock está en orden</div>`:alertas.map(a=>`<div style="padding:12px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px"><span>${a.tipo==='zero'?'🔴':'🟠'}</span><div><div style="font-size:13px;font-weight:500;color:var(--navy)">${a.nombre}</div><div style="font-size:11px;color:${a.tipo==='zero'?'var(--error)':'var(--rose-dark)'};margin-top:2px">${a.tipo==='zero'?'Sin stock':`${a.stock} unid. (mín: ${a.minimo})`}</div></div></div>`).join('');
     ['nl1','nl2'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=html});
@@ -968,24 +985,24 @@ async function cargarNotificaciones(){
 function toggleNotif(o){const id=o==='home'?'np1':'np2';const p=document.getElementById(id);const ab=p.style.display==='block';document.querySelectorAll('.notif-panel').forEach(x=>x.style.display='none');if(!ab){p.style.display='block';cargarNotificaciones()}}
 
 async function cargarProveedores(){
-  try{const data=await apiGet('getProveedores');proveedoresData=data.slice(1);['ing-proveedor','prod-proveedor','edit-proveedor'].forEach(id=>{const sel=document.getElementById(id);if(!sel)return;sel.innerHTML='<option value="">Seleccioná proveedor...</option>';proveedoresData.forEach(p=>sel.innerHTML+=`<option value="${p[0]}">${p[1]}</option>`)})}catch(e){}
+  try{const data=await cacheGet('getProveedores');proveedoresData=data.slice(1);['ing-proveedor','prod-proveedor','edit-proveedor'].forEach(id=>{const sel=document.getElementById(id);if(!sel)return;sel.innerHTML='<option value="">Seleccioná proveedor...</option>';proveedoresData.forEach(p=>sel.innerHTML+=`<option value="${p[0]}">${p[1]}</option>`)})}catch(e){}
 }
 async function iniciarProveedores(){
   document.getElementById('prov-loading').style.display='flex';document.getElementById('prov-table').style.display='none';
-  try{const data=await apiGet('getProveedores');const rows=data.slice(1);document.getElementById('prov-body').innerHTML=rows.length===0?'<tr><td colspan="3" style="text-align:center;color:var(--text-mid);padding:20px">No hay proveedores</td></tr>':rows.map(p=>`<tr><td><code style="color:var(--teal);font-size:12px">${p[0]}</code></td><td>${p[1]}</td><td>${p[2]||'—'}</td></tr>`).join('');document.getElementById('prov-loading').style.display='none';document.getElementById('prov-table').style.display='table'}catch(e){showToast('Error al cargar proveedores','error')}
+  try{const data=await cacheGet('getProveedores');const rows=data.slice(1);document.getElementById('prov-body').innerHTML=rows.length===0?'<tr><td colspan="3" style="text-align:center;color:var(--text-mid);padding:20px">No hay proveedores</td></tr>':rows.map(p=>`<tr><td><code style="color:var(--teal);font-size:12px">${p[0]}</code></td><td>${p[1]}</td><td>${p[2]||'—'}</td></tr>`).join('');document.getElementById('prov-loading').style.display='none';document.getElementById('prov-table').style.display='table'}catch(e){showToast('Error al cargar proveedores','error')}
 }
 async function agregarProveedor(){
   const c=document.getElementById('prov-codigo').value.trim(),n=document.getElementById('prov-nombre').value.trim(),ct=document.getElementById('prov-contacto').value.trim();
   if(!c||!n){showToast('Completá código y nombre','error');return}
-  try{await apiPost('agregarProveedor',{codigo:c,nombre:n,contacto:ct});showToast('Proveedor guardado');['prov-codigo','prov-nombre','prov-contacto'].forEach(id=>document.getElementById(id).value='');setTimeout(()=>{cargarProveedores();iniciarProveedores()},1500)}catch(e){showToast('Error','error')}
+  try{await apiPost('agregarProveedor',{codigo:c,nombre:n,contacto:ct});showToast('Proveedor guardado');['prov-codigo','prov-nombre','prov-contacto'].forEach(id=>document.getElementById(id).value='');cacheInvalidar('getProveedores');setTimeout(()=>{cargarProveedores();iniciarProveedores()},1500)}catch(e){showToast('Error','error')}
 }
 
 async function cargarCategorias(){
-  try{const data=await apiGet('getCategorias');categoriasData=data.slice(1).map(c=>c[0]).filter(Boolean);['prod-categoria','edit-categoria','stock-filtro-cat','prod-filtro-cat'].forEach(id=>{const sel=document.getElementById(id);if(!sel)return;const primera=sel.options[0]?.text||'Todas';sel.innerHTML=`<option value="">${primera}</option>`;categoriasData.forEach(c=>sel.innerHTML+=`<option value="${c}">${c}</option>`)})}catch(e){}
+  try{const data=await cacheGet('getCategorias');categoriasData=data.slice(1).map(c=>c[0]).filter(Boolean);['prod-categoria','edit-categoria','stock-filtro-cat','prod-filtro-cat'].forEach(id=>{const sel=document.getElementById(id);if(!sel)return;const primera=sel.options[0]?.text||'Todas';sel.innerHTML=`<option value="">${primera}</option>`;categoriasData.forEach(c=>sel.innerHTML+=`<option value="${c}">${c}</option>`)})}catch(e){}
 }
 async function iniciarCategorias(){
   document.getElementById('cat-loading').style.display='flex';document.getElementById('cat-table').style.display='none';
-  try{const data=await apiGet('getCategorias');const rows=data.slice(1).filter(r=>r[0]);document.getElementById('cat-body').innerHTML=rows.length===0?'<tr><td style="text-align:center;color:var(--text-mid);padding:20px">No hay categorías</td></tr>':rows.map(c=>`<tr><td>${c[0]}</td></tr>`).join('');document.getElementById('cat-loading').style.display='none';document.getElementById('cat-table').style.display='table'}catch(e){}
+  try{const data=await cacheGet('getCategorias');const rows=data.slice(1).filter(r=>r[0]);document.getElementById('cat-body').innerHTML=rows.length===0?'<tr><td style="text-align:center;color:var(--text-mid);padding:20px">No hay categorías</td></tr>':rows.map(c=>`<tr><td>${c[0]}</td></tr>`).join('');document.getElementById('cat-loading').style.display='none';document.getElementById('cat-table').style.display='table'}catch(e){}
 }
 async function agregarCategoria(){
   const n=document.getElementById('cat-nombre').value.trim();
@@ -994,13 +1011,13 @@ async function agregarCategoria(){
   try{await apiPost('agregarCategoria',{nombre:n});showToast('Categoría guardada');document.getElementById('cat-nombre').value='';setTimeout(()=>{cargarCategorias();iniciarCategorias()},1500)}catch(e){showToast('Error','error')}
 }
 
-async function cargarProductos(){try{const data=await apiGet('getProductos');productosData=data.slice(1)}catch(e){}}
+async function cargarProductos(){try{const data=await cacheGet('getProductos');productosData=data.slice(1)}catch(e){}}
 
 function calcMargen(costo,venta){return(costo>0&&venta>0)?Math.round(((venta/costo)-1)*100):0}
 
 async function iniciarProductos(){
   document.getElementById('prod-loading').style.display='flex';document.getElementById('prod-table').style.display='none';
-  try{const data=await apiGet('getProductos');prodTablaData=data.slice(1);renderTablaProductos(prodTablaData);document.getElementById('prod-loading').style.display='none';document.getElementById('prod-table').style.display='table'}catch(e){showToast('Error','error')}
+  try{const data=await cacheGet('getProductos');prodTablaData=data.slice(1);renderTablaProductos(prodTablaData);document.getElementById('prod-loading').style.display='none';document.getElementById('prod-table').style.display='table'}catch(e){showToast('Error','error')}
 }
 function renderTablaProductos(rows){
   document.getElementById('prod-body').innerHTML=rows.length===0?'<tr><td colspan="8" style="text-align:center;color:var(--text-mid);padding:20px">No hay productos</td></tr>':rows.map(p=>{
@@ -1015,12 +1032,12 @@ async function agregarProducto(){
   const codigo=document.getElementById('prod-codigo').value.trim(),descripcion=document.getElementById('prod-desc').value.trim(),proveedor=document.getElementById('prod-proveedor').value,categoria=document.getElementById('prod-categoria').value,precio_costo=Number(document.getElementById('prod-pcosto').value),precio_venta=Number(document.getElementById('prod-pventa').value),stock=Number(document.getElementById('prod-stock').value)||0,stock_minimo=Number(document.getElementById('prod-stock-min').value)||0;
   if(!codigo||!descripcion){showToast('Completá código y descripción','error');return}
   if(!precio_costo){showToast('Ingresá el precio de costo','error');return}
-  try{const data=await apiGet('getProductos');if(data.slice(1).some(p=>p[0].toString().trim().toLowerCase()===codigo.toLowerCase())){showToast(`El código ${codigo} ya existe`,'error');return}}catch(e){showToast('No se pudo verificar el código','error');return}
-  try{await apiPost('agregarProducto',{codigo,descripcion,proveedor,precio_venta,precio_costo,stock,stock_minimo,categoria});showToast('Producto guardado');['prod-codigo','prod-desc','prod-pcosto','prod-margen','prod-pventa','prod-stock','prod-stock-min'].forEach(id=>document.getElementById(id).value='');document.getElementById('prod-proveedor').value='';document.getElementById('prod-categoria').value='';setTimeout(()=>{cargarProductos();iniciarProductos()},1500)}catch(e){showToast('Error','error')}
+  try{const data=await cacheGet('getProductos');if(data.slice(1).some(p=>p[0].toString().trim().toLowerCase()===codigo.toLowerCase())){showToast(`El código ${codigo} ya existe`,'error');return}}catch(e){showToast('No se pudo verificar el código','error');return}
+  try{await apiPost('agregarProducto',{codigo,descripcion,proveedor,precio_venta,precio_costo,stock,stock_minimo,categoria});showToast('Producto guardado');['prod-codigo','prod-desc','prod-pcosto','prod-margen','prod-pventa','prod-stock','prod-stock-min'].forEach(id=>document.getElementById(id).value='');document.getElementById('prod-proveedor').value='';document.getElementById('prod-categoria').value='';cacheInvalidar('getProductos');setTimeout(()=>{cargarProductos();iniciarProductos()},1500)}catch(e){showToast('Error','error')}
 }
 async function eliminarProducto(codigo){
   if(!confirm(`¿Seguro que querés eliminar ${codigo}?`))return;
-  try{await apiPost('eliminarProducto',{codigo});showToast('Producto eliminado');setTimeout(()=>{cargarProductos();iniciarProductos()},1500)}catch(e){showToast('Error','error')}
+  try{await apiPost('eliminarProducto',{codigo});showToast('Producto eliminado');cacheInvalidar('getProductos');setTimeout(()=>{cargarProductos();iniciarProductos()},1500)}catch(e){showToast('Error','error')}
 }
 function abrirEditar(codigo){
   const p=prodTablaData.find(x=>x[0].toString()===codigo.toString());if(!p)return;
@@ -1031,12 +1048,12 @@ function calcularPrecioVentaEdit(){const c=Number(document.getElementById('edit-
 async function guardarEdicion(){
   const codigo=document.getElementById('edit-codigo').value.trim(),descripcion=document.getElementById('edit-desc').value.trim(),proveedor=document.getElementById('edit-proveedor').value,categoria=document.getElementById('edit-categoria').value,precio_costo=Number(document.getElementById('edit-pcosto').value),precio_venta=Number(document.getElementById('edit-pventa').value),stock_minimo=Number(document.getElementById('edit-stock-min').value)||0;
   if(!descripcion){showToast('Completá la descripción','error');return}
-  try{await apiPost('editarProducto',{codigo,descripcion,proveedor,precio_venta,precio_costo,stock_minimo,categoria});showToast('Producto actualizado');cerrarModal('modal-editar');setTimeout(()=>{cargarProductos();iniciarProductos()},1500)}catch(e){showToast('Error','error')}
+  try{await apiPost('editarProducto',{codigo,descripcion,proveedor,precio_venta,precio_costo,stock_minimo,categoria});showToast('Producto actualizado');cerrarModal('modal-editar');cacheInvalidar('getProductos');setTimeout(()=>{cargarProductos();iniciarProductos()},1500)}catch(e){showToast('Error','error')}
 }
 
 async function iniciarStock(){
   document.getElementById('stock-loading').style.display='flex';document.getElementById('stock-table').style.display='none';
-  try{const data=await apiGet('getProductos');stockData=data.slice(1);renderStock(stockData);document.getElementById('stock-loading').style.display='none';document.getElementById('stock-table').style.display='table'}catch(e){showToast('Error','error')}
+  try{const data=await cacheGet('getProductos');stockData=data.slice(1);renderStock(stockData);document.getElementById('stock-loading').style.display='none';document.getElementById('stock-table').style.display='table'}catch(e){showToast('Error','error')}
 }
 function renderStock(rows){
   document.getElementById('stock-body').innerHTML=rows.length===0?'<tr><td colspan="8" style="text-align:center;color:var(--text-mid);padding:20px">No hay productos</td></tr>':rows.map(p=>{
@@ -1084,7 +1101,7 @@ async function confirmarIngreso(){
     showToast('Ingreso registrado. Stock actualizado.');
 
     // Detectar cambios de costo
-    const dataProductos=await apiGet('getProductos');
+    const dataProductos=await cacheGet('getProductos');
     const productosActuales=dataProductos.slice(1);
     colaActualizaciones=[];
     fechaIngreso=fecha;
@@ -1107,7 +1124,7 @@ async function confirmarIngreso(){
     });
 
     limpiarIngreso();
-    setTimeout(()=>cargarProductos(),1500);
+    cacheInvalidar('getProductos');setTimeout(()=>cargarProductos(),1500);
 
     if(colaActualizaciones.length>0){
       indexActual=0;
@@ -1214,7 +1231,7 @@ async function iniciarMediosPago(){
   document.getElementById('mp-loading').style.display='flex';
   document.getElementById('mp-table').style.display='none';
   try{
-    const[dataMp,dataCuentas]=await Promise.all([apiGet('getMediosPago'),apiGet('getCuentas')]);
+    const[dataMp,dataCuentas]=await Promise.all([cacheGet('getMediosPago'),apiGet('getCuentas')]);
     mediosPagoData=dataMp.slice(1);
     cuentasData=dataCuentas.slice(1);
     renderTablaMediosPago();
@@ -1249,7 +1266,7 @@ async function agregarMedioPago(){
     await apiPost('agregarMedioPago',{id_cuenta,nombre,descuento_cliente_pct:Number(document.getElementById('mp-descuento').value)||0,comision_pct:Number(document.getElementById('mp-comision').value)||0,costo_financiero_pct:Number(document.getElementById('mp-cf').value)||0,dias_acreditacion:Number(document.getElementById('mp-dias').value)||0});
     showToast('Medio de pago guardado');
     ['mp-nombre','mp-descuento','mp-comision','mp-cf','mp-dias'].forEach(id=>{document.getElementById(id).value='0'});document.getElementById('mp-cuenta').value='';document.getElementById('mp-nombre').value='';
-    setTimeout(()=>iniciarMediosPago(),1500);
+    cacheInvalidar('getMediosPago');setTimeout(()=>iniciarMediosPago(),1500);
   }catch(e){showToast('Error','error')}
 }
 
@@ -1269,7 +1286,7 @@ async function guardarEdicionMP(){
   const id=document.getElementById('edit-mp-id').value;
   try{
     await apiPost('editarMedioPago',{id,id_cuenta:document.getElementById('edit-mp-cuenta').value,nombre:document.getElementById('edit-mp-nombre').value.trim(),descuento_cliente_pct:Number(document.getElementById('edit-mp-descuento').value)||0,comision_pct:Number(document.getElementById('edit-mp-comision').value)||0,costo_financiero_pct:Number(document.getElementById('edit-mp-cf').value)||0,dias_acreditacion:Number(document.getElementById('edit-mp-dias').value)||0,activo:true});
-    showToast('Medio de pago actualizado');cerrarModal('modal-editar-mp');setTimeout(()=>iniciarMediosPago(),1500);
+    showToast('Medio de pago actualizado');cerrarModal('modal-editar-mp');cacheInvalidar('getMediosPago');setTimeout(()=>iniciarMediosPago(),1500);
   }catch(e){showToast('Error','error')}
 }
 
@@ -1289,7 +1306,7 @@ async function iniciarCuentas(){
   document.getElementById('mov-loading').style.display='flex';
   document.getElementById('mov-table').style.display='none';
   try{
-    const[dataCuentas,dataMov,dataCatMov]=await Promise.all([apiGet('getCuentas'),apiGet('getMovimientos'),apiGet('getCategoriasMovimientos')]);
+    const[dataCuentas,dataMov,dataCatMov]=await Promise.all([cacheGet('getCuentas'),apiGet('getMovimientos'),apiGet('getCategoriasMovimientos')]);
     cuentasData=dataCuentas.slice(1);
     movimientosData=dataMov.slice(1);
     categoriasMovData=dataCatMov.slice(1);
@@ -1373,7 +1390,7 @@ async function registrarMovimiento(){
     await apiPost('registrarMovimiento',{id_cuenta,tipo,categoria,monto,fecha,descripcion});
     showToast('Movimiento guardado');
     ['mov-monto','mov-descripcion'].forEach(id=>document.getElementById(id).value='');
-    setTimeout(()=>iniciarCuentas(),1500);
+    cacheInvalidar('getCuentas','getMovimientos');setTimeout(()=>iniciarCuentas(),1500);
   }catch(e){showToast('Error','error')}
 }
 
@@ -1420,7 +1437,7 @@ function filtrarMovimientos(){
 async function iniciarVentas(){
   setFechaHoy('vta-fecha');
   try{
-    const[dataMp,dataCuentas,dataCli,dataVta]=await Promise.all([apiGet('getMediosPago'),apiGet('getCuentas'),apiGet('getClientes'),apiGet('getVentas')]);
+    const[dataMp,dataCuentas,dataCli,dataVta]=await Promise.all([cacheGet('getMediosPago'),apiGet('getCuentas'),apiGet('getClientes'),apiGet('getVentas')]);
     mediosPagoData=dataMp.slice(1);
     cuentasData=dataCuentas.slice(1);
     clientesData=dataCli.slice(1);
@@ -1580,7 +1597,7 @@ async function guardarCliente(){
     const res=await apiPost('agregarCliente',{nombre,contacto:document.getElementById('cli-contacto').value.trim(),notas:document.getElementById('cli-notas').value.trim()});
     showToast('Cliente guardado');cerrarModal('modal-nuevo-cliente');
     ['cli-nombre','cli-contacto','cli-notas'].forEach(id=>document.getElementById(id).value='');
-    const data=await apiGet('getClientes');clientesData=data.slice(1);llenarSelectClientes();
+    const data=await cacheGet('getClientes');clientesData=data.slice(1);llenarSelectClientes();
   }catch(e){showToast('Error','error')}
 }
 
@@ -1617,8 +1634,9 @@ async function confirmarVenta(){
   try{
     await apiPost('registrarVenta',{fecha,tipo,id_cliente:document.getElementById('vta-cliente').value||'',total_bruto:totalBruto,total_cobrado:totalCobrado,total_neto:totalNeto,notas:document.getElementById('vta-notas').value,items,pagos});
     showToast('✅ Venta registrada correctamente');
+    cacheInvalidar('getVentas','getDetalleVentas','getPagosVenta','getProductos','getCuentasPorCobrar','getMovimientos');
     limpiarVenta();
-    setTimeout(()=>{cargarProductos();iniciarVentas()},1500);
+    cacheInvalidar('getProductos','getVentas','getDetalleVentas','getPagosVenta');setTimeout(()=>{cargarProductos();iniciarVentas()},1500);
   }catch(e){showToast('Error al registrar la venta','error')}
 }
 
@@ -1665,14 +1683,14 @@ async function cancelarVenta(idVenta){
   try{
     await apiPost('cancelarVenta',{id_venta:idVenta});
     showToast('Venta cancelada. Stock reintegrado.');
-    setTimeout(()=>{cargarProductos();iniciarVentas()},1500);
+    cacheInvalidar('getProductos','getVentas','getDetalleVentas','getPagosVenta');setTimeout(()=>{cargarProductos();iniciarVentas()},1500);
   }catch(e){showToast('Error','error')}
 }
 
 async function verDetalleVenta(idVenta){
 async function abrirDetalleVenta(idVenta){return verDetalleVenta(idVenta)}
   try{
-    const[dataVentas,dataDetalle,dataPagos]=await Promise.all([apiGet('getVentas'),apiGet('getDetalleVentas'),apiGet('getPagosVenta')]);
+    const[dataVentas,dataDetalle,dataPagos]=await Promise.all([cacheGet('getVentas'),apiGet('getDetalleVentas'),apiGet('getPagosVenta')]);
     const items=dataDetalle.slice(1).filter(d=>String(d[0])===String(idVenta));
     const pagos=dataPagos.slice(1).filter(p=>String(p[0])===String(idVenta));
     const venta=dataVentas.slice(1).find(v=>String(v[0])===String(idVenta));
@@ -1693,10 +1711,30 @@ async function abrirDetalleVenta(idVenta){return verDetalleVenta(idVenta)}
   }catch(e){showToast('Error al cargar detalle','error')}
 }
 
+// ── PRECARGA INICIAL DE TODOS LOS DATOS ──
+async function precargarDatos(){
+  try{
+    const [p,pr,cat,mp,ctas,cli,movs,catMov]=await Promise.all([
+      cacheGet('getProductos'),cacheGet('getProveedores'),cacheGet('getCategorias'),
+      cacheGet('getMediosPago'),cacheGet('getCuentas'),cacheGet('getClientes'),
+      cacheGet('getMovimientos'),cacheGet('getCategoriasMovimientos')
+    ]);
+    productosData=p.slice(1);
+    proveedoresData=pr.slice(1);
+    categoriasData=cat.slice(1).map(c=>c[0]).filter(Boolean);
+    mediosPagoData=mp.slice(1);
+    cuentasData=ctas.slice(1);
+    clientesData=cli.slice(1);
+    movimientosData=movs.slice(1);
+    categoriasMovData=catMov.slice(1);
+    // Poblar selects
+    cargarProveedores();
+    cargarCategorias();
+  }catch(e){console.warn('Error en precarga:',e);}
+}
+
 setFechaHoy('ing-fecha');
-cargarProveedores();
-cargarProductos();
-cargarCategorias();
+precargarDatos();
 iniciarHome();
 
 // ── CONSULTA RÁPIDA DE PRECIOS ──
@@ -2010,7 +2048,7 @@ async function abrirFichaCliente(idCli, abrirPago=false){
   document.getElementById('ficha-cliente-contenido').innerHTML='<p style="color:var(--text-light);text-align:center;padding:16px">Cargando...</p>';
   document.getElementById('modal-ficha-cliente').classList.add('open');
 
-  const dataMovs=await apiGet('getMovimientos');
+  const dataMovs=await cacheGet('getMovimientos');
   const movs=Array.isArray(dataMovs)?dataMovs.slice(1):[];
 
   let lineas=[];
@@ -2139,6 +2177,7 @@ async function confirmarCobroCxc(){
     await apiPost('registrarCobroCPC',{id_cpc:idCpc,fecha,monto,id_cuenta:idCuenta});
     showToast('✅ Pago registrado');
     cerrarModal('modal-cobro-cxc');
+    cacheInvalidar('getCuentasPorCobrar','getMovimientos');
     iniciarCxc();
   }catch(e){showToast('Error al registrar el pago','error');}
 }

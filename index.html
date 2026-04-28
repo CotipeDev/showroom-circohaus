@@ -1625,6 +1625,7 @@ async function cancelarVenta(idVenta){
 }
 
 async function verDetalleVenta(idVenta){
+async function abrirDetalleVenta(idVenta){return verDetalleVenta(idVenta)}
   try{
     const[dataDetalle,dataPagos]=await Promise.all([apiGet('getDetalleVentas'),apiGet('getPagosVenta')]);
     const items=dataDetalle.slice(1).filter(d=>String(d[0])===String(idVenta));
@@ -1943,52 +1944,84 @@ function renderCxcFichas(entradas){
   }).join('');
 }
 
-function abrirFichaCliente(idCli){
-  const {porCliente,ventas,pagos,nombreMedio,hoy}=cxcDataGlobal;
+async function abrirFichaCliente(idCli){
+  const {porCliente,ventas,hoy}=cxcDataGlobal;
   const datos=porCliente[idCli];
   if(!datos)return;
   document.getElementById('ficha-cliente-nombre').textContent=datos.nombre;
   document.getElementById('ficha-cliente-deuda').textContent='Total pendiente: '+formatPeso(datos.totalDeuda);
+  document.getElementById('ficha-cliente-contenido').innerHTML='<p style="color:var(--text-light);text-align:center;padding:16px">Cargando...</p>';
+  document.getElementById('modal-ficha-cliente').classList.add('open');
 
-  const contenido=datos.cpcs.map(cpc=>{
+  // Cargar movimientos para obtener cobros posteriores
+  const dataMovs=await apiGet('getMovimientos');
+  const movs=Array.isArray(dataMovs)?dataMovs.slice(1):[];
+
+  // Armar líneas de cuenta corriente por cliente
+  let lineas=[];
+
+  datos.cpcs.forEach(cpc=>{
     const idVenta=String(cpc[1]);
     const v=ventas.find(x=>String(x[0])===idVenta);
-    const fechaVenta=v?fechaStr(v[1]):'—';
-    const montoOrig=Number(cpc[3]);
-    const montoCobrado=Number(cpc[4]);
-    const saldo=Number(cpc[5]);
-    const pagosCpc=pagos.filter(p=>String(p[0])===idVenta);
-    const historial=pagosCpc.length
-      ?`<div style="margin-top:8px">
-          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--text-light);margin-bottom:6px">Historial de pagos</div>
-          ${pagosCpc.map(p=>`<div style="display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:1px dashed var(--border)">
-            <span style="color:var(--text-mid)">${nombreMedio(p[1])}</span>
-            <span style="font-weight:600;color:var(--teal)">${formatPeso(p[2])}</span>
-          </div>`).join('')}
-        </div>`
-      :'<div style="font-size:12px;color:var(--text-light);margin-top:8px">Sin pagos registrados aún</div>';
+    const fechaVenta=v?fechaStr(v[1]):'';
+    const montoTotal=Number(cpc[3]);
 
-    return`<div style="background:var(--off-white);border-radius:10px;padding:14px;margin-bottom:12px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-        <div>
-          <code style="color:var(--teal);font-size:12px">${idVenta}</code>
-          <span style="color:var(--text-light);font-size:12px"> · ${fechaVenta}</span>
-        </div>
-        <span style="font-weight:700;color:#C44F4F">${formatPeso(saldo)} pendiente</span>
-      </div>
-      <div style="display:flex;gap:16px;font-size:12px;color:var(--text-light);margin-bottom:4px">
-        <span>Total: ${formatPeso(montoOrig)}</span>
-        <span>Cobrado: ${formatPeso(montoCobrado)}</span>
-      </div>
-      ${historial}
-      ${saldo>0?`<div style="margin-top:12px;text-align:right">
-        <button class="btn btn-primary" style="font-size:12px;padding:6px 16px" onclick="cerrarModal('modal-ficha-cliente');abrirCobroCxc('${cpc[0]}','${datos.nombre}',${saldo})">+ Registrar pago</button>
-      </div>`:'<div style="margin-top:8px;text-align:right"><span style="font-size:12px;color:var(--teal);font-weight:600">✓ Saldada</span></div>'}
-    </div>`;
+    // Línea de débito: la venta
+    lineas.push({fecha:fechaVenta,tipo:'venta',detalle:`Venta ${idVenta}`,debe:montoTotal,haber:0,idVenta,idCpc:String(cpc[0])});
+
+    // Pago inicial si hubo (está en Pagos_Venta con la venta)
+    const pagoInicial=Number(cpc[4])>0&&cpc[6]==='cobrada_parcial'||cpc[6]==='cobrada'?Number(cpc[4]):0;
+    // Los cobros posteriores están en Movimientos con origen cobro_cpc
+    const cobrosCpc=movs.filter(m=>String(m[8])==='cobro_cpc'&&String(m[7])===String(cpc[0]));
+    
+    // Pago inicial: diferencia entre cobrado y suma de cobros posteriores
+    const totalCobrosPoster=cobrosCpc.reduce((s,m)=>s+Number(m[5]),0);
+    const pagoInicialReal=Number(cpc[4])-totalCobrosPoster;
+    if(pagoInicialReal>0){
+      lineas.push({fecha:fechaVenta,tipo:'pago',detalle:'Pago inicial',debe:0,haber:pagoInicialReal,idCpc:String(cpc[0])});
+    }
+
+    // Cobros posteriores
+    cobrosCpc.forEach(m=>{
+      lineas.push({fecha:fechaStr(m[1]),tipo:'pago',detalle:'Pago parcial',debe:0,haber:Number(m[5]),idCpc:String(cpc[0])});
+    });
+  });
+
+  // Ordenar cronológicamente
+  lineas.sort((a,b)=>a.fecha.localeCompare(b.fecha));
+
+  // Calcular saldo acumulado
+  let saldoAcum=0;
+  const filas=lineas.map(l=>{
+    saldoAcum+=l.debe-l.haber;
+    const esPago=l.tipo==='pago';
+    return`<tr style="border-bottom:1px solid var(--border)">
+      <td style="padding:9px 8px;font-size:12px;color:var(--text-light)">${l.fecha||'—'}</td>
+      <td style="padding:9px 8px;font-size:12px">
+        ${l.tipo==='venta'?`<code style="color:var(--teal);cursor:pointer" onclick="abrirDetalleVenta('${l.idVenta}')">${l.idVenta}</code>`:''}
+        <span style="color:var(--text-mid)">${l.detalle}</span>
+      </td>
+      <td style="padding:9px 8px;text-align:right;font-size:13px;font-weight:600;color:${l.debe>0?'#C44F4F':'var(--text-light)'}">${l.debe>0?formatPeso(l.debe):'—'}</td>
+      <td style="padding:9px 8px;text-align:right;font-size:13px;font-weight:600;color:${l.haber>0?'var(--teal)':'var(--text-light)'}">${l.haber>0?formatPeso(l.haber):'—'}</td>
+      <td style="padding:9px 8px;text-align:right;font-size:13px;font-weight:700;color:${saldoAcum>0?'#C44F4F':'var(--teal)'}">${formatPeso(Math.abs(saldoAcum))}</td>
+      <td style="padding:9px 8px;text-align:right">
+        ${l.tipo==='venta'&&saldoAcum>0?`<button class="btn btn-primary" style="font-size:11px;padding:4px 10px" onclick="abrirCobroCxc('${l.idCpc}','${datos.nombre}',${saldoAcum})">+ Pago</button>`:''}
+      </td>
+    </tr>`;
   }).join('');
 
-  document.getElementById('ficha-cliente-contenido').innerHTML=contenido;
-  document.getElementById('modal-ficha-cliente').classList.add('open');
+  document.getElementById('ficha-cliente-contenido').innerHTML=`
+    <table style="width:100%;border-collapse:collapse;font-size:13px">
+      <thead><tr>
+        <th style="text-align:left;padding:6px 8px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-light);border-bottom:2px solid var(--border)">Fecha</th>
+        <th style="text-align:left;padding:6px 8px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-light);border-bottom:2px solid var(--border)">Detalle</th>
+        <th style="text-align:right;padding:6px 8px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#C44F4F;border-bottom:2px solid var(--border)">Debe</th>
+        <th style="text-align:right;padding:6px 8px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--teal);border-bottom:2px solid var(--border)">Haber</th>
+        <th style="text-align:right;padding:6px 8px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-light);border-bottom:2px solid var(--border)">Saldo</th>
+        <th style="border-bottom:2px solid var(--border)"></th>
+      </tr></thead>
+      <tbody>${filas}</tbody>
+    </table>`;
 }
 
 function actualizarNotifCxc(cantidad){

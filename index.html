@@ -1031,6 +1031,12 @@ async function cargarProveedores(){
   try{const data=await cacheGet('getProveedores');proveedoresData=data.slice(1);['ing-proveedor','prod-proveedor','edit-proveedor'].forEach(id=>{const sel=document.getElementById(id);if(!sel)return;sel.innerHTML='<option value="">Seleccioná proveedor...</option>';proveedoresData.forEach(p=>sel.innerHTML+=`<option value="${p[0]}">${p[1]}</option>`)})}catch(e){}
 }
 async function iniciarProveedores(){
+  if(proveedoresData.length){
+    document.getElementById('prov-body').innerHTML=proveedoresData.map(p=>`<tr><td><code style="color:var(--teal);font-size:12px">${p[0]}</code></td><td>${p[1]}</td><td>${p[2]||'—'}</td></tr>`).join('');
+    document.getElementById('prov-loading').style.display='none';
+    document.getElementById('prov-table').style.display='table';
+    return;
+  }
   document.getElementById('prov-loading').style.display='flex';document.getElementById('prov-table').style.display='none';
   try{const data=await cacheGet('getProveedores');const rows=data.slice(1);document.getElementById('prov-body').innerHTML=rows.length===0?'<tr><td colspan="3" style="text-align:center;color:var(--text-mid);padding:20px">No hay proveedores</td></tr>':rows.map(p=>`<tr><td><code style="color:var(--teal);font-size:12px">${p[0]}</code></td><td>${p[1]}</td><td>${p[2]||'—'}</td></tr>`).join('');document.getElementById('prov-loading').style.display='none';document.getElementById('prov-table').style.display='table'}catch(e){showToast('Error al cargar proveedores','error')}
 }
@@ -1044,6 +1050,12 @@ async function cargarCategorias(){
   try{const data=await cacheGet('getCategorias');categoriasData=data.slice(1).map(c=>c[0]).filter(Boolean);['prod-categoria','edit-categoria','stock-filtro-cat','prod-filtro-cat'].forEach(id=>{const sel=document.getElementById(id);if(!sel)return;const primera=sel.options[0]?.text||'Todas';sel.innerHTML=`<option value="">${primera}</option>`;categoriasData.forEach(c=>sel.innerHTML+=`<option value="${c}">${c}</option>`)})}catch(e){}
 }
 async function iniciarCategorias(){
+  if(categoriasData.length){
+    document.getElementById('cat-body').innerHTML=categoriasData.map(c=>`<tr><td>${c}</td></tr>`).join('');
+    document.getElementById('cat-loading').style.display='none';
+    document.getElementById('cat-table').style.display='table';
+    return;
+  }
   document.getElementById('cat-loading').style.display='flex';document.getElementById('cat-table').style.display='none';
   try{const data=await cacheGet('getCategorias');const rows=data.slice(1).filter(r=>r[0]);document.getElementById('cat-body').innerHTML=rows.length===0?'<tr><td style="text-align:center;color:var(--text-mid);padding:20px">No hay categorías</td></tr>':rows.map(c=>`<tr><td>${c[0]}</td></tr>`).join('');document.getElementById('cat-loading').style.display='none';document.getElementById('cat-table').style.display='table'}catch(e){}
 }
@@ -1059,6 +1071,13 @@ async function cargarProductos(){try{const data=await cacheGet('getProductos');p
 function calcMargen(costo,venta){return(costo>0&&venta>0)?Math.round(((venta/costo)-1)*100):0}
 
 async function iniciarProductos(){
+  if(prodTablaData.length||productosData.length){
+    prodTablaData=prodTablaData.length?prodTablaData:productosData;
+    renderTablaProductos(prodTablaData);
+    document.getElementById('prod-loading').style.display='none';
+    document.getElementById('prod-table').style.display='table';
+    return;
+  }
   document.getElementById('prod-loading').style.display='flex';document.getElementById('prod-table').style.display='none';
   try{const data=await cacheGet('getProductos');prodTablaData=data.slice(1);renderTablaProductos(prodTablaData);document.getElementById('prod-loading').style.display='none';document.getElementById('prod-table').style.display='table'}catch(e){showToast('Error','error')}
 }
@@ -1095,6 +1114,14 @@ async function guardarEdicion(){
 }
 
 async function iniciarStock(){
+  if(stockData.length&&productosData.length){
+    // Datos ya en memoria — renderizar inmediato
+    stockData=productosData;
+    renderStock(stockData);
+    document.getElementById('stock-loading').style.display='none';
+    document.getElementById('stock-table').style.display='table';
+    return;
+  }
   document.getElementById('stock-loading').style.display='flex';document.getElementById('stock-table').style.display='none';
   try{const data=await cacheGet('getProductos');stockData=data.slice(1);renderStock(stockData);document.getElementById('stock-loading').style.display='none';document.getElementById('stock-table').style.display='table'}catch(e){showToast('Error','error')}
 }
@@ -1271,6 +1298,13 @@ let vtaProductoSel=null;
 
 // ── MEDIOS DE PAGO ──
 async function iniciarMediosPago(){
+  if(mediosPagoData.length&&cuentasData.length){
+    renderTablaMediosPago();
+    llenarSelectCuentas(['mp-cuenta','edit-mp-cuenta']);
+    document.getElementById('mp-loading').style.display='none';
+    document.getElementById('mp-table').style.display='table';
+    return;
+  }
   document.getElementById('mp-loading').style.display='flex';
   document.getElementById('mp-table').style.display='none';
   try{
@@ -1278,11 +1312,11 @@ async function iniciarMediosPago(){
     mediosPagoData=dataMp.slice(1);
     cuentasData=dataCuentas.slice(1);
     renderTablaMediosPago();
-    // Solo llenar los selectores que existen en el panel de medios de pago
     llenarSelectCuentas(['mp-cuenta','edit-mp-cuenta']);
     document.getElementById('mp-loading').style.display='none';
     document.getElementById('mp-table').style.display='table';
   }catch(e){showToast('Error al cargar medios de pago','error')}
+}
 }
 
 function renderTablaMediosPago(){
@@ -1345,6 +1379,17 @@ async function toggleActivoMP(id,btn){
 
 // ── CUENTAS ──
 async function iniciarCuentas(){
+  if(cuentasData.length&&movimientosData.length){
+    renderCuentasCards();
+    llenarSelectCuentas(['mov-cuenta','mov-filtro-cuenta']);
+    cargarCategoriasMovimiento();
+    renderMovimientos(movimientosData);
+    setFechaHoy('mov-fecha');
+    document.getElementById('cuentas-cards-loading').style.display='none';
+    document.getElementById('mov-loading').style.display='none';
+    document.getElementById('mov-table').style.display='table';
+    return;
+  }
   document.getElementById('cuentas-cards-loading').style.display='flex';
   document.getElementById('mov-loading').style.display='flex';
   document.getElementById('mov-table').style.display='none';
@@ -1479,6 +1524,13 @@ function filtrarMovimientos(){
 // ── VENTAS ──
 async function iniciarVentas(){
   setFechaHoy('vta-fecha');
+  if(mediosPagoData.length&&cuentasData.length&&clientesData.length&&ventasHistData.length){
+    llenarSelectClientes();
+    renderHistorialVentas(ventasHistData);
+    vtaPagosFila=[];
+    agregarPagoVenta();
+    return;
+  }
   try{
     const[dataMp,dataCuentas,dataCli,dataVta]=await Promise.all([cacheGet('getMediosPago'),cacheGet('getCuentas'),cacheGet('getClientes'),cacheGet('getVentas')]);
     mediosPagoData=dataMp.slice(1);
@@ -1487,7 +1539,6 @@ async function iniciarVentas(){
     ventasHistData=dataVta.slice(1);
     llenarSelectClientes();
     renderHistorialVentas(ventasHistData);
-    // Inicializar fila de pago DESPUÉS de tener mediosPagoData cargado
     vtaPagosFila=[];
     agregarPagoVenta();
   }catch(e){showToast('Error al cargar datos de ventas','error')}
@@ -1770,6 +1821,10 @@ async function precargarDatos(){
     clientesData=(datos.Clientes||[]).slice(1);
     movimientosData=(datos.Movimientos||[]).slice(1);
     categoriasMovData=(datos.Categorias_Movimientos||[]).slice(1);
+    // Variables de módulos específicos — llenar desde los datos precargados
+    stockData=productosData;
+    prodTablaData=productosData;
+    ventasHistData=(datos.Ventas||[]).slice(1);
 
     // Poblar selects con los datos ya en memoria
     cargarProveedores();

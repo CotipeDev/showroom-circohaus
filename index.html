@@ -2002,7 +2002,11 @@ async function abrirFichaCliente(idCli, abrirPago=false){
   // Guardar idCli en el modal para usarlo desde el botón
   document.getElementById('modal-ficha-cliente').dataset.idCli=idCli;
   document.getElementById('ficha-cliente-nombre').textContent=datos.nombre;
-  document.getElementById('ficha-cliente-deuda').textContent='Total pendiente: '+formatPeso(datos.totalDeuda);
+  const saldoModal=datos.saldoTotal||datos.totalDeuda||0;
+  const deudaEl=document.getElementById('ficha-cliente-deuda');
+  if(saldoModal>0){deudaEl.style.color='#C44F4F';deudaEl.textContent='Total pendiente: '+formatPeso(saldoModal);}
+  else if(saldoModal<0){deudaEl.style.color='var(--teal)';deudaEl.textContent='Saldo a favor: '+formatPeso(Math.abs(saldoModal));}
+  else{deudaEl.style.color='var(--text-mid)';deudaEl.textContent='Sin saldo pendiente';}
   document.getElementById('ficha-cliente-contenido').innerHTML='<p style="color:var(--text-light);text-align:center;padding:16px">Cargando...</p>';
   document.getElementById('modal-ficha-cliente').classList.add('open');
 

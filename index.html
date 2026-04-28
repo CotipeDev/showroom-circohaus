@@ -916,7 +916,7 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
 </div>
 
 <script>
-const API_URL='https://script.google.com/macros/s/AKfycbyXiwYclMUadTpCSPGVneDPbR7EQgEy2X-wLljjAIpLdiqIqG5WI-w3KsH0pJpckuEl/exec';
+const API_URL='https://script.google.com/macros/s/AKfycbzrdDQpyKMZ8aTTxtBkeVn7yKwNhXVlguuJ5Ji3hlKQtKVXmgENQ2N0XwMPRXu9tch6/exec';
 let productosData=[],proveedoresData=[],categoriasData=[],itemsIngreso=[],ingProductoSel=null,stockData=[],prodTablaData=[];
 
 // ── CACHE GLOBAL ──
@@ -924,17 +924,53 @@ const cache={
   data:{},
   ts:{},
   ttl:5*60*1000, // 5 minutos
+  cargaCompleta:false,
   async get(key){
+    // Si ya cargamos todo, devolver del cache directamente
+    if(this.cargaCompleta&&this.data[key])return this.data[key];
     if(this.data[key]&&(Date.now()-this.ts[key])<this.ttl)return this.data[key];
     const d=await apiGet(key);
     this.data[key]=d;this.ts[key]=Date.now();
     return d;
   },
-  invalidar(...keys){keys.forEach(k=>{delete this.data[k];delete this.ts[k];})},
+  setDesdeCompleto(datosCompletos){
+    const mapeo={
+      'Productos':'getProductos','Proveedores':'getProveedores','Categorias':'getCategorias',
+      'Medios_Pago':'getMediosPago','Cuentas':'getCuentas','Clientes':'getClientes',
+      'Ventas':'getVentas','Detalle_Ventas':'getDetalleVentas','Pagos_Venta':'getPagosVenta',
+      'Cuentas_Por_Cobrar':'getCuentasPorCobrar','Movimientos':'getMovimientos',
+      'Categorias_Movimientos':'getCategoriasMovimientos'
+    };
+    Object.entries(mapeo).forEach(([hoja,key])=>{
+      if(datosCompletos[hoja]){this.data[key]=datosCompletos[hoja];this.ts[key]=Date.now();}
+    });
+    this.cargaCompleta=true;
+  },
+  invalidar(...keys){
+    keys.forEach(k=>{delete this.data[k];delete this.ts[k];});
+    this.cargaCompleta=false;
+  },
   set(key,data){this.data[key]=data;this.ts[key]=Date.now();}
 };
 async function cacheGet(key){return cache.get(key);}
-function cacheInvalidar(...keys){cache.invalidar(...keys);}
+function cacheInvalidar(...keys){
+  cache.invalidar(...keys);
+  // Refrescar datos en background
+  setTimeout(()=>refrescarDatos(...keys),100);
+}
+
+async function refrescarDatos(...keys){
+  try{
+    const datos=await apiGet('getDatosCompletos');
+    cache.setDesdeCompleto(datos);
+    // Actualizar variables globales relevantes
+    if(keys.some(k=>k==='getProductos'))productosData=(datos.Productos||[]).slice(1);
+    if(keys.some(k=>k==='getVentas')){ventasHistData=(datos.Ventas||[]).slice(1);}
+    if(keys.some(k=>k==='getMovimientos'))movimientosData=(datos.Movimientos||[]).slice(1);
+    if(keys.some(k=>k==='getCuentas'))cuentasData=(datos.Cuentas||[]).slice(1);
+    if(keys.some(k=>k==='getCuentasPorCobrar')){/* actualizado en cache */}
+  }catch(e){console.warn('Error al refrescar:',e);}
+}
 
 // ── DEBOUNCE ──
 function debounce(fn,ms=250){let t;return(...args)=>{clearTimeout(t);t=setTimeout(()=>fn(...args),ms);};}
@@ -1718,26 +1754,42 @@ async function abrirDetalleVenta(idVenta){return verDetalleVenta(idVenta)}
   }catch(e){showToast('Error al cargar detalle','error')}
 }
 
-// ── PRECARGA INICIAL DE TODOS LOS DATOS ──
+// ── PRECARGA INICIAL — una sola llamada al API ──
 async function precargarDatos(){
   try{
-    const [p,pr,cat,mp,ctas,cli,movs,catMov]=await Promise.all([
-      cacheGet('getProductos'),cacheGet('getProveedores'),cacheGet('getCategorias'),
-      cacheGet('getMediosPago'),cacheGet('getCuentas'),cacheGet('getClientes'),
-      cacheGet('getMovimientos'),cacheGet('getCategoriasMovimientos')
-    ]);
-    productosData=p.slice(1);
-    proveedoresData=pr.slice(1);
-    categoriasData=cat.slice(1).map(c=>c[0]).filter(Boolean);
-    mediosPagoData=mp.slice(1);
-    cuentasData=ctas.slice(1);
-    clientesData=cli.slice(1);
-    movimientosData=movs.slice(1);
-    categoriasMovData=catMov.slice(1);
-    // Poblar selects
+    // Una sola llamada trae todo
+    const datos=await apiGet('getDatosCompletos');
+    cache.setDesdeCompleto(datos);
+
+    // Poblar variables globales desde el cache
+    productosData=(datos.Productos||[]).slice(1);
+    proveedoresData=(datos.Proveedores||[]).slice(1);
+    categoriasData=(datos.Categorias||[]).slice(1).map(c=>c[0]).filter(Boolean);
+    mediosPagoData=(datos.Medios_Pago||[]).slice(1);
+    cuentasData=(datos.Cuentas||[]).slice(1);
+    clientesData=(datos.Clientes||[]).slice(1);
+    movimientosData=(datos.Movimientos||[]).slice(1);
+    categoriasMovData=(datos.Categorias_Movimientos||[]).slice(1);
+
+    // Poblar selects con los datos ya en memoria
     cargarProveedores();
     cargarCategorias();
-  }catch(e){console.warn('Error en precarga:',e);}
+  }catch(e){
+    console.warn('Error en precarga, usando carga individual:',e);
+    // Fallback: carga individual si getDatosCompletos falla
+    try{
+      await Promise.all([
+        cacheGet('getProductos').then(d=>{productosData=d.slice(1)}),
+        cacheGet('getProveedores').then(d=>{proveedoresData=d.slice(1)}),
+        cacheGet('getCategorias').then(d=>{categoriasData=d.slice(1).map(c=>c[0]).filter(Boolean)}),
+        cacheGet('getMediosPago').then(d=>{mediosPagoData=d.slice(1)}),
+        cacheGet('getCuentas').then(d=>{cuentasData=d.slice(1)}),
+        cacheGet('getClientes').then(d=>{clientesData=d.slice(1)}),
+      ]);
+      cargarProveedores();
+      cargarCategorias();
+    }catch(e2){console.warn('Error en fallback:',e2);}
+  }
 }
 
 setFechaHoy('ing-fecha');

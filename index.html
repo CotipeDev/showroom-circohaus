@@ -1629,16 +1629,17 @@ async function cancelarVenta(idVenta){
 async function verDetalleVenta(idVenta){
 async function abrirDetalleVenta(idVenta){return verDetalleVenta(idVenta)}
   try{
-    const[dataDetalle,dataPagos]=await Promise.all([apiGet('getDetalleVentas'),apiGet('getPagosVenta')]);
+    const[dataVentas,dataDetalle,dataPagos]=await Promise.all([apiGet('getVentas'),apiGet('getDetalleVentas'),apiGet('getPagosVenta')]);
     const items=dataDetalle.slice(1).filter(d=>String(d[0])===String(idVenta));
     const pagos=dataPagos.slice(1).filter(p=>String(p[0])===String(idVenta));
-    const venta=ventasHistData.find(v=>String(v[0])===String(idVenta));
+    const venta=dataVentas.slice(1).find(v=>String(v[0])===String(idVenta));
+    const prodNombre=cod=>{const p=productosData.find(x=>String(x[0])===String(cod));return p?p[1]:cod};
     document.getElementById('detalle-vta-titulo').textContent=`Detalle — ${idVenta}`;
     document.getElementById('detalle-vta-body').innerHTML=`
       <div style="margin-bottom:12px"><strong>Fecha:</strong> ${venta?fechaStr(venta[1]):'—'} &nbsp;|&nbsp; <strong>Estado:</strong> ${venta?venta[7]:'—'}</div>
       <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-mid);margin-bottom:6px">Productos</div>
       <table style="margin-bottom:16px"><thead><tr><th>Código</th><th>Desc</th><th>Cant</th><th>Precio</th><th>Subtotal</th></tr></thead><tbody>
-        ${items.map(i=>`<tr><td><code style="color:var(--teal)">${i[1]}</code></td><td>${i[1]}</td><td>${i[2]}</td><td>${formatPeso(i[3])}</td><td>${formatPeso(i[6])}</td></tr>`).join('')}
+        ${items.map(i=>`<tr><td><code style="color:var(--teal)">${i[1]}</code></td><td>${prodNombre(i[1])}</td><td>${i[2]}</td><td>${formatPeso(i[3])}</td><td>${formatPeso(i[6])}</td></tr>`).join('')}
       </tbody></table>
       <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-mid);margin-bottom:6px">Pagos</div>
       <table><thead><tr><th>Medio</th><th>Monto cobrado</th><th>Neto recibido</th></tr></thead><tbody>

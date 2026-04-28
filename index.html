@@ -168,6 +168,32 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
 .modulo-card.ventas-highlight:hover{border-color:var(--rose-dark);box-shadow:0 8px 28px rgba(218,164,154,.25)}
 .modulo-card.ventas-highlight .modulo-arrow{color:var(--rose)}
 .modulos-grupo-label{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text-light);margin:16px 0 8px}
+
+/* Acciones rápidas */
+.acciones-rapidas{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:32px}
+.accion-card{background:var(--white);border-radius:16px;padding:20px 22px;border:1.5px solid var(--border);cursor:pointer;display:flex;align-items:center;gap:16px;transition:all .2s;box-shadow:0 2px 10px rgba(72,84,114,.06)}
+.accion-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(72,84,114,.13)}
+.accion-icon{font-size:28px;flex-shrink:0;line-height:1}
+.accion-info{flex:1;min-width:0}
+.accion-nombre{font-family:'Playfair Display',serif;font-size:15px;font-weight:600;color:var(--navy);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.accion-desc{font-size:11px;color:var(--text-light);margin-top:2px;line-height:1.4}
+.accion-arrow{font-size:18px;color:var(--text-light);flex-shrink:0;transition:transform .2s}
+.accion-card:hover .accion-arrow{transform:translateX(3px)}
+.accion-ventas{border-color:var(--rose);background:linear-gradient(135deg,#fff 55%,#fdf5f4)}
+.accion-ventas .accion-arrow{color:var(--rose)}
+.accion-consulta{border-color:var(--teal)}
+.accion-consulta .accion-arrow{color:var(--teal)}
+.accion-cxc{border-color:var(--rose-dark)}
+.accion-cxc .accion-arrow{color:var(--rose-dark)}
+
+/* Launcher compacto */
+.launcher-seccion{margin-bottom:24px}
+.launcher-label{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text-light);margin-bottom:10px;padding-left:2px}
+.launcher-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.launcher-item{background:var(--white);border:1.5px solid var(--border);border-radius:14px;padding:18px 14px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:10px;transition:all .18s;box-shadow:0 1px 6px rgba(72,84,114,.05)}
+.launcher-item:hover{border-color:var(--teal);transform:translateY(-2px);box-shadow:0 6px 18px rgba(72,84,114,.11)}
+.launcher-icon{font-size:28px;line-height:1}
+.launcher-nombre{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;color:var(--navy);text-align:center;line-height:1.3}
 .modulo-topbar{display:flex;align-items:center;gap:16px;padding:14px 32px;background:var(--white);border-bottom:1.5px solid var(--border);position:sticky;top:0;z-index:50}
 .btn-volver-inicio{background:none;border:1.5px solid var(--border);border-radius:8px;padding:7px 14px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;color:var(--navy);cursor:pointer;transition:all .2s}
 .btn-volver-inicio:hover{border-color:var(--teal);color:var(--teal)}
@@ -249,47 +275,63 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
   <div class="modulos-wrap">
     <div class="modulos-titulo">¿Qué querés hacer hoy?</div>
 
-    <div class="modulos-grid" style="grid-template-columns:1fr 1fr 1fr;margin-bottom:8px">
-      <div class="modulo-card ventas-highlight" onclick="irA('ventas')" style="display:flex;align-items:center;gap:20px;padding:22px 28px">
-        <span class="modulo-icon" style="font-size:32px;line-height:1">🛒</span>
-        <div style="flex:1"><div class="modulo-nombre">Nueva venta</div><div class="modulo-desc" style="margin:0">Registrá productos, elegí el medio de pago y confirmá.</div></div>
-        <span class="modulo-arrow" style="white-space:nowrap">Registrar →</span>
+    <!-- Acciones rápidas -->
+    <div class="acciones-rapidas">
+      <div class="accion-card accion-ventas" onclick="irA('ventas')">
+        <div class="accion-icon">🛒</div>
+        <div class="accion-info">
+          <div class="accion-nombre">Nueva venta</div>
+          <div class="accion-desc">Registrá productos y confirmá el cobro</div>
+        </div>
+        <div class="accion-arrow">→</div>
       </div>
-      <div class="modulo-card" onclick="abrirConsultaPrecios()" style="display:flex;align-items:center;gap:20px;padding:22px 28px;border-color:var(--teal)">
-        <span class="modulo-icon" style="font-size:32px;line-height:1">🔍</span>
-        <div style="flex:1"><div class="modulo-nombre">Consulta de precios</div><div class="modulo-desc" style="margin:0">Buscá un producto y consultá precio y stock al instante.</div></div>
-        <span class="modulo-arrow" style="white-space:nowrap;color:var(--teal)">Consultar →</span>
+      <div class="accion-card accion-consulta" onclick="abrirConsultaPrecios()">
+        <div class="accion-icon">🔍</div>
+        <div class="accion-info">
+          <div class="accion-nombre">Consulta de precios</div>
+          <div class="accion-desc">Precio y stock al instante</div>
+        </div>
+        <div class="accion-arrow">→</div>
       </div>
-      <div class="modulo-card" onclick="irA('cxc')" style="display:flex;align-items:center;gap:20px;padding:22px 28px;border-color:var(--rose)">
-        <span class="modulo-icon" style="font-size:32px;line-height:1">📋</span>
-        <div style="flex:1"><div class="modulo-nombre">Cuentas por cobrar</div><div class="modulo-desc" style="margin:0">Fiados pendientes y registro de pagos parciales por cliente.</div></div>
-        <span class="modulo-arrow" style="white-space:nowrap;color:var(--rose)">Ver →</span>
+      <div class="accion-card accion-cxc" onclick="irA('cxc')">
+        <div class="accion-icon">📋</div>
+        <div class="accion-info">
+          <div class="accion-nombre">Cuentas por cobrar</div>
+          <div class="accion-desc">Fiados y pagos por cliente</div>
+        </div>
+        <div class="accion-arrow">→</div>
       </div>
     </div>
 
-    <div class="modulos-grupo-label">Operaciones</div>
-    <div class="modulos-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:8px">
-      <div class="modulo-card" onclick="irA('ingresos')"><span class="modulo-icon">📦</span><div class="modulo-nombre">Ingresos</div><div class="modulo-desc">Registrá la entrada de mercadería y actualizá el stock automáticamente.</div><span class="modulo-arrow">Ir al módulo →</span></div>
-      <div class="modulo-card" onclick="irA('stock')"><span class="modulo-icon">📊</span><div class="modulo-nombre">Stock</div><div class="modulo-desc">Visualizá el inventario completo y detectá productos con stock bajo.</div><span class="modulo-arrow">Ir al módulo →</span></div>
-      <div class="modulo-card" onclick="irA('reportes')"><span class="modulo-icon">📈</span><div class="modulo-nombre">Reportes</div><div class="modulo-desc">Analizá ventas, márgenes, productos más vendidos y estado de cuentas.</div><span class="modulo-arrow">Ir al módulo →</span></div>
+    <!-- Módulos: launcher compacto -->
+    <div class="launcher-seccion">
+      <div class="launcher-label">Operaciones</div>
+      <div class="launcher-grid">
+        <div class="launcher-item" onclick="irA('ingresos')"><span class="launcher-icon">📦</span><span class="launcher-nombre">Ingresos</span></div>
+        <div class="launcher-item" onclick="irA('stock')"><span class="launcher-icon">📊</span><span class="launcher-nombre">Stock</span></div>
+        <div class="launcher-item" onclick="irA('reportes')"><span class="launcher-icon">📈</span><span class="launcher-nombre">Reportes</span></div>
+      </div>
     </div>
 
-    <div class="modulos-grupo-label">Catálogo</div>
-    <div class="modulos-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:8px">
-      <div class="modulo-card" onclick="irA('productos')"><span class="modulo-icon">🏷️</span><div class="modulo-nombre">Productos</div><div class="modulo-desc">Cargá, editá y organizá tu catálogo por categoría.</div><span class="modulo-arrow">Ir al módulo →</span></div>
-      <div class="modulo-card" onclick="irA('proveedores')"><span class="modulo-icon">🤝</span><div class="modulo-nombre">Proveedores</div><div class="modulo-desc">Administrá los datos de tus proveedores.</div><span class="modulo-arrow">Ir al módulo →</span></div>
-      <div class="modulo-card" onclick="irA('categorias')"><span class="modulo-icon">🗂️</span><div class="modulo-nombre">Categorías</div><div class="modulo-desc">Creá y gestioná las categorías de tus productos.</div><span class="modulo-arrow">Ir al módulo →</span></div>
+    <div class="launcher-seccion">
+      <div class="launcher-label">Catálogo</div>
+      <div class="launcher-grid">
+        <div class="launcher-item" onclick="irA('productos')"><span class="launcher-icon">🏷️</span><span class="launcher-nombre">Productos</span></div>
+        <div class="launcher-item" onclick="irA('proveedores')"><span class="launcher-icon">🤝</span><span class="launcher-nombre">Proveedores</span></div>
+        <div class="launcher-item" onclick="irA('categorias')"><span class="launcher-icon">🗂️</span><span class="launcher-nombre">Categorías</span></div>
+      </div>
     </div>
 
-    <div class="modulos-grupo-label">Finanzas</div>
-    <div class="modulos-grid" style="grid-template-columns:repeat(2,1fr);margin-bottom:8px">
-      <div class="modulo-card" onclick="irA('cuentas')"><span class="modulo-icon">💰</span><div class="modulo-nombre">Cuentas</div><div class="modulo-desc">Seguí el saldo de tus cuentas y registrá movimientos de dinero.</div><span class="modulo-arrow">Ir al módulo →</span></div>
-      <div class="modulo-card" onclick="irA('medios-pago')"><span class="modulo-icon">💳</span><div class="modulo-nombre">Medios de pago</div><div class="modulo-desc">Configurá comisiones, descuentos y formas de cobro.</div><span class="modulo-arrow">Ir al módulo →</span></div>
+    <div class="launcher-seccion">
+      <div class="launcher-label">Finanzas</div>
+      <div class="launcher-grid">
+        <div class="launcher-item" onclick="irA('cuentas')"><span class="launcher-icon">💰</span><span class="launcher-nombre">Cuentas</span></div>
+        <div class="launcher-item" onclick="irA('medios-pago')"><span class="launcher-icon">💳</span><span class="launcher-nombre">Medios de pago</span></div>
+      </div>
     </div>
 
-    <div class="modulos-grupo-label">Ayuda</div>
-    <div class="modulos-grid" style="grid-template-columns:1fr">
-      <div class="modulo-card instructivos" onclick="irA('instructivos')"><span class="modulo-icon">📚</span><div class="modulo-nombre">Instructivos</div><div class="modulo-desc">Descargá los manuales de uso del sistema.</div><span class="modulo-arrow">Ver manuales →</span></div>
+    <div style="text-align:center;margin-top:8px;padding-bottom:8px">
+      <span onclick="irA('instructivos')" style="font-size:12px;color:var(--text-light);cursor:pointer;transition:color .2s" onmouseover="this.style.color='var(--teal)'" onmouseout="this.style.color='var(--text-light)'">📚 Manuales de uso →</span>
     </div>
 
   </div>
@@ -1959,11 +2001,7 @@ async function abrirFichaCliente(idCli, abrirPago=false){
   // Guardar idCli en el modal para usarlo desde el botón
   document.getElementById('modal-ficha-cliente').dataset.idCli=idCli;
   document.getElementById('ficha-cliente-nombre').textContent=datos.nombre;
-  const saldoModal=datos.saldoTotal;
-  const deudaEl=document.getElementById('ficha-cliente-deuda');
-  if(saldoModal>0){deudaEl.style.color='#C44F4F';deudaEl.textContent='Total pendiente: '+formatPeso(saldoModal);}
-  else if(saldoModal<0){deudaEl.style.color='var(--teal)';deudaEl.textContent='Saldo a favor: '+formatPeso(Math.abs(saldoModal));}
-  else{deudaEl.style.color='var(--text-mid)';deudaEl.textContent='Sin saldo pendiente';}
+  document.getElementById('ficha-cliente-deuda').textContent='Total pendiente: '+formatPeso(datos.totalDeuda);
   document.getElementById('ficha-cliente-contenido').innerHTML='<p style="color:var(--text-light);text-align:center;padding:16px">Cargando...</p>';
   document.getElementById('modal-ficha-cliente').classList.add('open');
 
@@ -2035,10 +2073,11 @@ function abrirCobrosDesdeModal(){
   const idCli=document.getElementById('modal-ficha-cliente').dataset.idCli;
   const datos=cxcDataGlobal.porCliente[idCli];
   if(!datos)return;
-  const primerCpc=datos.cpcs.find(c=>Number(c[5])>0);
-  if(primerCpc){
+  // Buscar la CxC con mayor saldo pendiente, o la primera si todas son <= 0
+  const cpcPendiente=datos.cpcs.find(c=>Number(c[5])>0)||datos.cpcs[0];
+  if(cpcPendiente){
     cerrarModal('modal-ficha-cliente');
-    abrirCobroCxc(String(primerCpc[0]),datos.nombre,Number(primerCpc[5]));
+    abrirCobroCxc(String(cpcPendiente[0]),datos.nombre,Number(cpcPendiente[5]));
   }
 }
 

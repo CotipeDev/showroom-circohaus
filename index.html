@@ -1895,14 +1895,15 @@ async function iniciarCxc(){
     document.getElementById('cxc-kpi-alertas').textContent=alertas.length;
     actualizarNotifCxc(alertas.length);
 
-    // Agrupar por cliente
+    // Agrupar por cliente — TODOS los que tienen alguna CxC
     const porCliente={};
-    pendientes.forEach(cpc=>{
+    cpcs.forEach(cpc=>{
       const idCli=String(cpc[2]);
-      if(!porCliente[idCli])porCliente[idCli]={nombre:nombreCliente(idCli),cpcs:[],totalDeuda:0};
+      if(!porCliente[idCli])porCliente[idCli]={nombre:nombreCliente(idCli),cpcs:[],saldoTotal:0};
       porCliente[idCli].cpcs.push(cpc);
-      porCliente[idCli].totalDeuda+=Number(cpc[5]);
+      porCliente[idCli].saldoTotal+=Number(cpc[5]);
     });
+    Object.values(porCliente).forEach(d=>d.totalDeuda=d.saldoTotal);
 
     cxcDataGlobal={porCliente,ventas,pagos,nombreCliente,nombreMedio,hoy};
     renderCxcFichas(Object.entries(porCliente));
@@ -1933,16 +1934,19 @@ function renderCxcFichas(entradas){
     const diasDesde=ultimaFecha?Math.floor((hoy-ultimaFecha)/(1000*60*60*24)):null;
     const hayAlerta=diasDesde!==null&&diasDesde>37;
     const cantVentas=datos.cpcs.length;
-    return`<div class="card" style="border-left:3px solid ${hayAlerta?'#C44F4F':'var(--teal)'}">
+    const saldo=datos.saldoTotal;
+    const saldoColor=saldo>0?'#C44F4F':saldo<0?'var(--teal)':'var(--text-mid)';
+    const saldoLabel=saldo>0?formatPeso(saldo):saldo<0?`${formatPeso(Math.abs(saldo))} a favor`:'Sin saldo pendiente';
+    return`<div class="card" style="border-left:3px solid ${hayAlerta?'#C44F4F':saldo<0?'var(--teal)':'var(--border)'}">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
         <div style="font-family:'Playfair Display',serif;font-size:17px;color:var(--navy);font-weight:600">${datos.nombre}</div>
         ${hayAlerta?`<span style="background:#FDE8E8;color:#C44F4F;font-size:11px;font-weight:700;padding:3px 10px;border-radius:12px">⚠️ ${diasDesde} días</span>`:''}
       </div>
-      <div style="font-size:24px;font-weight:700;color:#C44F4F;margin-bottom:8px">${formatPeso(datos.totalDeuda)}</div>
-      <div style="font-size:12px;color:var(--text-light);margin-bottom:12px">${cantVentas} venta${cantVentas!==1?'s':''} pendiente${cantVentas!==1?'s':''}${ultimaFecha?' · Última: '+ultimaFecha.toLocaleDateString('es-AR'):''}</div>
+      <div style="font-size:24px;font-weight:700;color:${saldoColor};margin-bottom:8px">${saldoLabel}</div>
+      <div style="font-size:12px;color:var(--text-light);margin-bottom:12px">${cantVentas} venta${cantVentas!==1?'s':''}${ultimaFecha?' · Última: '+ultimaFecha.toLocaleDateString('es-AR'):''}</div>
       <div style="display:flex;gap:8px">
-        <button class="btn btn-primary" style="font-size:12px;flex:1" onclick="abrirFichaCliente('${idCli}',true)">+ Registrar pago</button>
-        <button class="btn btn-secondary" style="font-size:12px;flex:1" onclick="abrirFichaCliente('${idCli}',false)">Ver detalle →</button>
+        ${saldo>0?`<button class="btn btn-primary" style="font-size:12px;flex:1" onclick="abrirFichaCliente('${idCli}',true)">+ Registrar pago</button>`:''}
+        <button class="btn btn-secondary" style="font-size:12px;flex:1" onclick="abrirFichaCliente('${idCli}',false)">Ver historial →</button>
       </div>
     </div>`;
   }).join('');

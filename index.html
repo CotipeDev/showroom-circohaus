@@ -194,6 +194,7 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
 .launcher-item:hover{border-color:var(--teal);transform:translateY(-2px);box-shadow:0 6px 18px rgba(72,84,114,.11)}
 .launcher-icon{font-size:28px;line-height:1}
 .launcher-nombre{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;color:var(--navy);text-align:center;line-height:1.3}
+.launcher-desc{font-size:11px;color:var(--text-light);text-align:center;line-height:1.3;margin-top:2px}
 .modulo-topbar{display:flex;align-items:center;gap:16px;padding:14px 32px;background:var(--white);border-bottom:1.5px solid var(--border);position:sticky;top:0;z-index:50}
 .btn-volver-inicio{background:none;border:1.5px solid var(--border);border-radius:8px;padding:7px 14px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;color:var(--navy);cursor:pointer;transition:all .2s}
 .btn-volver-inicio:hover{border-color:var(--teal);color:var(--teal)}
@@ -307,26 +308,26 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
     <div class="launcher-seccion">
       <div class="launcher-label">Operaciones</div>
       <div class="launcher-grid">
-        <div class="launcher-item" onclick="irA('ingresos')"><span class="launcher-icon">📦</span><span class="launcher-nombre">Ingresos</span></div>
-        <div class="launcher-item" onclick="irA('stock')"><span class="launcher-icon">📊</span><span class="launcher-nombre">Stock</span></div>
-        <div class="launcher-item" onclick="irA('reportes')"><span class="launcher-icon">📈</span><span class="launcher-nombre">Reportes</span></div>
+        <div class="launcher-item" onclick="irA('ingresos')"><span class="launcher-icon">📦</span><span class="launcher-nombre">Ingresos</span><span class="launcher-desc">Entrada de mercadería y stock</span></div>
+        <div class="launcher-item" onclick="irA('stock')"><span class="launcher-icon">📊</span><span class="launcher-nombre">Stock</span><span class="launcher-desc">Inventario y alertas de reposición</span></div>
+        <div class="launcher-item" onclick="irA('reportes')"><span class="launcher-icon">📈</span><span class="launcher-nombre">Reportes</span><span class="launcher-desc">Ventas, márgenes y cuentas</span></div>
       </div>
     </div>
 
     <div class="launcher-seccion">
       <div class="launcher-label">Catálogo</div>
       <div class="launcher-grid">
-        <div class="launcher-item" onclick="irA('productos')"><span class="launcher-icon">🏷️</span><span class="launcher-nombre">Productos</span></div>
-        <div class="launcher-item" onclick="irA('proveedores')"><span class="launcher-icon">🤝</span><span class="launcher-nombre">Proveedores</span></div>
-        <div class="launcher-item" onclick="irA('categorias')"><span class="launcher-icon">🗂️</span><span class="launcher-nombre">Categorías</span></div>
+        <div class="launcher-item" onclick="irA('productos')"><span class="launcher-icon">🏷️</span><span class="launcher-nombre">Productos</span><span class="launcher-desc">Cargá y editá el catálogo</span></div>
+        <div class="launcher-item" onclick="irA('proveedores')"><span class="launcher-icon">🤝</span><span class="launcher-nombre">Proveedores</span><span class="launcher-desc">Datos y contactos</span></div>
+        <div class="launcher-item" onclick="irA('categorias')"><span class="launcher-icon">🗂️</span><span class="launcher-nombre">Categorías</span><span class="launcher-desc">Organizá tu catálogo</span></div>
       </div>
     </div>
 
     <div class="launcher-seccion">
       <div class="launcher-label">Finanzas</div>
       <div class="launcher-grid">
-        <div class="launcher-item" onclick="irA('cuentas')"><span class="launcher-icon">💰</span><span class="launcher-nombre">Cuentas</span></div>
-        <div class="launcher-item" onclick="irA('medios-pago')"><span class="launcher-icon">💳</span><span class="launcher-nombre">Medios de pago</span></div>
+        <div class="launcher-item" onclick="irA('cuentas')"><span class="launcher-icon">💰</span><span class="launcher-nombre">Cuentas</span><span class="launcher-desc">Saldo y movimientos</span></div>
+        <div class="launcher-item" onclick="irA('medios-pago')"><span class="launcher-icon">💳</span><span class="launcher-nombre">Medios de pago</span><span class="launcher-desc">Comisiones y descuentos</span></div>
       </div>
     </div>
 

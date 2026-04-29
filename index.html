@@ -1003,26 +1003,42 @@ function showPanel(name){
 function cerrarModal(id){document.getElementById(id).classList.remove('open')}
 
 async function iniciarHome(){
+  // Si ya hay datos en memoria, usarlos inmediatamente
+  if(productosData.length){
+    _renderHomeKpis(productosData,proveedoresData);
+    return;
+  }
   try{
     const[p,pr]=await Promise.all([cacheGet('getProductos'),cacheGet('getProveedores')]);
-    const rows=p.slice(1),provRows=pr.slice(1);
-    let al=0;rows.forEach(r=>{const s=Number(r[5])||0,m=Number(r[6])||0;if(s===0||(m>0&&s<=m))al++});
-    document.getElementById('kpi-productos').textContent=rows.length;
-    document.getElementById('kpi-alertas').textContent=al;
-    document.getElementById('kpi-proveedores').textContent=provRows.length;
-    if(al>0)document.getElementById('kpi-alertas-wrap').classList.add('alerta');
-    actualizarBadges(al);
+    productosData=p.slice(1);proveedoresData=pr.slice(1);
+    _renderHomeKpis(productosData,proveedoresData);
   }catch(e){}
+}
+function _renderHomeKpis(rows,provRows){
+  let al=0;rows.forEach(r=>{const s=Number(r[5])||0,m=Number(r[6])||0;if(s===0||(m>0&&s<=m))al++;});
+  document.getElementById('kpi-productos').textContent=rows.length;
+  document.getElementById('kpi-alertas').textContent=al;
+  document.getElementById('kpi-proveedores').textContent=provRows.length;
+  if(al>0)document.getElementById('kpi-alertas-wrap').classList.add('alerta');
+  else document.getElementById('kpi-alertas-wrap').classList.remove('alerta');
+  actualizarBadges(al);
+  // Notificaciones también desde memoria
+  _renderNotificaciones(rows);
 }
 function actualizarBadges(n){['nb1','nb2'].forEach(id=>{const el=document.getElementById(id);if(el){el.textContent=n;el.style.display=n>0?'inline-block':'none'}})}
 
+function _renderNotificaciones(rows){
+  const alertas=rows.filter(p=>{const s=Number(p[5])||0,m=Number(p[6])||0;return s===0||(m>0&&s<=m)}).map(p=>({tipo:Number(p[5])===0?'zero':'low',nombre:p[1],codigo:p[0],stock:Number(p[5])||0,minimo:Number(p[6])||0}));
+  const html=alertas.length===0?`<div style="padding:20px;text-align:center;color:var(--text-mid);font-size:13px">✅ Todo el stock está en orden</div>`:alertas.map(a=>`<div style="padding:12px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px"><span>${a.tipo==='zero'?'🔴':'🟠'}</span><div><div style="font-size:13px;font-weight:500;color:var(--navy)">${a.nombre}</div><div style="font-size:11px;color:${a.tipo==='zero'?'var(--error)':'var(--rose-dark)'};margin-top:2px">${a.tipo==='zero'?'Sin stock':`${a.stock} unid. (mín: ${a.minimo})`}</div></div></div>`).join('');
+  ['nl1','nl2'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=html});
+  actualizarBadges(alertas.length);
+}
 async function cargarNotificaciones(){
+  if(productosData.length){_renderNotificaciones(productosData);return;}
   try{
     const data=await cacheGet('getProductos');
-    const alertas=data.slice(1).filter(p=>{const s=Number(p[5])||0,m=Number(p[6])||0;return s===0||(m>0&&s<=m)}).map(p=>({tipo:Number(p[5])===0?'zero':'low',nombre:p[1],codigo:p[0],stock:Number(p[5])||0,minimo:Number(p[6])||0}));
-    const html=alertas.length===0?`<div style="padding:20px;text-align:center;color:var(--text-mid);font-size:13px">✅ Todo el stock está en orden</div>`:alertas.map(a=>`<div style="padding:12px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px"><span>${a.tipo==='zero'?'🔴':'🟠'}</span><div><div style="font-size:13px;font-weight:500;color:var(--navy)">${a.nombre}</div><div style="font-size:11px;color:${a.tipo==='zero'?'var(--error)':'var(--rose-dark)'};margin-top:2px">${a.tipo==='zero'?'Sin stock':`${a.stock} unid. (mín: ${a.minimo})`}</div></div></div>`).join('');
-    ['nl1','nl2'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=html});
-    actualizarBadges(alertas.length);
+    productosData=data.slice(1);
+    _renderNotificaciones(productosData);
   }catch(e){}
 }
 function toggleNotif(o){const id=o==='home'?'np1':'np2';const p=document.getElementById(id);const ab=p.style.display==='block';document.querySelectorAll('.notif-panel').forEach(x=>x.style.display='none');if(!ab){p.style.display='block';cargarNotificaciones()}}
@@ -1114,16 +1130,23 @@ async function guardarEdicion(){
 }
 
 async function iniciarStock(){
-  if(stockData.length&&productosData.length){
-    // Datos ya en memoria — renderizar inmediato
+  if(productosData.length){
     stockData=productosData;
     renderStock(stockData);
     document.getElementById('stock-loading').style.display='none';
     document.getElementById('stock-table').style.display='table';
     return;
   }
-  document.getElementById('stock-loading').style.display='flex';document.getElementById('stock-table').style.display='none';
-  try{const data=await cacheGet('getProductos');stockData=data.slice(1);renderStock(stockData);document.getElementById('stock-loading').style.display='none';document.getElementById('stock-table').style.display='table'}catch(e){showToast('Error','error')}
+  document.getElementById('stock-loading').style.display='flex';
+  document.getElementById('stock-table').style.display='none';
+  try{
+    const data=await cacheGet('getProductos');
+    stockData=data.slice(1);
+    productosData=stockData;
+    renderStock(stockData);
+    document.getElementById('stock-loading').style.display='none';
+    document.getElementById('stock-table').style.display='table';
+  }catch(e){showToast('Error','error')}
 }
 function renderStock(rows){
   document.getElementById('stock-body').innerHTML=rows.length===0?'<tr><td colspan="8" style="text-align:center;color:var(--text-mid);padding:20px">No hay productos</td></tr>':rows.map(p=>{
@@ -1316,7 +1339,6 @@ async function iniciarMediosPago(){
     document.getElementById('mp-loading').style.display='none';
     document.getElementById('mp-table').style.display='table';
   }catch(e){showToast('Error al cargar medios de pago','error')}
-}
 }
 
 function renderTablaMediosPago(){
@@ -1848,8 +1870,8 @@ async function precargarDatos(){
 }
 
 setFechaHoy('ing-fecha');
-precargarDatos();
-iniciarHome();
+precargarDatos().then(()=>iniciarHome());
+iniciarHome(); // Llamada inmediata para mostrar UI rápido, se actualiza cuando carga
 
 // ── CONSULTA RÁPIDA DE PRECIOS ──
 function abrirConsultaPrecios(){

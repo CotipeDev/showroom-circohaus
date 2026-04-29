@@ -918,6 +918,7 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
 <script>
 const API_URL='https://script.google.com/macros/s/AKfycbzrdDQpyKMZ8aTTxtBkeVn7yKwNhXVlguuJ5Ji3hlKQtKVXmgENQ2N0XwMPRXu9tch6/exec';
 let productosData=[],proveedoresData=[],categoriasData=[],itemsIngreso=[],ingProductoSel=null,stockData=[],prodTablaData=[];
+let cuentasPorCobrarData=[],ventasData=[],detalleVentasData=[],pagosVentaData=[];
 
 // ── CACHE GLOBAL ──
 const cache={
@@ -1843,10 +1844,14 @@ async function precargarDatos(){
     clientesData=(datos.Clientes||[]).slice(1);
     movimientosData=(datos.Movimientos||[]).slice(1);
     categoriasMovData=(datos.Categorias_Movimientos||[]).slice(1);
-    // Variables de módulos específicos — llenar desde los datos precargados
+    // Variables de módulos específicos
     stockData=productosData;
     prodTablaData=productosData;
     ventasHistData=(datos.Ventas||[]).slice(1);
+    ventasData=ventasHistData;
+    detalleVentasData=(datos.Detalle_Ventas||[]).slice(1);
+    pagosVentaData=(datos.Pagos_Venta||[]).slice(1);
+    cuentasPorCobrarData=(datos.Cuentas_Por_Cobrar||[]).slice(1);
 
     // Poblar selects con los datos ya en memoria
     cargarProveedores();
@@ -1936,24 +1941,27 @@ async function generarReportes(){
   const hasta=document.getElementById('rep-hasta').value;
   if(!desde||!hasta)return;
 
-  // Cargar datos necesarios
-  const [dataVentas,dataDetalle,dataPagos,dataProductos,dataMedios,dataCuentas,dataMovimientos]=await Promise.all([
-    cacheGet('getVentas'),cacheGet('getDetalleVentas'),cacheGet('getPagosVenta'),
-    cacheGet('getProductos'),cacheGet('getMediosPago'),cacheGet('getCuentas'),cacheGet('getMovimientos')
-  ]);
+  // Usar variables globales si están disponibles
+  const rawVentas=ventasData.length?ventasData:(await cacheGet('getVentas')).slice(1);
+  const rawDetalle=detalleVentasData.length?detalleVentasData:(await cacheGet('getDetalleVentas')).slice(1);
+  const rawPagos=pagosVentaData.length?pagosVentaData:(await cacheGet('getPagosVenta')).slice(1);
+  const productos=productosData.length?productosData:(await cacheGet('getProductos')).slice(1);
+  const medios=mediosPagoData.length?mediosPagoData:(await cacheGet('getMediosPago')).slice(1);
+  const cuentas=cuentasData.length?cuentasData:(await cacheGet('getCuentas')).slice(1);
+  const movs=movimientosData.length?movimientosData:(await cacheGet('getMovimientos')).slice(1);
 
-  const ventas=(dataVentas.slice||Array.isArray(dataVentas)?dataVentas.slice(1):[]).filter(v=>{
+  const ventas=rawVentas.filter(v=>{
     const f=fechaStr(v[1]);
     return f>=desde&&f<=hasta&&v[7]!=='cancelada';
   });
 
   const ventaIds=new Set(ventas.map(v=>String(v[0])));
-  const detalles=(Array.isArray(dataDetalle)?dataDetalle.slice(1):[]).filter(d=>ventaIds.has(String(d[0])));
-  const pagos=(Array.isArray(dataPagos)?dataPagos.slice(1):[]).filter(p=>ventaIds.has(String(p[0])));
-  const productos=Array.isArray(dataProductos)?dataProductos.slice(1):[];
-  const medios=Array.isArray(dataMedios)?dataMedios.slice(1):[];
-  const cuentas=Array.isArray(dataCuentas)?dataCuentas.slice(1):[];
-  const movimientos=Array.isArray(dataMovimientos)?dataMovimientos.slice(1):[];
+  const detalles=rawDetalle.filter(d=>ventaIds.has(String(d[0])));
+  const pagos=rawPagos.filter(p=>ventaIds.has(String(p[0])));
+  const movimientos=movs;
+  const detalles=detalleVentasData.length?detalleVentasData.filter(d=>ventaIds.has(String(d[0]))):rawDetalle.filter(d=>ventaIds.has(String(d[0])));
+  const pagos2=pagosVentaData.length?pagosVentaData.filter(p=>ventaIds.has(String(p[0]))):rawPagos.filter(p=>ventaIds.has(String(p[0])));
+  const movimientos2=movimientos;
 
   // ── KPIs ──
   const totalCobrado=ventas.reduce((s,v)=>s+Number(v[5]),0);
@@ -2078,16 +2086,18 @@ let cxcDataGlobal=[];
 async function iniciarCxc(){
   document.getElementById('cxc-fichas').innerHTML='<p style="color:var(--text-light);text-align:center;padding:32px;grid-column:span 2">Cargando...</p>';
   try{
-    const [dataCpc,dataVentas,dataClientes,dataPagos,dataMedios,dataCuentas]=await Promise.all([
-      cacheGet('getCuentasPorCobrar'),cacheGet('getVentas'),cacheGet('getClientes'),
-      cacheGet('getPagosVenta'),cacheGet('getMediosPago'),cacheGet('getCuentas')
-    ]);
-    const cpcs=Array.isArray(dataCpc)?dataCpc.slice(1):[];
-    const ventas=Array.isArray(dataVentas)?dataVentas.slice(1):[];
-    const clientes=Array.isArray(dataClientes)?dataClientes.slice(1):[];
-    const pagos=Array.isArray(dataPagos)?dataPagos.slice(1):[];
-    const medios=Array.isArray(dataMedios)?dataMedios.slice(1):[];
-    const cuentas=Array.isArray(dataCuentas)?dataCuentas.slice(1):[];
+    // Usar variables globales si ya están cargadas, si no pedir al API
+    const cpcs=cuentasPorCobrarData.length?cuentasPorCobrarData:(await cacheGet('getCuentasPorCobrar')).slice(1);
+    const ventas=ventasData.length?ventasData:(await cacheGet('getVentas')).slice(1);
+    const clientes=clientesData.length?clientesData:(await cacheGet('getClientes')).slice(1);
+    const pagos=pagosVentaData.length?pagosVentaData:(await cacheGet('getPagosVenta')).slice(1);
+    const medios=mediosPagoData.length?mediosPagoData:(await cacheGet('getMediosPago')).slice(1);
+    const cuentas=cuentasData.length?cuentasData:(await cacheGet('getCuentas')).slice(1);
+
+    // Actualizar variables globales
+    if(!cuentasPorCobrarData.length)cuentasPorCobrarData=cpcs;
+    if(!ventasData.length)ventasData=ventas;
+    if(!pagosVentaData.length)pagosVentaData=pagos;
 
     // Cargar selects del modal de cobro
     const selMedio=document.getElementById('cxc-cobro-medio');

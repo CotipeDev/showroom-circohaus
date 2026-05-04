@@ -1929,8 +1929,8 @@ async function cancelarVenta(idVenta){
   }catch(e){showToast('Error','error')}
 }
 
+async function abrirDetalleVenta(id){return verDetalleVenta(id);}
 async function verDetalleVenta(idVenta){
-  async function abrirDetalleVenta(id){return verDetalleVenta(id);}
   try{
     const[dataVentas,dataDetalle,dataPagos]=await Promise.all([cacheGet('getVentas'),cacheGet('getDetalleVentas'),cacheGet('getPagosVenta')]);
     const items=dataDetalle.slice(1).filter(d=>String(d[0])===String(idVenta));

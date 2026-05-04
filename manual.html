@@ -161,8 +161,10 @@
       <a class="sidebar-item" href="#s9"><div class="sidebar-num">9</div>Cuentas</a>
       <a class="sidebar-item" href="#s10"><div class="sidebar-num">10</div>Medios de pago</a>
       <a class="sidebar-item" href="#s11"><div class="sidebar-num">11</div>Reportes</a>
-      <a class="sidebar-item" href="#s12"><div class="sidebar-num">12</div>Notificaciones</a>
-      <a class="sidebar-item" href="#s13"><div class="sidebar-num">13</div>Consejos generales</a>
+      <a class="sidebar-item" href="#s12"><div class="sidebar-num">12</div>Cuentas por cobrar</a>
+      <a class="sidebar-item" href="#s13"><div class="sidebar-num">13</div>Facturas</a>
+      <a class="sidebar-item" href="#s14"><div class="sidebar-num">14</div>Notificaciones</a>
+      <a class="sidebar-item" href="#s15"><div class="sidebar-num">15</div>Consejos generales</a>
     </div>
   </div>
 
@@ -187,11 +189,12 @@
       <div class="sec-line"></div>
       <p>La pantalla de inicio es el punto de entrada al sistema. Las tarjetas están organizadas en grupos según su función.</p>
       <div class="sub-title">Acción rápida</div>
-      <p>Las dos tarjetas principales están destacadas arriba de todo para el uso diario:</p>
+      <p>Tres tarjetas destacadas arriba para el uso diario:</p>
       <table>
         <tr><th>Tarjeta</th><th>Qué hace</th></tr>
-        <tr><td><strong>🛒 Nueva venta</strong></td><td>Abre el módulo de ventas directamente para registrar una venta.</td></tr>
-        <tr><td><strong>🔍 Consulta de precios</strong></td><td>Abre un buscador rápido para consultar precio de venta y stock de cualquier producto sin entrar a ningún módulo.</td></tr>
+        <tr><td><strong>🛒 Nueva venta</strong></td><td>Abre el módulo de ventas para registrar una venta.</td></tr>
+        <tr><td><strong>🔍 Consulta de precios</strong></td><td>Buscador rápido para consultar precio y stock de cualquier producto por nombre, código o proveedor — sin entrar a ningún módulo.</td></tr>
+        <tr><td><strong>📋 Cuentas por cobrar</strong></td><td>Acceso directo a los fiados pendientes por cliente.</td></tr>
       </table>
       <div class="sub-title">Operaciones</div>
       <table>
@@ -212,8 +215,9 @@
         <tr><th>Tarjeta</th><th>Qué hace</th></tr>
         <tr><td><strong>💰 Cuentas</strong></td><td>Seguí el saldo de tus cuentas y registrá movimientos.</td></tr>
         <tr><td><strong>💳 Medios de pago</strong></td><td>Configurá comisiones, descuentos y formas de cobro.</td></tr>
+        <tr><td><strong>🧾 Facturas</strong></td><td>Registro de comprobantes emitidos en AFIP.</td></tr>
       </table>
-      <div class="tip">La consulta de precios es ideal para usar durante la atención al cliente: buscás rápido por nombre, código o proveedor y ves el precio y el stock en el momento.</div>
+      <div class="tip">La consulta de precios es ideal para usar durante la atención al cliente: buscás rápido y ves el precio y el stock en el momento, sin tener que navegar a ningún módulo.</div>
     </div>
 
     <div class="sec" id="s3">
@@ -374,7 +378,20 @@
       <div class="nota">Los porcentajes de descuento y comisión son configurables en el módulo Medios de pago.</div>
 
       <div class="sub-title">Venta fiada (cuenta por cobrar)</div>
-      <p>Si el cliente se lleva la mercadería pero paga después, podés registrar la venta como <strong>fiado</strong>. El stock se descuenta igual, pero el cobro queda pendiente para registrar después.</p>
+      <p>Si el cliente se lleva la mercadería pero paga después, elegí <strong>Fiado (cuenta por cobrar)</strong> en el tipo de venta. El stock se descuenta igual.</p>
+      <div class="paso"><div class="paso-num">1</div><p>Elegí la fecha y el tipo de venta <strong>Fiado</strong>.</p></div>
+      <div class="paso"><div class="paso-num">2</div><p>Seleccioná el cliente. Si no existe, crealo con el botón <strong>+ Nuevo</strong>.</p></div>
+      <div class="paso"><div class="paso-num">3</div><p>Si el cliente entrega algo en ese momento, ingresá el monto y el medio de pago en la sección <strong>¿Entregó algo ahora?</strong>. El saldo restante queda pendiente.</p></div>
+      <div class="paso"><div class="paso-num">4</div><p>Confirmá la venta. La deuda queda registrada en Cuentas por cobrar.</p></div>
+      <div class="nota">Los pagos posteriores del cliente se registran desde el módulo Cuentas por cobrar, solo en efectivo o transferencia.</div>
+
+      <div class="sub-title">Facturar una venta</div>
+      <p>Desde el historial de ventas podés emitir y registrar la factura de cualquier venta.</p>
+      <div class="paso"><div class="paso-num">1</div><p>En el historial, tocá el botón <strong>🧾 Facturar</strong> en la fila de la venta.</p></div>
+      <div class="paso"><div class="paso-num">2</div><p>El sistema abre automáticamente el <strong>Facturador de ARCA</strong> en una nueva pestaña.</p></div>
+      <div class="paso"><div class="paso-num">3</div><p>Emitís la factura en AFIP con tu clave fiscal.</p></div>
+      <div class="paso"><div class="paso-num">4</div><p>Volvés al sistema e ingresás el <strong>número de factura</strong> y la fecha. La venta queda marcada como <strong>✅ Facturada</strong>.</p></div>
+      <div class="tip">El Facturador de ARCA funciona desde el iPad y el celular. Podés instalarlo como app desde Safari: entrá a facturador.afip.gob.ar, tocá Compartir → Agregar a inicio.</div>
 
       <div class="sub-title">Historial de ventas</div>
       <p>En la parte inferior del módulo está el historial con todas las ventas registradas. Podés filtrar por fecha y por estado (cobrada, fiado pendiente, cancelada). Al hacer clic en una venta podés ver el detalle completo.</p>
@@ -452,20 +469,73 @@
       <div class="sub-title">Productos más vendidos</div>
       <p>Top 10 de productos por unidades vendidas en el período, con el monto total recaudado por cada uno.</p>
 
-      <div class="sub-title">Margen y rentabilidad</div>
+      <div class="sub-title">Margen por producto</div>
       <table>
         <tr><th>Columna</th><th>Qué muestra</th></tr>
         <tr><td><strong>Vendido</strong></td><td>Unidades vendidas en el período.</td></tr>
-        <tr><td><strong>Costo hist.</strong></td><td>Costo promedio al momento de cada venta.</td></tr>
         <tr><td><strong>Costo repo.</strong></td><td>Costo de reposición actual (lo que costaría comprarlo hoy).</td></tr>
-        <tr><td><strong>Margen neto</strong></td><td>Porcentaje de ganancia real sobre el costo histórico.</td></tr>
-        <tr><td><strong>Alerta</strong></td><td>🔴 Si el costo de reposición subió más del 5% respecto al histórico. 🟢 Si bajó.</td></tr>
+        <tr><td><strong>Margen bruto</strong></td><td>El porcentaje que le cargaste al producto originalmente sobre el costo.</td></tr>
+        <tr><td><strong>Margen neto</strong></td><td>Lo que realmente te quedó después de descuentos y comisiones del medio de pago. Se distribuye proporcionalmente entre los productos de cada venta.</td></tr>
+        <tr><td><strong>Alerta</strong></td><td>🔴 Si el costo de reposición subió más del 5%. 🟢 Si bajó.</td></tr>
       </table>
-      <div class="tip">Si un producto muestra 🔴 "Costo subió", revisá si el precio de venta sigue siendo rentable. Puede ser momento de actualizar el precio.</div>
+      <div class="tip">El margen neto puede ser menor al bruto si usaste medios de pago con comisión (tarjeta). Si ves diferencias grandes entre ambos, es señal de que ese producto se vende mucho con tarjeta.</div>
+
+      <div class="sub-title">Margen por venta</div>
+      <p>Una tabla con las últimas 50 ventas del período que muestra el margen real de cada operación completa.</p>
+      <table>
+        <tr><th>Columna</th><th>Qué muestra</th></tr>
+        <tr><td><strong>Venta</strong></td><td>ID clickeable que abre el detalle de esa venta.</td></tr>
+        <tr><td><strong>Cobrado</strong></td><td>Lo que pagó el cliente.</td></tr>
+        <tr><td><strong>Neto</strong></td><td>Lo que recibió el negocio tras comisiones.</td></tr>
+        <tr><td><strong>Costo</strong></td><td>Costo histórico total de los productos de esa venta.</td></tr>
+        <tr><td><strong>Margen neto</strong></td><td>Ganancia real de esa venta sobre el costo. En naranja si es bajo, en verde si es bueno.</td></tr>
+        <tr><td><strong>Medios</strong></td><td>Formas de pago usadas en esa venta.</td></tr>
+      </table>
     </div>
 
     <div class="sec" id="s12">
-      <div class="sec-header"><div class="sec-num">12</div><div class="sec-title">Notificaciones</div></div>
+      <div class="sec-header"><div class="sec-num">12</div><div class="sec-title">Cuentas por cobrar</div></div>
+      <div class="sec-line"></div>
+      <p>Módulo para gestionar los fiados pendientes por cliente. Muestra una ficha por cada cliente que tiene deuda o saldo a favor.</p>
+      <div class="sub-title">Tarjeta de cliente</div>
+      <p>Cada tarjeta muestra el nombre del cliente, el saldo total (en rojo si debe, en verde si tiene saldo a favor), la última venta y la cantidad de ventas pendientes. Si pasaron más de 37 días sin pago aparece una alerta ⚠️.</p>
+      <div class="sub-title">Ficha del cliente — cuenta corriente</div>
+      <p>Al tocar <strong>Ver historial</strong> se abre la ficha con la cuenta corriente completa del cliente:</p>
+      <table>
+        <tr><th>Columna</th><th>Qué muestra</th></tr>
+        <tr><td><strong>Fecha</strong></td><td>Fecha de cada movimiento.</td></tr>
+        <tr><td><strong>Detalle</strong></td><td>ID de venta (clickeable) o descripción del pago.</td></tr>
+        <tr><td><strong>Debe</strong></td><td>Monto de cada venta fiada.</td></tr>
+        <tr><td><strong>Haber</strong></td><td>Monto de cada pago recibido.</td></tr>
+        <tr><td><strong>Saldo</strong></td><td>Saldo acumulado. En rojo si debe, en verde si tiene a favor.</td></tr>
+      </table>
+      <div class="sub-title">Registrar un pago</div>
+      <div class="paso"><div class="paso-num">1</div><p>En la tarjeta del cliente tocá <strong>+ Registrar pago</strong>, o desde la ficha tocá el botón en el encabezado.</p></div>
+      <div class="paso"><div class="paso-num">2</div><p>Ingresá la fecha, el monto y el medio de pago (solo efectivo o transferencia).</p></div>
+      <div class="paso"><div class="paso-num">3</div><p>Confirmá. El saldo se actualiza automáticamente.</p></div>
+      <div class="nota">Si el cliente paga más de lo que debe, el saldo queda a su favor y se ve en verde. Puede usarse para futuras compras.</div>
+      <div class="sub-title">Buscador</div>
+      <p>Podés buscar por nombre de cliente o por ID de venta para encontrar rápidamente una cuenta específica.</p>
+    </div>
+
+    <div class="sec" id="s13">
+      <div class="sec-header"><div class="sec-num">13</div><div class="sec-title">Facturas</div></div>
+      <div class="sec-line"></div>
+      <p>Módulo de registro de comprobantes emitidos en AFIP. Permite tener un historial propio de todas las facturas emitidas sin depender del portal de AFIP para consultarlas.</p>
+      <div class="sub-title">Emitir una factura</div>
+      <div class="paso"><div class="paso-num">1</div><p>En el historial de ventas, tocá <strong>🧾 Facturar</strong> en la venta que querés facturar.</p></div>
+      <div class="paso"><div class="paso-num">2</div><p>El sistema abre el <strong>Facturador de ARCA</strong> (facturador.afip.gob.ar) en una nueva pestaña.</p></div>
+      <div class="paso"><div class="paso-num">3</div><p>Emitís la factura en AFIP con tu clave fiscal.</p></div>
+      <div class="paso"><div class="paso-num">4</div><p>Volvés al sistema e ingresás el número de factura y la fecha de emisión.</p></div>
+      <div class="paso"><div class="paso-num">5</div><p>La venta queda marcada como ✅ Facturada y el comprobante queda en el registro.</p></div>
+      <div class="tip">Instalá el Facturador de ARCA como app en el iPad: abrí facturador.afip.gob.ar en Safari, tocá el botón Compartir y seleccioná "Agregar a inicio". Así accedés con un toque.</div>
+      <div class="sub-title">Historial de facturas</div>
+      <p>En el módulo Facturas podés ver todas las facturas emitidas con su número, fecha, venta asociada y monto. Podés filtrar por período y ver los KPIs del mes: cantidad de facturas emitidas, total facturado y total del mes actual.</p>
+      <div class="nota">El módulo solo registra las facturas que ingresás manualmente. Las facturas que emitiste directamente en AFIP sin pasar por el sistema no aparecen acá.</div>
+    </div>
+
+    <div class="sec" id="s14">
+      <div class="sec-header"><div class="sec-num">14</div><div class="sec-title">Notificaciones</div></div>
       <div class="sec-line"></div>
       <p>La campana en la esquina superior derecha te avisa cuando hay productos con stock bajo o agotado. Al abrir la app el sistema revisa el stock automáticamente. Si hay alertas aparece un número rojo sobre la campana.</p>
       <div class="sub-title">Tipos de alerta</div>
@@ -477,8 +547,8 @@
       <div class="tip">Las notificaciones se actualizan cada vez que abrís el panel. Hacé clic en la campana para ver el detalle completo.</div>
     </div>
 
-    <div class="sec" id="s13">
-      <div class="sec-header"><div class="sec-num">13</div><div class="sec-title">Consejos generales</div></div>
+    <div class="sec" id="s15">
+      <div class="sec-header"><div class="sec-num">15</div><div class="sec-title">Consejos generales</div></div>
       <div class="sec-line"></div>
       <div class="sub-title">Orden de carga recomendado</div>
       <p>Al empezar a usar el sistema cargá en este orden: primero <strong>Categorías</strong>, luego <strong>Proveedores</strong>, luego <strong>Productos</strong>. Así cuando cargues un producto ya tenés disponibles todas las opciones.</p>

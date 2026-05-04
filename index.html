@@ -787,10 +787,23 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
       <div class="section-title">Historial de ventas</div>
       <div class="section-sub">Todas las ventas registradas</div>
       <div class="card">
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px">
+        <div class="search-wrap" style="margin-bottom:12px">
+          <input type="text" id="vta-hist-buscar" placeholder="🔍 Buscar por ID de venta o cliente..." oninput="filtrarHistorialVentas()">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin-bottom:16px">
           <input type="date" id="vta-hist-desde" style="background:var(--off-white);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:13px;outline:none" onchange="filtrarHistorialVentas()">
           <input type="date" id="vta-hist-hasta" style="background:var(--off-white);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:13px;outline:none" onchange="filtrarHistorialVentas()">
-          <select id="vta-hist-estado" onchange="filtrarHistorialVentas()" style="background:var(--off-white);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:13px;outline:none"><option value="">Todos los estados</option><option value="cobrada">Cobradas</option><option value="pendiente">Pendientes (fiado)</option><option value="cancelada">Canceladas</option></select>
+          <select id="vta-hist-estado" onchange="filtrarHistorialVentas()" style="background:var(--off-white);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:13px;outline:none">
+            <option value="">Todos los estados</option>
+            <option value="cobrada">Cobradas</option>
+            <option value="pendiente">Fiado pendiente</option>
+            <option value="cancelada">Canceladas</option>
+          </select>
+          <select id="vta-hist-factura" onchange="filtrarHistorialVentas()" style="background:var(--off-white);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:13px;outline:none">
+            <option value="">Todas (factura)</option>
+            <option value="si">✅ Facturadas</option>
+            <option value="no">🧾 Sin facturar</option>
+          </select>
         </div>
         <div id="vta-hist-loading" class="spinner-wrap"><div class="spinner"></div> Cargando...</div>
         <table id="vta-hist-table" style="display:none"><thead><tr><th>ID</th><th>Fecha</th><th>Total cobrado</th><th>Neto</th><th>Estado</th><th>Factura</th><th></th></tr></thead><tbody id="vta-hist-body"></tbody></table>
@@ -1889,11 +1902,21 @@ function renderHistorialVentas(rows){
 }
 
 function filtrarHistorialVentas(){
-  const desde=document.getElementById('vta-hist-desde').value,hasta=document.getElementById('vta-hist-hasta').value,estado=document.getElementById('vta-hist-estado').value;
+  const desde=document.getElementById('vta-hist-desde').value;
+  const hasta=document.getElementById('vta-hist-hasta').value;
+  const estado=document.getElementById('vta-hist-estado').value;
+  const factura=document.getElementById('vta-hist-factura')?.value||'';
+  const buscar=document.getElementById('vta-hist-buscar')?.value.toLowerCase().trim()||'';
   let rows=ventasHistData;
-  if(desde)rows=rows.filter(v=>v[1]>=desde);
-  if(hasta)rows=rows.filter(v=>v[1]<=hasta);
+  if(desde)rows=rows.filter(v=>fechaStr(v[1])>=desde);
+  if(hasta)rows=rows.filter(v=>fechaStr(v[1])<=hasta);
   if(estado)rows=rows.filter(v=>v[7]===estado);
+  if(factura==='si')rows=rows.filter(v=>v[9]===true||v[9]==='TRUE');
+  if(factura==='no')rows=rows.filter(v=>!v[9]||v[9]===false||v[9]==='FALSE');
+  if(buscar){
+    const clienteNombre=id=>{const c=clientesData.find(x=>String(x[0])===String(id));return c?c[1].toLowerCase():'';};
+    rows=rows.filter(v=>String(v[0]).toLowerCase().includes(buscar)||clienteNombre(v[3]).includes(buscar));
+  }
   renderHistorialVentas(rows);
 }
 

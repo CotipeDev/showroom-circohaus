@@ -185,9 +185,9 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
   .acciones-rapidas{grid-template-columns:1fr;gap:10px}
   .accion-card{padding:14px 16px;gap:12px}
   .accion-icon{font-size:22px}
-  .accion-nombre{font-size:14px}
+  .accion-nombre{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .accion-desc{display:none}
-  .accion-arrow{font-size:14px}
+  .accion-arrow{font-size:14px;flex-shrink:0}
 
   /* Launcher compacto — 2 columnas en mobile */
   .launcher-grid{grid-template-columns:repeat(2,1fr);gap:8px}
@@ -253,6 +253,7 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
   .launcher-grid{grid-template-columns:repeat(2,1fr)}
   #cxc-fichas{grid-template-columns:1fr}
   .cuentas-grid{grid-template-columns:1fr}
+  .notif-panel{width:calc(100vw - 24px);right:-120px;max-height:60vh;overflow-y:auto}
 }
 
 /* BOTÓN NUEVA VENTA EN HEADER */

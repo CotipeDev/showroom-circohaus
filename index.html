@@ -1106,7 +1106,7 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
 </div>
 
 <script>
-const API_URL='https://script.google.com/macros/s/AKfycbxgOoH1mB53Eb8Rdj2G3RnaTuOtNPMZL7TPkAHaAUxgjSSqjD0AN8LMHNkWISRSA2Tf/exec';
+const API_URL='https://script.google.com/macros/s/AKfycbwoKy49Mri2GrxM0H6-NTaeCt5n6PTmMdDo3YijSSPhGqDf5Dv0VYmMQ80yhdkr9NtW/exec';
 let productosData=[],proveedoresData=[],categoriasData=[],itemsIngreso=[],ingProductoSel=null,stockData=[],prodTablaData=[];
 let cuentasPorCobrarData=[],ventasData=[],detalleVentasData=[],pagosVentaData=[];
 
@@ -1298,11 +1298,11 @@ function filtrarTablaProductos(){const q=document.getElementById('prod-buscar').
 function calcularPrecioVenta(){const c=Number(document.getElementById('prod-pcosto').value),m=Number(document.getElementById('prod-margen').value);document.getElementById('prod-pventa').value=(c>0&&m>0)?Math.round(c*(1+m/100)):''}
 
 async function agregarProducto(){
-  const codigo=document.getElementById('prod-codigo').value.trim(),descripcion=document.getElementById('prod-desc').value.trim(),proveedor=document.getElementById('prod-proveedor').value,categoria=document.getElementById('prod-categoria').value,precio_costo=Number(document.getElementById('prod-pcosto').value),precio_venta=Number(document.getElementById('prod-pventa').value),stock=Number(document.getElementById('prod-stock').value)||0,stock_minimo=Number(document.getElementById('prod-stock-min').value)||0;
+  const codigo=document.getElementById('prod-codigo').value.trim(),descripcion=document.getElementById('prod-desc').value.trim(),proveedor=document.getElementById('prod-proveedor').value,categoria=document.getElementById('prod-categoria').value,precio_costo=Number(document.getElementById('prod-pcosto').value),margen_pct=Number(document.getElementById('prod-margen').value)||0,precio_venta=Number(document.getElementById('prod-pventa').value),stock=Number(document.getElementById('prod-stock').value)||0,stock_minimo=Number(document.getElementById('prod-stock-min').value)||0;
   if(!codigo||!descripcion){showToast('Completá código y descripción','error');return}
   if(!precio_costo){showToast('Ingresá el precio de costo','error');return}
   try{const data=await cacheGet('getProductos');if(data.slice(1).some(p=>p[0].toString().trim().toLowerCase()===codigo.toLowerCase())){showToast(`El código ${codigo} ya existe`,'error');return}}catch(e){showToast('No se pudo verificar el código','error');return}
-  try{await apiPost('agregarProducto',{codigo,descripcion,proveedor,precio_venta,precio_costo,stock,stock_minimo,categoria});showToast('Producto guardado');['prod-codigo','prod-desc','prod-pcosto','prod-margen','prod-pventa','prod-stock','prod-stock-min'].forEach(id=>document.getElementById(id).value='');document.getElementById('prod-proveedor').value='';document.getElementById('prod-categoria').value='';cacheInvalidar('getProductos');setTimeout(()=>{cargarProductos();iniciarProductos()},1500)}catch(e){showToast('Error','error')}
+  try{await apiPost('agregarProducto',{codigo,descripcion,proveedor,precio_venta,precio_costo,margen_pct,stock,stock_minimo,categoria});showToast('Producto guardado');['prod-codigo','prod-desc','prod-pcosto','prod-margen','prod-pventa','prod-stock','prod-stock-min'].forEach(id=>document.getElementById(id).value='');document.getElementById('prod-proveedor').value='';document.getElementById('prod-categoria').value='';cacheInvalidar('getProductos');setTimeout(()=>{cargarProductos();iniciarProductos()},1500)}catch(e){showToast('Error','error')}
 }
 async function eliminarProducto(codigo){
   if(!confirm(`¿Seguro que querés eliminar ${codigo}?`))return;
@@ -1310,14 +1310,17 @@ async function eliminarProducto(codigo){
 }
 function abrirEditar(codigo){
   const p=prodTablaData.find(x=>x[0].toString()===codigo.toString());if(!p)return;
-  document.getElementById('edit-codigo').value=p[0];document.getElementById('edit-desc').value=p[1];document.getElementById('edit-proveedor').value=p[2]||'';document.getElementById('edit-pcosto').value=p[4]||'';document.getElementById('edit-pventa').value=p[3]||'';document.getElementById('edit-stock-min').value=p[6]||'';document.getElementById('edit-categoria').value=p[7]||'';document.getElementById('edit-margen').value=calcMargen(Number(p[4]),Number(p[3]));
+  document.getElementById('edit-codigo').value=p[0];document.getElementById('edit-desc').value=p[1];document.getElementById('edit-proveedor').value=p[2]||'';document.getElementById('edit-pcosto').value=p[4]||'';document.getElementById('edit-pventa').value=p[3]||'';document.getElementById('edit-stock-min').value=p[6]||'';document.getElementById('edit-categoria').value=p[7]||'';
+  // Margen: usar col I si existe, sino calcularlo
+  const margenGuardado=p[8]?Number(p[8]):calcMargen(Number(p[4]),Number(p[3]));
+  document.getElementById('edit-margen').value=margenGuardado||'';
   document.getElementById('modal-editar').classList.add('open');
 }
 function calcularPrecioVentaEdit(){const c=Number(document.getElementById('edit-pcosto').value),m=Number(document.getElementById('edit-margen').value);document.getElementById('edit-pventa').value=(c>0&&m>0)?Math.round(c*(1+m/100)):''}
 async function guardarEdicion(){
-  const codigo=document.getElementById('edit-codigo').value.trim(),descripcion=document.getElementById('edit-desc').value.trim(),proveedor=document.getElementById('edit-proveedor').value,categoria=document.getElementById('edit-categoria').value,precio_costo=Number(document.getElementById('edit-pcosto').value),precio_venta=Number(document.getElementById('edit-pventa').value),stock_minimo=Number(document.getElementById('edit-stock-min').value)||0;
+  const codigo=document.getElementById('edit-codigo').value.trim(),descripcion=document.getElementById('edit-desc').value.trim(),proveedor=document.getElementById('edit-proveedor').value,categoria=document.getElementById('edit-categoria').value,precio_costo=Number(document.getElementById('edit-pcosto').value),margen_pct=Number(document.getElementById('edit-margen').value)||0,precio_venta=Number(document.getElementById('edit-pventa').value),stock_minimo=Number(document.getElementById('edit-stock-min').value)||0;
   if(!descripcion){showToast('Completá la descripción','error');return}
-  try{await apiPost('editarProducto',{codigo,descripcion,proveedor,precio_venta,precio_costo,stock_minimo,categoria});showToast('Producto actualizado');cerrarModal('modal-editar');cacheInvalidar('getProductos');setTimeout(()=>{cargarProductos();iniciarProductos()},1500)}catch(e){showToast('Error','error')}
+  try{await apiPost('editarProducto',{codigo,descripcion,proveedor,precio_venta,precio_costo,margen_pct,stock_minimo,categoria});showToast('Producto actualizado');cerrarModal('modal-editar');cacheInvalidar('getProductos');setTimeout(()=>{cargarProductos();iniciarProductos()},1500)}catch(e){showToast('Error','error')}
 }
 
 async function iniciarStock(){

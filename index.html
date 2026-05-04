@@ -310,6 +310,7 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
       <div class="launcher-grid">
         <div class="launcher-item" onclick="irA('ingresos')"><span class="launcher-icon">📦</span><span class="launcher-nombre">Ingresos</span><span class="launcher-desc">Entrada de mercadería y stock</span></div>
         <div class="launcher-item" onclick="irA('stock')"><span class="launcher-icon">📊</span><span class="launcher-nombre">Stock</span><span class="launcher-desc">Inventario y alertas de reposición</span></div>
+        <div class="launcher-item" onclick="irA('historial-ventas')"><span class="launcher-icon">🧾</span><span class="launcher-nombre">Ventas</span><span class="launcher-desc">Historial y detalle de ventas</span></div>
         <div class="launcher-item" onclick="irA('reportes')"><span class="launcher-icon">📈</span><span class="launcher-nombre">Reportes</span><span class="launcher-desc">Ventas, márgenes y cuentas</span></div>
       </div>
     </div>
@@ -779,8 +780,13 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
           <button class="btn btn-secondary" onclick="limpiarVenta()">Limpiar</button>
         </div>
       </div>
+    </div>
+
+    <!-- HISTORIAL VENTAS -->
+    <div id="panel-historial-ventas" class="panel">
+      <div class="section-title">Historial de ventas</div>
+      <div class="section-sub">Todas las ventas registradas</div>
       <div class="card">
-        <div class="card-title">Historial de ventas</div>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px">
           <input type="date" id="vta-hist-desde" style="background:var(--off-white);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:13px;outline:none" onchange="filtrarHistorialVentas()">
           <input type="date" id="vta-hist-hasta" style="background:var(--off-white);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:13px;outline:none" onchange="filtrarHistorialVentas()">
@@ -1070,7 +1076,7 @@ function showToast(m,t='success'){const el=document.getElementById('toast');el.t
 function formatPeso(n){return'$'+Number(n).toLocaleString('es-AR')}
 function setFechaHoy(id){document.getElementById(id).value=new Date().toISOString().split('T')[0]}
 
-const moduloNombres={ingresos:'📦 Ingresos',stock:'📊 Stock',productos:'🏷️ Productos',ventas:'🛒 Ventas',cuentas:'💰 Cuentas',proveedores:'🤝 Proveedores',categorias:'🗂️ Categorías','medios-pago':'💳 Medios de pago',reportes:'📈 Reportes',cxc:'📋 Cuentas por cobrar',facturas:'🧾 Facturas',instructivos:'📚 Instructivos'};
+const moduloNombres={ingresos:'📦 Ingresos',stock:'📊 Stock',productos:'🏷️ Productos',ventas:'🛒 Ventas','historial-ventas':'🧾 Ventas',cuentas:'💰 Cuentas',proveedores:'🤝 Proveedores',categorias:'🗂️ Categorías','medios-pago':'💳 Medios de pago',reportes:'📈 Reportes',cxc:'📋 Cuentas por cobrar',facturas:'🧾 Facturas',instructivos:'📚 Instructivos'};
 function irA(nombre){document.getElementById('home').style.display='none';document.getElementById('app-main').style.display='flex';showPanel(nombre);}
 function volverHome(){document.getElementById('home').style.display='';document.getElementById('app-main').style.display='none';iniciarHome()}
 function showPanel(name){
@@ -1080,7 +1086,7 @@ function showPanel(name){
   if(name==='stock')iniciarStock();if(name==='proveedores')iniciarProveedores();
   if(name==='productos')iniciarProductos();if(name==='categorias')iniciarCategorias();
   if(name==='medios-pago')iniciarMediosPago();if(name==='cuentas')iniciarCuentas();
-  if(name==='ventas')iniciarVentas();if(name==='reportes')iniciarReportes();if(name==='cxc')iniciarCxc();if(name==='facturas')iniciarFacturas();
+  if(name==='ventas')iniciarVentas();if(name==='historial-ventas')iniciarHistorialVentas();if(name==='reportes')iniciarReportes();if(name==='cxc')iniciarCxc();if(name==='facturas')iniciarFacturas();
 }
 function cerrarModal(id){document.getElementById(id).classList.remove('open')}
 
@@ -1626,23 +1632,33 @@ function filtrarMovimientos(){
 }
 
 // ── VENTAS ──
+async function iniciarHistorialVentas(){
+  if(ventasHistData.length){
+    renderHistorialVentas(ventasHistData);
+    return;
+  }
+  document.getElementById('vta-hist-loading').style.display='flex';
+  document.getElementById('vta-hist-table').style.display='none';
+  try{
+    const data=await cacheGet('getVentas');
+    ventasHistData=data.slice(1);
+    renderHistorialVentas(ventasHistData);
+  }catch(e){showToast('Error al cargar ventas','error');}
+}
 async function iniciarVentas(){
   setFechaHoy('vta-fecha');
-  if(mediosPagoData.length&&cuentasData.length&&clientesData.length&&ventasHistData.length){
+  if(mediosPagoData.length&&cuentasData.length&&clientesData.length){
     llenarSelectClientes();
-    renderHistorialVentas(ventasHistData);
     vtaPagosFila=[];
     agregarPagoVenta();
     return;
   }
   try{
-    const[dataMp,dataCuentas,dataCli,dataVta]=await Promise.all([cacheGet('getMediosPago'),cacheGet('getCuentas'),cacheGet('getClientes'),cacheGet('getVentas')]);
+    const[dataMp,dataCuentas,dataCli]=await Promise.all([cacheGet('getMediosPago'),cacheGet('getCuentas'),cacheGet('getClientes')]);
     mediosPagoData=dataMp.slice(1);
     cuentasData=dataCuentas.slice(1);
     clientesData=dataCli.slice(1);
-    ventasHistData=dataVta.slice(1);
     llenarSelectClientes();
-    renderHistorialVentas(ventasHistData);
     vtaPagosFila=[];
     agregarPagoVenta();
   }catch(e){showToast('Error al cargar datos de ventas','error')}
@@ -1834,7 +1850,7 @@ async function confirmarVenta(){
     showToast('✅ Venta registrada correctamente');
     cacheInvalidar('getVentas','getDetalleVentas','getPagosVenta','getProductos','getCuentasPorCobrar','getMovimientos');
     limpiarVenta();
-    cacheInvalidar('getProductos','getVentas','getDetalleVentas','getPagosVenta');setTimeout(()=>{cargarProductos();iniciarVentas()},1500);
+    cacheInvalidar("getProductos","getVentas","getDetalleVentas","getPagosVenta");ventasHistData=[];setTimeout(()=>{cargarProductos();},1500);
   }catch(e){showToast('Error al registrar la venta','error')}
 }
 
@@ -1886,7 +1902,7 @@ async function cancelarVenta(idVenta){
   try{
     await apiPost('cancelarVenta',{id_venta:idVenta});
     showToast('Venta cancelada. Stock reintegrado.');
-    cacheInvalidar('getProductos','getVentas','getDetalleVentas','getPagosVenta');setTimeout(()=>{cargarProductos();iniciarVentas()},1500);
+    cacheInvalidar("getProductos","getVentas","getDetalleVentas","getPagosVenta");ventasHistData=[];setTimeout(()=>{cargarProductos();},1500);
   }catch(e){showToast('Error','error')}
 }
 

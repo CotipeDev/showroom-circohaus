@@ -565,19 +565,36 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
           </table>
         </div>
 
-        <!-- Margen / Rentabilidad -->
+        <!-- Margen / Rentabilidad por producto -->
         <div class="card">
-          <div class="card-title">Margen y rentabilidad</div>
+          <div class="card-title">Margen por producto</div>
           <table style="width:100%;border-collapse:collapse;font-size:13px">
             <thead><tr>
               <th style="text-align:left;padding:6px 0;color:var(--text-light);font-size:11px;text-transform:uppercase;border-bottom:1px solid var(--border)">Producto</th>
               <th style="text-align:right;padding:6px 0;color:var(--text-light);font-size:11px;text-transform:uppercase;border-bottom:1px solid var(--border)">Vendido</th>
-              <th style="text-align:right;padding:6px 0;color:var(--text-light);font-size:11px;text-transform:uppercase;border-bottom:1px solid var(--border)">Costo hist.</th>
               <th style="text-align:right;padding:6px 0;color:var(--text-light);font-size:11px;text-transform:uppercase;border-bottom:1px solid var(--border)">Costo repo.</th>
+              <th style="text-align:right;padding:6px 0;color:var(--text-light);font-size:11px;text-transform:uppercase;border-bottom:1px solid var(--border)">Margen bruto</th>
               <th style="text-align:right;padding:6px 0;color:var(--text-light);font-size:11px;text-transform:uppercase;border-bottom:1px solid var(--border)">Margen neto</th>
               <th style="text-align:center;padding:6px 0;color:var(--text-light);font-size:11px;text-transform:uppercase;border-bottom:1px solid var(--border)">Alerta</th>
             </tr></thead>
             <tbody id="rep-margen-body"><tr><td colspan="6" style="text-align:center;color:var(--text-light);padding:20px">Seleccioná un período</td></tr></tbody>
+          </table>
+        </div>
+
+        <!-- Margen por venta -->
+        <div class="card">
+          <div class="card-title">Margen por venta</div>
+          <table style="width:100%;border-collapse:collapse;font-size:13px">
+            <thead><tr>
+              <th style="text-align:left;padding:6px 0;color:var(--text-light);font-size:11px;text-transform:uppercase;border-bottom:1px solid var(--border)">Venta</th>
+              <th style="text-align:left;padding:6px 0;color:var(--text-light);font-size:11px;text-transform:uppercase;border-bottom:1px solid var(--border)">Fecha</th>
+              <th style="text-align:right;padding:6px 0;color:var(--text-light);font-size:11px;text-transform:uppercase;border-bottom:1px solid var(--border)">Cobrado</th>
+              <th style="text-align:right;padding:6px 0;color:var(--text-light);font-size:11px;text-transform:uppercase;border-bottom:1px solid var(--border)">Neto</th>
+              <th style="text-align:right;padding:6px 0;color:var(--text-light);font-size:11px;text-transform:uppercase;border-bottom:1px solid var(--border)">Costo</th>
+              <th style="text-align:right;padding:6px 0;color:var(--text-light);font-size:11px;text-transform:uppercase;border-bottom:1px solid var(--border)">Margen neto</th>
+              <th style="text-align:left;padding:6px 0;color:var(--text-light);font-size:11px;text-transform:uppercase;border-bottom:1px solid var(--border)">Medios</th>
+            </tr></thead>
+            <tbody id="rep-margen-venta-body"><tr><td colspan="7" style="text-align:center;color:var(--text-light);padding:20px">Seleccioná un período</td></tr></tbody>
           </table>
         </div>
       </div>
@@ -2033,35 +2050,80 @@ async function generarReportes(){
         <td style="text-align:right;padding:8px 0">${formatPeso(v.total)}</td>
       </tr>`).join('');
 
-  // ── Margen / Rentabilidad ──
+  // ── Margen por producto — distribución proporcional del neto por medio de pago ──
+  const netoRealPorVenta={};
+  const costoTotalPorVenta={};
+  ventas.forEach(v=>{
+    const idVenta=String(v[0]);
+    const totalBruto=Number(v[4])||0;
+    const pagosDeLaVenta=pagos.filter(p=>String(p[0])===idVenta);
+    const netoReal=pagosDeLaVenta.reduce((s,p)=>s+Number(p[6]),0);
+    netoRealPorVenta[idVenta]={totalBruto,netoReal,pagos:pagosDeLaVenta};
+    const det=detalles.filter(d=>String(d[0])===idVenta);
+    costoTotalPorVenta[idVenta]=det.reduce((s,d)=>s+(Number(d[5])||0)*Number(d[2]),0);
+  });
+
   const margenData={};
   detalles.forEach(d=>{
+    const idVenta=String(d[0]);
     const cod=String(d[1]);
     const costoHist=Number(d[5])||0;
-    const cobrado=Number(d[6])||0;
+    const subtotalBruto=Number(d[6])||0;
     const uds=Number(d[2])||0;
-    if(!margenData[cod])margenData[cod]={desc:'',costoHistTotal:0,cobradoTotal:0,uds:0,costoActual:0};
+    const ventaInfo=netoRealPorVenta[idVenta];
+    let netoItem=subtotalBruto;
+    if(ventaInfo&&ventaInfo.totalBruto>0){netoItem=ventaInfo.netoReal*(subtotalBruto/ventaInfo.totalBruto);}
+    if(!margenData[cod])margenData[cod]={desc:'',costoHistTotal:0,cobradoTotal:0,netoTotal:0,uds:0,costoActual:0};
     margenData[cod].costoHistTotal+=costoHist*uds;
-    margenData[cod].cobradoTotal+=cobrado;
+    margenData[cod].cobradoTotal+=subtotalBruto;
+    margenData[cod].netoTotal+=netoItem;
     margenData[cod].uds+=uds;
     if(!margenData[cod].desc){const p=productos.find(x=>String(x[0])===cod);if(p){margenData[cod].desc=p[1];margenData[cod].costoActual=Number(p[4])||0;}}
   });
+
+  const medioNombreCorto=id=>{const m=medios.find(x=>String(x[0])===id);return m?m[2]:id};
+
   document.getElementById('rep-margen-body').innerHTML=Object.keys(margenData).length===0
     ?'<tr><td colspan="6" style="text-align:center;color:var(--text-light);padding:16px">Sin datos</td></tr>'
-    :Object.entries(margenData).sort((a,b)=>b[1].cobradoTotal-a[1].cobradoTotal).slice(0,10).map(([cod,v])=>{
-      const costoHistProm=v.uds>0?v.costoHistTotal/v.uds:0;
-      const margenNeto=v.costoHistTotal>0?Math.round(((v.cobradoTotal-v.costoHistTotal)/(v.costoHistTotal))*100):0;
+    :Object.entries(margenData).sort((a,b)=>b[1].netoTotal-a[1].netoTotal).slice(0,15).map(([cod,v])=>{
       const costoRepo=v.costoActual;
+      const costoHistProm=v.uds>0?v.costoHistTotal/v.uds:0;
+      const margenBruto=costoHistProm>0?Math.round(((v.cobradoTotal/v.uds-costoHistProm)/costoHistProm)*100):0;
+      const margenNeto=v.costoHistTotal>0?Math.round(((v.netoTotal-v.costoHistTotal)/v.costoHistTotal)*100):0;
       const subioCosto=costoRepo>0&&costoHistProm>0&&costoRepo>costoHistProm*1.05;
       const bajoCosto=costoRepo>0&&costoHistProm>0&&costoRepo<costoHistProm*0.95;
-      const alerta=subioCosto?`<span style="color:#C44F4F;font-weight:600">🔴 Costo subió</span>`:bajoCosto?`<span style="color:var(--teal);font-weight:600">🟢 Costo bajó</span>`:`<span style="color:var(--text-light)">—</span>`;
+      const alerta=subioCosto?`<span style="color:#C44F4F;font-weight:600">🔴 Subió</span>`:bajoCosto?`<span style="color:var(--teal);font-weight:600">🟢 Bajó</span>`:`<span style="color:var(--text-light)">—</span>`;
+      const colorNeto=margenNeto<0?'#C44F4F':margenNeto<margenBruto?'#E8A838':'var(--teal)';
       return`<tr style="border-bottom:1px solid var(--border)">
         <td style="padding:8px 0;font-size:12px">${v.desc}</td>
         <td style="text-align:right;padding:8px 0">${v.uds} uds</td>
-        <td style="text-align:right;padding:8px 0">${formatPeso(costoHistProm)}</td>
         <td style="text-align:right;padding:8px 0;font-weight:600;color:${subioCosto?'#C44F4F':bajoCosto?'var(--teal)':'var(--text-main)'}">${costoRepo>0?formatPeso(costoRepo):'—'}</td>
-        <td style="text-align:right;padding:8px 0;font-weight:600;color:var(--teal)">${margenNeto}%</td>
+        <td style="text-align:right;padding:8px 0;color:var(--text-mid)">${margenBruto}%</td>
+        <td style="text-align:right;padding:8px 0;font-weight:700;color:${colorNeto}">${margenNeto}%</td>
         <td style="text-align:center;padding:8px 0">${alerta}</td>
+      </tr>`;
+    }).join('');
+
+  // ── Margen por venta ──
+  document.getElementById('rep-margen-venta-body').innerHTML=ventas.length===0
+    ?'<tr><td colspan="7" style="text-align:center;color:var(--text-light);padding:16px">Sin datos</td></tr>'
+    :[...ventas].reverse().slice(0,50).map(v=>{
+      const idVenta=String(v[0]);
+      const ventaInfo=netoRealPorVenta[idVenta]||{totalBruto:0,netoReal:0,pagos:[]};
+      const costoTotal=costoTotalPorVenta[idVenta]||0;
+      const cobrado=Number(v[5])||0;
+      const neto=ventaInfo.netoReal||Number(v[6])||0;
+      const margenVenta=costoTotal>0?Math.round(((neto-costoTotal)/costoTotal)*100):null;
+      const colorMargen=margenVenta===null?'var(--text-light)':margenVenta<0?'#C44F4F':margenVenta<30?'#E8A838':'var(--teal)';
+      const mediosUsados=ventaInfo.pagos.map(p=>medioNombreCorto(p[1])).filter((x,i,a)=>a.indexOf(x)===i).join(', ')||'—';
+      return`<tr style="border-bottom:1px solid var(--border)">
+        <td style="padding:8px 0"><span style="color:var(--teal);cursor:pointer;font-size:11px;text-decoration:underline" onclick="verDetalleVenta('${idVenta}')">${idVenta}</span></td>
+        <td style="padding:8px 0;font-size:12px;color:var(--text-light)">${fechaStr(v[1])}</td>
+        <td style="text-align:right;padding:8px 0">${formatPeso(cobrado)}</td>
+        <td style="text-align:right;padding:8px 0;color:var(--teal)">${formatPeso(neto)}</td>
+        <td style="text-align:right;padding:8px 0;color:var(--text-mid)">${costoTotal>0?formatPeso(costoTotal):'—'}</td>
+        <td style="text-align:right;padding:8px 0;font-weight:700;color:${colorMargen}">${margenVenta!==null?margenVenta+'%':'—'}</td>
+        <td style="padding:8px 0;font-size:11px;color:var(--text-mid)">${mediosUsados}</td>
       </tr>`;
     }).join('');
 }

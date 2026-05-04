@@ -201,6 +201,7 @@
         <tr><th>Tarjeta</th><th>Qué hace</th></tr>
         <tr><td><strong>📦 Ingresos</strong></td><td>Registrá la entrada de mercadería y actualizá el stock.</td></tr>
         <tr><td><strong>📊 Stock</strong></td><td>Visualizá el inventario completo con precios y alertas.</td></tr>
+        <tr><td><strong>🧾 Ventas</strong></td><td>Historial completo de ventas con filtros por fecha, estado, facturación y buscador por cliente o ID.</td></tr>
         <tr><td><strong>📈 Reportes</strong></td><td>Analizá ventas, márgenes y estado de cuentas por período.</td></tr>
       </table>
       <div class="sub-title">Catálogo</div>
@@ -394,7 +395,23 @@
       <div class="tip">El Facturador de ARCA funciona desde el iPad y el celular. Podés instalarlo como app desde Safari: entrá a facturador.afip.gob.ar, tocá Compartir → Agregar a inicio.</div>
 
       <div class="sub-title">Historial de ventas</div>
-      <p>En la parte inferior del módulo está el historial con todas las ventas registradas. Podés filtrar por fecha y por estado (cobrada, fiado pendiente, cancelada). Al hacer clic en una venta podés ver el detalle completo.</p>
+      <p>El historial de ventas es un módulo separado accesible desde el inicio con la tarjeta <strong>🧾 Ventas</strong>. Muestra todas las ventas registradas con filtros y acciones.</p>
+      <div class="sub-title">Filtros disponibles</div>
+      <table>
+        <tr><th>Filtro</th><th>Qué hace</th></tr>
+        <tr><td><strong>Buscador</strong></td><td>Buscá por ID de venta o nombre de cliente.</td></tr>
+        <tr><td><strong>Desde / Hasta</strong></td><td>Filtrá por rango de fechas.</td></tr>
+        <tr><td><strong>Estado</strong></td><td>Cobradas, Fiado pendiente o Canceladas.</td></tr>
+        <tr><td><strong>Factura</strong></td><td>✅ Facturadas o 🧾 Sin facturar — para saber rápido qué ventas les falta comprobante.</td></tr>
+      </table>
+      <div class="sub-title">Acciones por venta</div>
+      <p>En cada fila del historial podés:</p>
+      <table>
+        <tr><th>Botón</th><th>Qué hace</th></tr>
+        <tr><td><strong>👁</strong></td><td>Ver el detalle completo de la venta: productos, cantidades, precios, pagos y cliente si es un fiado.</td></tr>
+        <tr><td><strong>🧾 Facturar</strong></td><td>Abre el Facturador de ARCA y registra el número de factura.</td></tr>
+        <tr><td><strong>✕</strong></td><td>Cancela la venta y reintegra el stock.</td></tr>
+      </table>
 
       <div class="sub-title">Cancelar una venta</div>
       <p>Desde el detalle de una venta podés cancelarla. Al cancelar, el stock de los productos vuelve a su valor anterior automáticamente.</p>

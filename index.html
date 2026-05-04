@@ -328,6 +328,7 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
       <div class="launcher-grid">
         <div class="launcher-item" onclick="irA('cuentas')"><span class="launcher-icon">💰</span><span class="launcher-nombre">Cuentas</span><span class="launcher-desc">Saldo y movimientos</span></div>
         <div class="launcher-item" onclick="irA('medios-pago')"><span class="launcher-icon">💳</span><span class="launcher-nombre">Medios de pago</span><span class="launcher-desc">Comisiones y descuentos</span></div>
+        <div class="launcher-item" onclick="irA('facturas')"><span class="launcher-icon">🧾</span><span class="launcher-nombre">Facturas</span><span class="launcher-desc">Comprobantes emitidos en AFIP</span></div>
       </div>
     </div>
 
@@ -667,6 +668,47 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
       </div>
     </div>
 
+    <div id="panel-facturas" class="panel">
+      <div class="section-title">Facturas emitidas</div>
+      <div class="section-sub">Registro de comprobantes emitidos en AFIP</div>
+
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px">
+        <div class="card" style="text-align:center;padding:18px 12px">
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-light);margin-bottom:6px">Facturas emitidas</div>
+          <div id="fact-kpi-total" style="font-size:26px;font-weight:700;color:var(--navy)">—</div>
+        </div>
+        <div class="card" style="text-align:center;padding:18px 12px">
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-light);margin-bottom:6px">Total facturado</div>
+          <div id="fact-kpi-monto" style="font-size:26px;font-weight:700;color:var(--teal)">—</div>
+        </div>
+        <div class="card" style="text-align:center;padding:18px 12px">
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-light);margin-bottom:6px">Último mes</div>
+          <div id="fact-kpi-mes" style="font-size:26px;font-weight:700;color:var(--navy)">—</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <div class="card-title" style="margin:0">Historial de facturas</div>
+          <div style="display:flex;gap:8px">
+            <input type="date" id="fact-desde" style="background:var(--off-white);border:1.5px solid var(--border);border-radius:8px;padding:7px 12px;font-family:'DM Sans',sans-serif;font-size:13px;outline:none" onchange="filtrarFacturas()">
+            <input type="date" id="fact-hasta" style="background:var(--off-white);border:1.5px solid var(--border);border-radius:8px;padding:7px 12px;font-family:'DM Sans',sans-serif;font-size:13px;outline:none" onchange="filtrarFacturas()">
+          </div>
+        </div>
+        <div id="fact-loading" class="spinner-wrap"><div class="spinner"></div> Cargando...</div>
+        <table id="fact-table" style="display:none;width:100%;border-collapse:collapse;font-size:13px">
+          <thead><tr>
+            <th style="text-align:left;padding:8px 0;color:var(--text-light);font-size:11px;text-transform:uppercase;border-bottom:1px solid var(--border)">Nro. Factura</th>
+            <th style="text-align:left;padding:8px 0;color:var(--text-light);font-size:11px;text-transform:uppercase;border-bottom:1px solid var(--border)">Fecha</th>
+            <th style="text-align:left;padding:8px 0;color:var(--text-light);font-size:11px;text-transform:uppercase;border-bottom:1px solid var(--border)">Venta</th>
+            <th style="text-align:right;padding:8px 0;color:var(--text-light);font-size:11px;text-transform:uppercase;border-bottom:1px solid var(--border)">Monto</th>
+            <th style="text-align:center;padding:8px 0;color:var(--text-light);font-size:11px;text-transform:uppercase;border-bottom:1px solid var(--border)">Estado</th>
+          </tr></thead>
+          <tbody id="fact-body"></tbody>
+        </table>
+      </div>
+    </div>
+
     <div id="panel-instructivos" class="panel">
       <div class="section-title">Instructivos</div>
       <div class="section-sub">Descargá los manuales de uso del sistema</div>
@@ -745,7 +787,7 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
           <select id="vta-hist-estado" onchange="filtrarHistorialVentas()" style="background:var(--off-white);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:13px;outline:none"><option value="">Todos los estados</option><option value="cobrada">Cobradas</option><option value="pendiente">Pendientes (fiado)</option><option value="cancelada">Canceladas</option></select>
         </div>
         <div id="vta-hist-loading" class="spinner-wrap"><div class="spinner"></div> Cargando...</div>
-        <table id="vta-hist-table" style="display:none"><thead><tr><th>ID</th><th>Fecha</th><th>Total cobrado</th><th>Neto</th><th>Estado</th><th></th></tr></thead><tbody id="vta-hist-body"></tbody></table>
+        <table id="vta-hist-table" style="display:none"><thead><tr><th>ID</th><th>Fecha</th><th>Total cobrado</th><th>Neto</th><th>Estado</th><th>Factura</th><th></th></tr></thead><tbody id="vta-hist-body"></tbody></table>
       </div>
     </div>
 
@@ -920,19 +962,42 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
 </div>
 
 <!-- MODAL DETALLE VENTA -->
+<!-- MODAL NÚMERO DE FACTURA -->
+<div id="modal-nro-factura" class="modal-overlay" onclick="if(event.target===this)cerrarModal('modal-nro-factura')">
+  <div class="modal" style="max-width:380px">
+    <div class="modal-title">Registrar número de factura</div>
+    <p style="font-size:13px;color:var(--text-mid);margin-bottom:16px">Ingresá el número de factura que te generó AFIP para esta venta.</p>
+    <input type="hidden" id="fact-id-venta">
+    <input type="hidden" id="fact-monto">
+    <div class="field">
+      <label>Número de factura</label>
+      <input type="text" id="fact-nro" placeholder="Ej: 00001-00000123" style="width:100%;font-size:16px;letter-spacing:.05em">
+    </div>
+    <div class="field">
+      <label>Fecha de emisión</label>
+      <input type="date" id="fact-fecha">
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-primary" onclick="confirmarFactura()">✓ Guardar factura</button>
+      <button class="btn btn-secondary" onclick="cerrarModal('modal-nro-factura')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
 <div id="modal-detalle-venta" class="modal-overlay">
   <div class="modal" style="max-width:600px">
     <div class="modal-title" id="detalle-vta-titulo">Detalle de venta</div>
     <div id="detalle-vta-body" style="font-size:13px;color:var(--text-mid)"></div>
     <div class="modal-actions">
       <button class="btn btn-danger" id="btn-cancelar-vta" onclick="">Cancelar venta</button>
+      <button class="btn btn-secondary" id="btn-facturar-vta" onclick="" style="display:none">🧾 Facturar</button>
       <button class="btn btn-secondary" onclick="cerrarModal('modal-detalle-venta')">Cerrar</button>
     </div>
   </div>
 </div>
 
 <script>
-const API_URL='https://script.google.com/macros/s/AKfycbzrdDQpyKMZ8aTTxtBkeVn7yKwNhXVlguuJ5Ji3hlKQtKVXmgENQ2N0XwMPRXu9tch6/exec';
+const API_URL='https://script.google.com/macros/s/AKfycbxgOoH1mB53Eb8Rdj2G3RnaTuOtNPMZL7TPkAHaAUxgjSSqjD0AN8LMHNkWISRSA2Tf/exec';
 let productosData=[],proveedoresData=[],categoriasData=[],itemsIngreso=[],ingProductoSel=null,stockData=[],prodTablaData=[];
 let cuentasPorCobrarData=[],ventasData=[],detalleVentasData=[],pagosVentaData=[];
 
@@ -1005,7 +1070,7 @@ function showToast(m,t='success'){const el=document.getElementById('toast');el.t
 function formatPeso(n){return'$'+Number(n).toLocaleString('es-AR')}
 function setFechaHoy(id){document.getElementById(id).value=new Date().toISOString().split('T')[0]}
 
-const moduloNombres={ingresos:'📦 Ingresos',stock:'📊 Stock',productos:'🏷️ Productos',ventas:'🛒 Ventas',cuentas:'💰 Cuentas',proveedores:'🤝 Proveedores',categorias:'🗂️ Categorías','medios-pago':'💳 Medios de pago',reportes:'📈 Reportes',cxc:'📋 Cuentas por cobrar',instructivos:'📚 Instructivos'};
+const moduloNombres={ingresos:'📦 Ingresos',stock:'📊 Stock',productos:'🏷️ Productos',ventas:'🛒 Ventas',cuentas:'💰 Cuentas',proveedores:'🤝 Proveedores',categorias:'🗂️ Categorías','medios-pago':'💳 Medios de pago',reportes:'📈 Reportes',cxc:'📋 Cuentas por cobrar',facturas:'🧾 Facturas',instructivos:'📚 Instructivos'};
 function irA(nombre){document.getElementById('home').style.display='none';document.getElementById('app-main').style.display='flex';showPanel(nombre);}
 function volverHome(){document.getElementById('home').style.display='';document.getElementById('app-main').style.display='none';iniciarHome()}
 function showPanel(name){
@@ -1015,7 +1080,7 @@ function showPanel(name){
   if(name==='stock')iniciarStock();if(name==='proveedores')iniciarProveedores();
   if(name==='productos')iniciarProductos();if(name==='categorias')iniciarCategorias();
   if(name==='medios-pago')iniciarMediosPago();if(name==='cuentas')iniciarCuentas();
-  if(name==='ventas')iniciarVentas();if(name==='reportes')iniciarReportes();if(name==='cxc')iniciarCxc();
+  if(name==='ventas')iniciarVentas();if(name==='reportes')iniciarReportes();if(name==='cxc')iniciarCxc();if(name==='facturas')iniciarFacturas();
 }
 function cerrarModal(id){document.getElementById(id).classList.remove('open')}
 
@@ -1786,17 +1851,22 @@ function renderHistorialVentas(rows){
   document.getElementById('vta-hist-loading').style.display='none';document.getElementById('vta-hist-table').style.display='table';
   const sorted=[...rows].reverse().slice(0,100);
   document.getElementById('vta-hist-body').innerHTML=sorted.length===0
-    ?'<tr><td colspan="6" style="text-align:center;color:var(--text-mid);padding:20px">No hay ventas registradas</td></tr>'
+    ?'<tr><td colspan="7" style="text-align:center;color:var(--text-mid);padding:20px">No hay ventas registradas</td></tr>'
     :sorted.map(v=>{
       const estado=v[7]||'cobrada';
+      const facturada=v[9]===true||v[9]==='TRUE';
       const badgeCls=estado==='cobrada'?'badge-ok':estado==='pendiente'?'badge-low':'badge-zero';
       const estadoLabel=estado==='cobrada'?'Cobrada':estado==='pendiente'?'Fiado pendiente':'Cancelada';
+      const factBadge=facturada
+        ?`<span style="color:var(--teal);font-size:11px;font-weight:600">✅ Facturada</span>`
+        :`<button class="btn-warning" style="font-size:11px;padding:3px 8px" onclick="emitirFactura('${v[0]}',${v[5]})">🧾 Facturar</button>`;
       return`<tr>
         <td><code style="color:var(--teal);font-size:11px">${v[0]}</code></td>
-        <td>${v[1]||'—'}</td>
+        <td>${fechaStr(v[1])||'—'}</td>
         <td>${formatPeso(v[5])}</td>
         <td style="color:var(--success);font-weight:600">${formatPeso(v[6])}</td>
         <td><span class="badge ${badgeCls}">${estadoLabel}</span></td>
+        <td>${factBadge}</td>
         <td><button class="btn-warning" onclick="verDetalleVenta('${v[0]}')">👁</button>${estado!=='cancelada'?`<button class="btn-danger" style="margin-left:6px" onclick="cancelarVenta('${v[0]}')">✕</button>`:''}</td>
       </tr>`;
     }).join('');
@@ -1840,6 +1910,10 @@ async function abrirDetalleVenta(idVenta){return verDetalleVenta(idVenta)}
         ${pagos.map(p=>{const mp=mediosPagoData.find(m=>String(m[0])===String(p[1]));return`<tr><td>${mp?mp[2]:p[1]}</td><td>${formatPeso(p[2])}</td><td style="color:var(--success)">${formatPeso(p[6])}</td></tr>`}).join('')}
       </tbody></table>`;
     document.getElementById('btn-cancelar-vta').onclick=()=>{cerrarModal('modal-detalle-venta');cancelarVenta(idVenta)};
+    const facturada=venta&&(venta[9]===true||venta[9]==='TRUE');
+    const btnFact=document.getElementById('btn-facturar-vta');
+    if(facturada){btnFact.style.display='none';}
+    else{btnFact.style.display='';btnFact.onclick=()=>emitirFactura(idVenta,venta?Number(venta[5]):0);}
     document.getElementById('modal-detalle-venta').classList.add('open');
   }catch(e){showToast('Error al cargar detalle','error')}
 }
@@ -1901,7 +1975,84 @@ document.addEventListener('DOMContentLoaded',()=>{
   });
 });
 
-// ── CONSULTA RÁPIDA DE PRECIOS ──
+// ── FACTURACIÓN ──
+let facturasData=[];
+
+function emitirFactura(idVenta, monto){
+  // Abrir el Facturador de ARCA
+  window.open('https://facturador.afip.gob.ar','_blank');
+  // Abrir modal para ingresar número de factura
+  document.getElementById('fact-id-venta').value=idVenta;
+  document.getElementById('fact-monto').value=monto;
+  document.getElementById('fact-nro').value='';
+  setFechaHoy('fact-fecha');
+  cerrarModal('modal-detalle-venta');
+  setTimeout(()=>document.getElementById('modal-nro-factura').classList.add('open'),300);
+}
+
+async function confirmarFactura(){
+  const idVenta=document.getElementById('fact-id-venta').value;
+  const nro=document.getElementById('fact-nro').value.trim();
+  const fecha=document.getElementById('fact-fecha').value;
+  const monto=Number(document.getElementById('fact-monto').value)||0;
+  if(!nro){showToast('Ingresá el número de factura','error');return;}
+  try{
+    await Promise.all([
+      apiPost('marcarFacturada',{id_venta:idVenta}),
+      apiPost('registrarFactura',{nro_factura:nro,fecha,id_venta:idVenta,monto})
+    ]);
+    // Actualizar en memoria
+    const idx=ventasHistData.findIndex(v=>String(v[0])===String(idVenta));
+    if(idx>=0)ventasHistData[idx][9]=true;
+    cacheInvalidar('getVentas','getFacturas');
+    showToast('✅ Factura registrada correctamente');
+    cerrarModal('modal-nro-factura');
+    renderHistorialVentas(ventasHistData);
+  }catch(e){showToast('Error al registrar la factura','error');}
+}
+
+let facturasDataGlobal=[];
+
+async function iniciarFacturas(){
+  document.getElementById('fact-loading').style.display='flex';
+  document.getElementById('fact-table').style.display='none';
+  try{
+    const data=await cacheGet('getFacturas');
+    facturasDataGlobal=Array.isArray(data)?data.slice(1):[];
+    renderFacturas(facturasDataGlobal);
+  }catch(e){showToast('Error al cargar facturas','error');}
+}
+
+function renderFacturas(rows){
+  document.getElementById('fact-loading').style.display='none';
+  document.getElementById('fact-table').style.display='table';
+  const total=rows.length;
+  const monto=rows.reduce((s,f)=>s+Number(f[4]),0);
+  const hoy=new Date();
+  const mesActual=hoy.getFullYear()+'-'+(String(hoy.getMonth()+1).padStart(2,'0'));
+  const montoMes=rows.filter(f=>fechaStr(f[2]).startsWith(mesActual)).reduce((s,f)=>s+Number(f[4]),0);
+  document.getElementById('fact-kpi-total').textContent=total;
+  document.getElementById('fact-kpi-monto').textContent=formatPeso(monto);
+  document.getElementById('fact-kpi-mes').textContent=formatPeso(montoMes);
+  document.getElementById('fact-body').innerHTML=rows.length===0
+    ?'<tr><td colspan="5" style="text-align:center;color:var(--text-light);padding:24px">No hay facturas registradas</td></tr>'
+    :[...rows].reverse().map(f=>`<tr style="border-bottom:1px solid var(--border)">
+      <td style="padding:8px 0;font-weight:600;color:var(--navy)">${f[1]}</td>
+      <td style="padding:8px 0;color:var(--text-light)">${fechaStr(f[2])}</td>
+      <td style="padding:8px 0"><span style="color:var(--teal);cursor:pointer;font-size:11px;text-decoration:underline" onclick="verDetalleVenta('${f[3]}')">${String(f[3]).replace('VTA-','…').slice(-10)}</span></td>
+      <td style="text-align:right;padding:8px 0;font-weight:600">${formatPeso(f[4])}</td>
+      <td style="text-align:center;padding:8px 0"><span class="badge badge-ok">Emitida</span></td>
+    </tr>`).join('');
+}
+
+function filtrarFacturas(){
+  const desde=document.getElementById('fact-desde').value;
+  const hasta=document.getElementById('fact-hasta').value;
+  let rows=facturasDataGlobal;
+  if(desde)rows=rows.filter(f=>fechaStr(f[2])>=desde);
+  if(hasta)rows=rows.filter(f=>fechaStr(f[2])<=hasta);
+  renderFacturas(rows);
+}
 function abrirConsultaPrecios(){
   document.getElementById('modal-consulta-precios').classList.add('open');
   document.getElementById('consulta-buscar').value='';

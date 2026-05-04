@@ -168,13 +168,12 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
 
   /* App header */
   .app-header{padding:0 12px;height:48px}
-  .app-logo-text{font-size:14px}
   .btn-home{font-size:11px;padding:4px 10px}
   .btn-nueva-venta{font-size:11px;padding:6px 10px}
   #modulo-topbar-nombre{font-size:11px}
 
   /* KPIs */
-  .kpis{grid-template-columns:1fr;padding:0 12px;gap:10px}
+  .kpis{grid-template-columns:1fr 1fr;padding:0 12px;gap:10px}
   .kpi-value{font-size:26px}
 
   /* Módulos home */
@@ -182,7 +181,7 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
   .modulos-titulo{font-size:18px}
 
   /* Acciones rápidas — columna en mobile */
-  .acciones-rapidas{grid-template-columns:1fr;gap:10px}
+  .acciones-rapidas{grid-template-columns:1fr !important;gap:10px}
   .accion-card{padding:14px 16px;gap:12px}
   .accion-icon{font-size:22px}
   .accion-nombre{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -190,7 +189,7 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
   .accion-arrow{font-size:14px;flex-shrink:0}
 
   /* Launcher compacto — 2 columnas en mobile */
-  .launcher-grid{grid-template-columns:repeat(2,1fr);gap:8px}
+  .launcher-grid{grid-template-columns:repeat(2,1fr) !important;gap:8px}
   .launcher-item{padding:14px 10px;gap:7px}
   .launcher-icon{font-size:22px}
   .launcher-nombre{font-size:12px}
@@ -200,31 +199,27 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
   /* Contenido módulos */
   .content{padding:16px 12px}
   .section-title{font-size:20px}
-  .section-sub{font-size:13px}
   .card{padding:16px}
-  .card-title{font-size:14px}
 
   /* Formularios */
   .form-grid{grid-template-columns:1fr}
   .form-grid.cols-3{grid-template-columns:1fr}
   .add-item-row{grid-template-columns:1fr}
-  .field label{font-size:12px}
 
   /* Tablas — scroll horizontal */
   .card{overflow-x:auto}
-  table{font-size:12px;min-width:500px}
+  table{font-size:12px;min-width:480px}
   th,td{padding:7px 6px}
 
   /* Modales */
   .modal{padding:20px 16px;margin:12px;max-width:calc(100vw - 24px)}
   .modal-title{font-size:16px}
 
-  /* Notificaciones */
-  .notif-panel{width:calc(100vw - 32px);right:-60px}
+  /* Notificaciones — fixed para que no se salga */
+  .notif-panel{position:fixed !important;top:56px !important;right:8px !important;left:8px !important;width:auto !important;max-height:70vh;overflow-y:auto;z-index:9999}
 
   /* Cuentas */
   .cuentas-grid{grid-template-columns:1fr}
-  .cuenta-card{padding:16px}
 
   /* CxC fichas */
   #cxc-fichas{grid-template-columns:1fr}
@@ -235,9 +230,6 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
   /* Botones acción */
   .form-actions{flex-direction:column;gap:8px}
   .form-actions .btn{width:100%;text-align:center}
-
-  /* Item row carrito */
-  .item-row{grid-template-columns:1fr auto auto}
 }
 
 @media(max-width:768px){
@@ -249,8 +241,9 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
   .form-grid.cols-3{grid-template-columns:1fr}
   .add-item-row{grid-template-columns:1fr 1fr}
   .instructivos-grid{grid-template-columns:1fr}
-  .acciones-rapidas{grid-template-columns:1fr;gap:10px}
-  .launcher-grid{grid-template-columns:repeat(2,1fr)}
+  .acciones-rapidas{grid-template-columns:1fr !important;gap:10px}
+  .launcher-grid{grid-template-columns:repeat(2,1fr) !important}
+  .notif-panel{position:fixed !important;top:56px !important;right:8px !important;left:8px !important;width:auto !important;max-height:70vh;overflow-y:auto;z-index:9999}
   #cxc-fichas{grid-template-columns:1fr}
   .cuentas-grid{grid-template-columns:1fr}
   .notif-panel{width:calc(100vw - 24px);right:-120px;max-height:60vh;overflow-y:auto}

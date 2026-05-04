@@ -1963,6 +1963,7 @@ async function generarReportes(){
   });
 
   const ventaIds=new Set(ventas.map(v=>String(v[0])));
+  const detalles=rawDetalle.filter(d=>ventaIds.has(String(d[0])));
   const pagos=rawPagos.filter(p=>ventaIds.has(String(p[0])));
   const movimientos=movs;
 

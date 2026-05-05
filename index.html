@@ -1174,6 +1174,7 @@ const filtrarCxcD=debounce(()=>filtrarCxc());
 let colaActualizaciones=[], indexActual=0, fechaIngreso='';
 
 async function cacheGet(a){const r=await fetch(`${API_URL}?action=${a}`);return r.json()}
+async function apiGet(a){const r=await fetch(`${API_URL}?action=${a}`);return r.json()}
 async function apiPost(a,b){await fetch(`${API_URL}?action=${a}`,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(b)});return{ok:true}}
 function showToast(m,t='success'){const el=document.getElementById('toast');el.textContent=m;el.className=`toast ${t} show`;setTimeout(()=>el.className='toast',3500)}
 function formatPeso(n){return'$'+Number(n).toLocaleString('es-AR')}

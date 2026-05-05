@@ -2238,7 +2238,10 @@ async function cargarHistorialIngresos(){
   document.getElementById('ing-hist-loading').style.display='flex';
   document.getElementById('ing-hist-table').style.display='none';
   try{
-    const[dataIng,dataDet]=await Promise.all([cacheGet('getIngresos'),cacheGet('getDetalleIngresos')]);
+    const[dataIng,dataDet]=await Promise.all([
+      apiGet('getIngresos'),
+      apiGet('getDetalleIngresos')
+    ]);
     ingresosData=Array.isArray(dataIng)?dataIng.slice(1):[];
     detalleIngresosData=Array.isArray(dataDet)?dataDet.slice(1):[];
     renderHistorialIngresos();
@@ -2262,8 +2265,15 @@ function renderHistorialIngresos(){
     </tr>`).join('');
 }
 
-function verDetalleIngreso(idIngreso){
+async function verDetalleIngreso(idIngreso){
   const ing=ingresosData.find(x=>String(x[0])===String(idIngreso));
+  // Si no tenemos el detalle en memoria, cargarlo del API
+  if(!detalleIngresosData.length){
+    try{
+      const dataDet=await apiGet('getDetalleIngresos');
+      detalleIngresosData=Array.isArray(dataDet)?dataDet.slice(1):[];
+    }catch(e){detalleIngresosData=[];}
+  }
   const items=detalleIngresosData.filter(d=>String(d[0])===String(idIngreso));
   const provNombre=id=>{const p=proveedoresData.find(x=>String(x[0])===String(id));return p?p[1]:id||'—'};
   const prodNombre=cod=>{const p=productosData.find(x=>String(x[0])===String(cod));return p?p[1]:cod};

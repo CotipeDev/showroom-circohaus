@@ -484,6 +484,32 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
           <button class="btn btn-secondary" onclick="limpiarIngreso()">Limpiar</button>
         </div>
       </div>
+
+      <!-- Historial de ingresos -->
+      <div class="card">
+        <div class="card-title">Historial de ingresos</div>
+        <div id="ing-hist-loading" class="spinner-wrap"><div class="spinner"></div> Cargando...</div>
+        <table id="ing-hist-table" style="display:none;width:100%;border-collapse:collapse;font-size:13px">
+          <thead><tr>
+            <th style="text-align:left;padding:8px 0;color:var(--text-light);font-size:11px;text-transform:uppercase;border-bottom:1px solid var(--border)">ID</th>
+            <th style="text-align:left;padding:8px 0;color:var(--text-light);font-size:11px;text-transform:uppercase;border-bottom:1px solid var(--border)">Fecha</th>
+            <th style="text-align:left;padding:8px 0;color:var(--text-light);font-size:11px;text-transform:uppercase;border-bottom:1px solid var(--border)">Proveedor</th>
+            <th style="text-align:left;padding:8px 0;color:var(--text-light);font-size:11px;text-transform:uppercase;border-bottom:1px solid var(--border)">Remito</th>
+          </tr></thead>
+          <tbody id="ing-hist-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- MODAL DETALLE INGRESO -->
+    <div id="modal-detalle-ingreso" class="modal-overlay" onclick="if(event.target===this)cerrarModal('modal-detalle-ingreso')">
+      <div class="modal" style="max-width:560px">
+        <div class="modal-title" id="ing-det-titulo">Detalle del ingreso</div>
+        <div id="ing-det-body" style="margin-top:12px"></div>
+        <div style="margin-top:16px;text-align:right">
+          <button class="btn btn-secondary" onclick="cerrarModal('modal-detalle-ingreso')">Cerrar</button>
+        </div>
+      </div>
     </div>
 
     <!-- STOCK -->
@@ -1191,6 +1217,7 @@ function showPanel(name){
   if(name==='productos')iniciarProductos();if(name==='categorias')iniciarCategorias();
   if(name==='medios-pago')iniciarMediosPago();if(name==='cuentas')iniciarCuentas();
   if(name==='ventas')iniciarVentas();if(name==='historial-ventas')iniciarHistorialVentas();if(name==='reportes')iniciarReportes();if(name==='cxc')iniciarCxc();if(name==='facturas')iniciarFacturas();
+  if(name==='ingresos')cargarHistorialIngresos();
 }
 function cerrarModal(id){document.getElementById(id).classList.remove('open')}
 
@@ -1418,7 +1445,8 @@ async function confirmarIngreso(){
     });
 
     limpiarIngreso();
-    cacheInvalidar('getProductos');setTimeout(()=>cargarProductos(),1500);
+    cacheInvalidar('getIngresos','getDetalleIngresos','getProductos');setTimeout(()=>cargarProductos(),1500);
+    cargarHistorialIngresos();
 
     if(colaActualizaciones.length>0){
       indexActual=0;
@@ -2201,6 +2229,73 @@ function abrirConsultaPrecios(){
   document.getElementById('consulta-buscar').value='';
   document.getElementById('consulta-resultados').innerHTML='<p style="color:var(--text-light);text-align:center;padding:24px;font-size:14px">Escribí para buscar un producto</p>';
   setTimeout(()=>document.getElementById('consulta-buscar').focus(),100);
+}
+
+// ── HISTORIAL DE INGRESOS ──
+let ingresosData=[], detalleIngresosData=[];
+
+async function cargarHistorialIngresos(){
+  document.getElementById('ing-hist-loading').style.display='flex';
+  document.getElementById('ing-hist-table').style.display='none';
+  try{
+    const[dataIng,dataDet]=await Promise.all([cacheGet('getIngresos'),cacheGet('getDetalleIngresos')]);
+    ingresosData=Array.isArray(dataIng)?dataIng.slice(1):[];
+    detalleIngresosData=Array.isArray(dataDet)?dataDet.slice(1):[];
+    renderHistorialIngresos();
+  }catch(e){
+    document.getElementById('ing-hist-loading').style.display='none';
+  }
+}
+
+function renderHistorialIngresos(){
+  document.getElementById('ing-hist-loading').style.display='none';
+  document.getElementById('ing-hist-table').style.display='table';
+  const sorted=[...ingresosData].reverse().slice(0,50);
+  const provNombre=id=>{const p=proveedoresData.find(x=>String(x[0])===String(id));return p?p[1]:id||'—'};
+  document.getElementById('ing-hist-body').innerHTML=sorted.length===0
+    ?'<tr><td colspan="4" style="text-align:center;color:var(--text-light);padding:20px">No hay ingresos registrados</td></tr>'
+    :sorted.map(ing=>`<tr style="border-bottom:1px solid var(--border);cursor:pointer" onclick="verDetalleIngreso('${ing[0]}')" onmouseover="this.style.background='var(--off-white)'" onmouseout="this.style.background=''">
+      <td style="padding:9px 0"><code style="color:var(--teal);font-size:11px">${ing[0]}</code></td>
+      <td style="padding:9px 0;color:var(--text-mid)">${fechaStr(ing[1])||'—'}</td>
+      <td style="padding:9px 0;font-weight:500">${provNombre(ing[2])}</td>
+      <td style="padding:9px 0;color:var(--text-light)">${ing[3]||'—'}</td>
+    </tr>`).join('');
+}
+
+function verDetalleIngreso(idIngreso){
+  const ing=ingresosData.find(x=>String(x[0])===String(idIngreso));
+  const items=detalleIngresosData.filter(d=>String(d[0])===String(idIngreso));
+  const provNombre=id=>{const p=proveedoresData.find(x=>String(x[0])===String(id));return p?p[1]:id||'—'};
+  const prodNombre=cod=>{const p=productosData.find(x=>String(x[0])===String(cod));return p?p[1]:cod};
+  document.getElementById('ing-det-titulo').textContent=`Ingreso — ${idIngreso}`;
+  document.getElementById('ing-det-body').innerHTML=`
+    <div style="font-size:13px;color:var(--text-mid);margin-bottom:16px">
+      <strong>Fecha:</strong> ${ing?fechaStr(ing[1]):'—'} &nbsp;|&nbsp;
+      <strong>Proveedor:</strong> ${ing?provNombre(ing[2]):'—'}
+      ${ing&&ing[3]?`&nbsp;|&nbsp; <strong>Remito:</strong> ${ing[3]}`:''}
+    </div>
+    <table style="width:100%;border-collapse:collapse;font-size:13px">
+      <thead><tr>
+        <th style="text-align:left;padding:7px 0;color:var(--text-light);font-size:11px;text-transform:uppercase;border-bottom:1px solid var(--border)">Código</th>
+        <th style="text-align:left;padding:7px 0;color:var(--text-light);font-size:11px;text-transform:uppercase;border-bottom:1px solid var(--border)">Descripción</th>
+        <th style="text-align:right;padding:7px 0;color:var(--text-light);font-size:11px;text-transform:uppercase;border-bottom:1px solid var(--border)">Cantidad</th>
+        <th style="text-align:right;padding:7px 0;color:var(--text-light);font-size:11px;text-transform:uppercase;border-bottom:1px solid var(--border)">Costo unit.</th>
+        <th style="text-align:right;padding:7px 0;color:var(--text-light);font-size:11px;text-transform:uppercase;border-bottom:1px solid var(--border)">Subtotal</th>
+      </tr></thead>
+      <tbody>
+        ${items.map(d=>`<tr style="border-bottom:1px solid var(--border)">
+          <td style="padding:8px 0"><code style="color:var(--teal);font-size:11px">${d[1]}</code></td>
+          <td style="padding:8px 0">${prodNombre(d[1])}</td>
+          <td style="text-align:right;padding:8px 0">${d[2]}</td>
+          <td style="text-align:right;padding:8px 0">${formatPeso(d[3])}</td>
+          <td style="text-align:right;padding:8px 0;font-weight:600">${formatPeso(Number(d[2])*Number(d[3]))}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>
+    <div style="text-align:right;margin-top:12px;font-size:14px;font-weight:700;color:var(--navy)">
+      Total: ${formatPeso(items.reduce((s,d)=>s+Number(d[2])*Number(d[3]),0))}
+    </div>`;
+  document.getElementById('modal-detalle-ingreso').classList.add('open');
 }
 
 function filtrarConsulta(){

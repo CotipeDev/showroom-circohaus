@@ -1106,7 +1106,7 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
 </div>
 
 <script>
-const API_URL='https://script.google.com/macros/s/AKfycbwoKy49Mri2GrxM0H6-NTaeCt5n6PTmMdDo3YijSSPhGqDf5Dv0VYmMQ80yhdkr9NtW/exec';
+const API_URL='https://script.google.com/macros/s/AKfycbzIuPEU3xa4WSnHTzCnBLoFgQn6HaLCIrCeR6Cc3v60TLf0-AEcnHjozeh7fQzb8xb2/exec';
 let productosData=[],proveedoresData=[],categoriasData=[],itemsIngreso=[],ingProductoSel=null,stockData=[],prodTablaData=[];
 let cuentasPorCobrarData=[],ventasData=[],detalleVentasData=[],pagosVentaData=[];
 
@@ -1276,6 +1276,7 @@ async function agregarCategoria(){
 async function cargarProductos(){try{const data=await cacheGet('getProductos');productosData=data.slice(1)}catch(e){}}
 
 function calcMargen(costo,venta){return(costo>0&&venta>0)?Math.round(((venta/costo)-1)*100):0}
+function getMargen(p){return p[8]&&Number(p[8])>0?Number(p[8]):calcMargen(Number(p[4]),Number(p[3]))}
 
 async function iniciarProductos(){
   if(prodTablaData.length||productosData.length){
@@ -1290,7 +1291,7 @@ async function iniciarProductos(){
 }
 function renderTablaProductos(rows){
   document.getElementById('prod-body').innerHTML=rows.length===0?'<tr><td colspan="8" style="text-align:center;color:var(--text-mid);padding:20px">No hay productos</td></tr>':rows.map(p=>{
-    const margen=calcMargen(Number(p[4]),Number(p[3]));
+    const margen=getMargen(p);
     return`<tr><td><code style="color:var(--teal);font-size:12px">${p[0]}</code></td><td>${p[1]}</td><td>${p[7]||'—'}</td><td>${formatPeso(p[4])}</td><td><span class="badge badge-margen">${margen}%</span></td><td>${formatPeso(p[3])}</td><td>${p[5]||0}</td><td style="display:flex;gap:6px"><button class="btn-warning" onclick="abrirEditar('${p[0]}')">✏️</button><button class="btn-danger" onclick="eliminarProducto('${p[0]}')">🗑️</button></td></tr>`;
   }).join('');
 }
@@ -1310,9 +1311,14 @@ async function eliminarProducto(codigo){
 }
 function abrirEditar(codigo){
   const p=prodTablaData.find(x=>x[0].toString()===codigo.toString());if(!p)return;
-  document.getElementById('edit-codigo').value=p[0];document.getElementById('edit-desc').value=p[1];document.getElementById('edit-proveedor').value=p[2]||'';document.getElementById('edit-pcosto').value=p[4]||'';document.getElementById('edit-pventa').value=p[3]||'';document.getElementById('edit-stock-min').value=p[6]||'';document.getElementById('edit-categoria').value=p[7]||'';
-  // Margen: usar col I si existe, sino calcularlo
+  document.getElementById('edit-codigo').value=p[0];document.getElementById('edit-desc').value=p[1];document.getElementById('edit-proveedor').value=p[2]||'';document.getElementById('edit-pcosto').value=p[4]||'';
+  // Si precio venta está vacío, calcularlo desde margen
   const margenGuardado=p[8]?Number(p[8]):calcMargen(Number(p[4]),Number(p[3]));
+  const pvCalculado=(!p[3]||Number(p[3])===0)&&margenGuardado>0&&Number(p[4])>0
+    ?Math.round(Number(p[4])*(1+margenGuardado/100))
+    :Number(p[3])||'';
+  document.getElementById('edit-pventa').value=pvCalculado;
+  document.getElementById('edit-stock-min').value=p[6]||'';document.getElementById('edit-categoria').value=p[7]||'';
   document.getElementById('edit-margen').value=margenGuardado||'';
   document.getElementById('modal-editar').classList.add('open');
 }
@@ -1344,7 +1350,7 @@ async function iniciarStock(){
 }
 function renderStock(rows){
   document.getElementById('stock-body').innerHTML=rows.length===0?'<tr><td colspan="8" style="text-align:center;color:var(--text-mid);padding:20px">No hay productos</td></tr>':rows.map(p=>{
-    const s=Number(p[5])||0,m=Number(p[6])||0,margen=calcMargen(Number(p[4]),Number(p[3]));
+    const s=Number(p[5])||0,m=Number(p[6])||0,margen=getMargen(p);
     const badge=s===0?`<span class="badge badge-zero">Sin stock</span>`:(m>0&&s<=m)?`<span class="badge badge-low">${s} ⚠️</span>`:`<span class="badge badge-ok">${s}</span>`;
     return`<tr><td><code style="color:var(--teal);font-size:12px">${p[0]}</code></td><td>${p[1]}</td><td>${p[7]||'—'}</td><td>${formatPeso(p[4])}</td><td><span class="badge badge-margen">${margen}%</span></td><td>${formatPeso(p[3])}</td><td>${badge}</td><td style="color:var(--text-mid);font-size:12px">${m>0?'Mín: '+m:'—'}</td></tr>`;
   }).join('');

@@ -2238,10 +2238,7 @@ async function cargarHistorialIngresos(){
   document.getElementById('ing-hist-loading').style.display='flex';
   document.getElementById('ing-hist-table').style.display='none';
   try{
-    const[dataIng,dataDet]=await Promise.all([
-      apiGet('getIngresos'),
-      apiGet('getDetalleIngresos')
-    ]);
+    const[dataIng,dataDet]=await Promise.all([cacheGet('getIngresos'),cacheGet('getDetalleIngresos')]);
     ingresosData=Array.isArray(dataIng)?dataIng.slice(1):[];
     detalleIngresosData=Array.isArray(dataDet)?dataDet.slice(1):[];
     renderHistorialIngresos();
@@ -2257,24 +2254,22 @@ function renderHistorialIngresos(){
   const provNombre=id=>{const p=proveedoresData.find(x=>String(x[0])===String(id));return p?p[1]:id||'—'};
   document.getElementById('ing-hist-body').innerHTML=sorted.length===0
     ?'<tr><td colspan="4" style="text-align:center;color:var(--text-light);padding:20px">No hay ingresos registrados</td></tr>'
-    :sorted.map(ing=>`<tr style="border-bottom:1px solid var(--border);cursor:pointer" onclick="verDetalleIngreso('${ing[0]}')" onmouseover="this.style.background='var(--off-white)'" onmouseout="this.style.background=''">
-      <td style="padding:9px 0"><code style="color:var(--teal);font-size:11px">${ing[0]}</code></td>
-      <td style="padding:9px 0;color:var(--text-mid)">${fechaStr(ing[1])||'—'}</td>
-      <td style="padding:9px 0;font-weight:500">${provNombre(ing[2])}</td>
-      <td style="padding:9px 0;color:var(--text-light)">${ing[3]||'—'}</td>
-    </tr>`).join('');
+    :sorted.map(ing=>{
+      const idEscapado=String(ing[0]).replace(/'/g,"\\'");
+      const provNombreVal=provNombre(ing[2]);
+      return`<tr style="border-bottom:1px solid var(--border);cursor:pointer" onclick="verDetalleIngreso('${idEscapado}')" onmouseover="this.style.background='var(--off-white)'" onmouseout="this.style.background=''">
+        <td style="padding:9px 0"><code style="color:var(--teal);font-size:11px">${ing[0]}</code></td>
+        <td style="padding:9px 0;color:var(--text-mid)">${fechaStr(ing[1])||'—'}</td>
+        <td style="padding:9px 0;font-weight:500">${provNombreVal}</td>
+        <td style="padding:9px 0;color:var(--text-light)">${ing[3]||'—'}</td>
+      </tr>`;
+    }).join('');
 }
 
-async function verDetalleIngreso(idIngreso){
+function verDetalleIngreso(idIngreso){
   const ing=ingresosData.find(x=>String(x[0])===String(idIngreso));
-  // Si no tenemos el detalle en memoria, cargarlo del API
-  if(!detalleIngresosData.length){
-    try{
-      const dataDet=await apiGet('getDetalleIngresos');
-      detalleIngresosData=Array.isArray(dataDet)?dataDet.slice(1):[];
-    }catch(e){detalleIngresosData=[];}
-  }
-  const items=detalleIngresosData.filter(d=>String(d[0])===String(idIngreso));
+  const items=detalleIngresosData.filter(d=>String(d[0]).trim()===String(idIngreso).trim());
+  console.log('ID buscado:', idIngreso, '| Items encontrados:', items.length, '| Total detalle:', detalleIngresosData.length, '| Primer item:', detalleIngresosData[0]);
   const provNombre=id=>{const p=proveedoresData.find(x=>String(x[0])===String(id));return p?p[1]:id||'—'};
   const prodNombre=cod=>{const p=productosData.find(x=>String(x[0])===String(cod));return p?p[1]:cod};
   document.getElementById('ing-det-titulo').textContent=`Ingreso — ${idIngreso}`;

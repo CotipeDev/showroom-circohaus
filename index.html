@@ -466,10 +466,9 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
         <button class="notif-btn" onclick="toggleNotif('app')">🔔 <span id="nb2" style="display:none;background:#C44F4F;color:white;font-size:10px;font-weight:700;border-radius:10px;padding:1px 6px"></span></button>
         <div class="notif-panel" id="np2"><div class="notif-panel-title">Alertas de stock</div><div id="nl2" style="max-height:280px;overflow-y:auto;padding:8px 0"></div></div>
       </div>
+      <button onclick="cerrarSesion()" title="Cerrar sesión" style="background:none;border:none;cursor:pointer;color:var(--blue-mist);font-size:20px;padding:4px 6px;opacity:.6;transition:opacity .2s;line-height:1" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.6">⏏</button>
     </div>
   </div>
-
-  <div class="content">
 
     <!-- INGRESOS -->
     <div id="panel-ingresos" class="panel active">
@@ -2248,9 +2247,16 @@ function abrirConsultaPrecios(){
   setTimeout(()=>document.getElementById('consulta-buscar').focus(),100);
 }
 
+function cerrarSesion(){
+  sessionStorage.removeItem(LOGIN_KEY);
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('login-pass').value='';
+  document.getElementById('login-error').style.display='none';
+}
+
 // ── LOGIN ──
 const LOGIN_KEY='circohaus_auth';
-const PASSWORD='Circo2026*';
+const PASSWORD='REEMPLAZAR_CONTRASEÑA';
 function verificarLogin(){
   const pass=document.getElementById('login-pass').value;
   if(pass===PASSWORD){

@@ -318,6 +318,22 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
 </style>
 </head>
 <body>
+<!-- PANTALLA DE LOGIN -->
+<div id="login-screen" style="display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--navy);position:fixed;inset:0;z-index:99999">
+  <div style="background:var(--white);border-radius:20px;padding:40px 36px;width:340px;max-width:90vw;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.25)">
+    <div style="margin-bottom:8px;display:flex;justify-content:center">
+      <svg width="44" height="46" viewBox="0 0 40 44" fill="none">
+        <path d="M3 20 L20 4 L37 20" stroke="#DAA49A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M20 38 C20 38 11 30 11 23 C11 19.5 13.8 17 17 17 C18.6 17 19.8 18.2 20 18.5 C20.2 18.2 21.4 17 23 17 C26.2 17 29 19.5 29 23 C29 30 20 38 20 38Z" fill="#DAA49A"/>
+      </svg>
+    </div>
+    <div style="font-family:'DM Sans',sans-serif;font-size:22px;font-weight:700;color:var(--navy);margin-bottom:4px">CircoHaus</div>
+    <div style="font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--text-light);margin-bottom:28px">Casa Atelier</div>
+    <input type="password" id="login-pass" placeholder="Contraseña" style="width:100%;padding:12px 16px;border:1.5px solid var(--border);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:15px;outline:none;box-sizing:border-box;margin-bottom:10px" onkeydown="if(event.key==='Enter')verificarLogin()">
+    <div id="login-error" style="display:none;font-size:12px;color:#C44F4F;margin-bottom:10px">Contraseña incorrecta</div>
+    <button onclick="verificarLogin()" style="width:100%;padding:12px;background:var(--navy);color:white;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;cursor:pointer">Ingresar</button>
+  </div>
+</div>
 
 <!-- HOME -->
 <div id="home">
@@ -506,7 +522,8 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
       <div class="modal" style="max-width:560px">
         <div class="modal-title" id="ing-det-titulo">Detalle del ingreso</div>
         <div id="ing-det-body" style="margin-top:12px"></div>
-        <div style="margin-top:16px;text-align:right">
+        <div style="margin-top:16px;display:flex;justify-content:space-between;align-items:center">
+          <button class="btn btn-danger" onclick="eliminarIngreso(document.getElementById('ing-det-titulo').dataset.id)">🗑 Eliminar ingreso</button>
           <button class="btn btn-secondary" onclick="cerrarModal('modal-detalle-ingreso')">Cerrar</button>
         </div>
       </div>
@@ -1132,7 +1149,7 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
 </div>
 
 <script>
-const API_URL='https://script.google.com/macros/s/AKfycbw3sBPQJWMptElgvyZOSTQxk1yVOMOfca1I0kJUYBwSffi9kTYAmQ7-ZOJT4jX6_Yb2/exec';
+const API_URL='https://script.google.com/macros/s/AKfycbz9yo_4U1GoLL7t9wqtbSw2jlbRgyeuPIoNlSyxlgLytg4yeOkBhjhOgTIzRoXH_kC3/exec';
 let productosData=[],proveedoresData=[],categoriasData=[],itemsIngreso=[],ingProductoSel=null,stockData=[],prodTablaData=[];
 let cuentasPorCobrarData=[],ventasData=[],detalleVentasData=[],pagosVentaData=[];
 
@@ -2231,7 +2248,35 @@ function abrirConsultaPrecios(){
   setTimeout(()=>document.getElementById('consulta-buscar').focus(),100);
 }
 
-// ── HISTORIAL DE INGRESOS ──
+// ── LOGIN ──
+const LOGIN_KEY='circohaus_auth';
+const PASSWORD='REEMPLAZAR_CONTRASEÑA';
+function verificarLogin(){
+  const pass=document.getElementById('login-pass').value;
+  if(pass===PASSWORD){
+    sessionStorage.setItem(LOGIN_KEY,'1');
+    document.getElementById('login-screen').style.display='none';
+  }else{
+    document.getElementById('login-error').style.display='block';
+    document.getElementById('login-pass').value='';
+    document.getElementById('login-pass').focus();
+  }
+}
+if(sessionStorage.getItem(LOGIN_KEY)==='1'){
+  document.getElementById('login-screen').style.display='none';
+}
+async function eliminarIngreso(idIngreso){
+  if(!confirm(`¿Eliminar el ingreso ${idIngreso}?\nEsta acción no se puede deshacer y no revierte el stock.`))return;
+  try{
+    await apiPost('eliminarIngreso',{id_ingreso:idIngreso});
+    showToast('Ingreso eliminado');
+    cerrarModal('modal-detalle-ingreso');
+    ingresosData=ingresosData.filter(x=>String(x[0])!==String(idIngreso));
+    detalleIngresosData=detalleIngresosData.filter(x=>String(x[0])!==String(idIngreso));
+    renderHistorialIngresos();
+  }catch(e){showToast('Error al eliminar','error');}
+}
+
 let ingresosData=[], detalleIngresosData=[];
 
 async function cargarHistorialIngresos(){
@@ -2273,6 +2318,7 @@ function verDetalleIngreso(idIngreso){
   const provNombre=id=>{const p=proveedoresData.find(x=>String(x[0])===String(id));return p?p[1]:id||'—'};
   const prodNombre=cod=>{const p=productosData.find(x=>String(x[0])===String(cod));return p?p[1]:cod};
   document.getElementById('ing-det-titulo').textContent=`Ingreso — ${idIngreso}`;
+  document.getElementById('ing-det-titulo').dataset.id=idIngreso;
   document.getElementById('ing-det-body').innerHTML=`
     <div style="font-size:13px;color:var(--text-mid);margin-bottom:16px">
       <strong>Fecha:</strong> ${ing?fechaStr(ing[1]):'—'} &nbsp;|&nbsp;

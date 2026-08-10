@@ -866,10 +866,9 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
         </div>
         <div id="vta-producto-preview" style="display:none;margin-top:12px;background:var(--pearl);border-radius:8px;padding:14px 16px">
           <div style="font-size:12px;font-weight:600;color:var(--navy);margin-bottom:8px" id="vta-prod-nombre"></div>
-          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
             <div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-light)">Precio tarjeta</div><div style="font-size:15px;font-weight:600;color:var(--navy)" id="vta-precio-tarjeta">—</div></div>
-            <div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-light)">Transferencia</div><div style="font-size:15px;font-weight:600;color:var(--teal)" id="vta-precio-transfer">—</div></div>
-            <div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-light)">Efectivo</div><div style="font-size:15px;font-weight:600;color:var(--success)" id="vta-precio-efectivo">—</div></div>
+            <div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-light)">Efectivo (−15%)</div><div style="font-size:15px;font-weight:600;color:var(--success)" id="vta-precio-efectivo">—</div></div>
           </div>
         </div>
       </div>
@@ -1838,22 +1837,17 @@ function filtrarProductosVenta(){
 }
 
 function selProductoVenta(codigo){
+function selProductoVenta(codigo){
   const p=productosData.find(x=>String(x[0])===String(codigo));if(!p)return;
   vtaProductoSel=p;
   document.getElementById('vta-buscar').value=`${p[0]} — ${p[1]}`;
   document.getElementById('vta-autocomplete').style.display='none';
-  // calcular precios según medios de pago configurados
-  const mpTransfer=mediosPagoData.find(m=>(m[2]||'').toLowerCase().includes('transfer')&&(m[7]===true||m[7]==='TRUE'));
   const mpEfectivo=mediosPagoData.find(m=>(m[2]||'').toLowerCase().includes('efectivo')&&(m[7]===true||m[7]==='TRUE'));
   const pv=Number(p[3])||0;
-  const descTransfer=mpTransfer?Number(mpTransfer[3])||0:10;
   const descEfectivo=mpEfectivo?Number(mpEfectivo[3])||0:15;
-  document.getElementById('vta-prod-nombre').textContent=`${p[0]} — ${p[1]}`;
   document.getElementById('vta-precio-tarjeta').textContent=formatPeso(pv);
-  document.getElementById('vta-precio-transfer').textContent=`${formatPeso(Math.round(pv*(1-descTransfer/100)))} (−${descTransfer}%)`;
   document.getElementById('vta-precio-efectivo').textContent=`${formatPeso(Math.round(pv*(1-descEfectivo/100)))} (−${descEfectivo}%)`;
   const stock=Number(p[5])||0;
-  document.getElementById('vta-prod-nombre').textContent=`${p[0]} — ${p[1]}`;
   document.getElementById('vta-prod-nombre').innerHTML=`${p[0]} — ${p[1]} <span style="margin-left:8px;font-size:11px;font-weight:400;color:${stock===0?'var(--error)':stock<=3?'var(--rose-dark)':'var(--text-light)'}">${stock===0?'⚠️ Sin stock':`Stock: ${stock} unid.`}</span>`;
   document.getElementById('vta-producto-preview').style.display='block';
 }
@@ -1896,24 +1890,28 @@ function quitarItemVenta(i){vtaItemsCarrito.splice(i,1);renderCarritoVenta()}
 
 function actualizarTotalesVenta(){
   const totalBruto=vtaItemsCarrito.reduce((s,i)=>s+i.precio_unitario*i.cantidad,0);
-  // calcular cobrado y neto según pagos seleccionados
   let totalCobrado=0,totalNeto=0;
-  vtaPagosFila.forEach(fila=>{
-    const monto=Number(fila.monto)||0;
-    const mp=mediosPagoData.find(m=>String(m[0])===String(fila.id_medio));
-    if(mp){
-      const desc=Number(mp[3])||0,com=Number(mp[4])||0,cf=Number(mp[5])||0;
-      const cobrado=monto; // el monto ya es lo que paga el cliente
-      totalCobrado+=cobrado;
-      totalNeto+=Math.round(cobrado*(1-(com+cf)/100));
-    } else {
-      totalCobrado+=monto;totalNeto+=monto;
-    }
-  });
-  if(!vtaPagosFila.length){totalCobrado=totalBruto;totalNeto=totalBruto}
+  const hayMontosIngresados=vtaPagosFila.some(f=>Number(f.monto)>0&&f.id_medio);
+  if(hayMontosIngresados){
+    vtaPagosFila.forEach(fila=>{
+      const monto=Number(fila.monto)||0;
+      const mp=mediosPagoData.find(m=>String(m[0])===String(fila.id_medio));
+      if(mp&&monto>0){
+        const com=Number(mp[4])||0,cf=Number(mp[5])||0;
+        totalCobrado+=monto;
+        totalNeto+=Math.round(monto*(1-(com+cf)/100));
+      } else if(monto>0){
+        totalCobrado+=monto;totalNeto+=monto;
+      }
+    });
+  } else {
+    totalCobrado=totalBruto;totalNeto=totalBruto;
+  }
   document.getElementById('vta-total-bruto').textContent=formatPeso(totalBruto);
   document.getElementById('vta-total-cobrado').textContent=formatPeso(totalCobrado);
   document.getElementById('vta-total-neto').textContent=formatPeso(totalNeto);
+  document.getElementById('vta-totales').style.display=totalBruto>0?'block':'none';
+  document.getElementById('vta-card-pagos').style.display=totalBruto>0?'block':'none';
 }
 
 function agregarPagoVenta(){
@@ -1943,7 +1941,18 @@ function renderFilasPago(){
   `).join('');
 }
 
-function cambiarMedioPago(i,val){vtaPagosFila[i].id_medio=val;actualizarTotalesVenta()}
+function cambiarMedioPago(i,val){
+  vtaPagosFila[i].id_medio=val;
+  // Autocompletar monto con el total pendiente
+  const totalBruto=vtaItemsCarrito.reduce((s,item)=>s+item.precio_unitario*item.cantidad,0);
+  const yaAsignado=vtaPagosFila.reduce((s,f,j)=>j!==i?s+(Number(f.monto)||0):s,0);
+  const pendiente=Math.max(0,totalBruto-yaAsignado);
+  if(!vtaPagosFila[i].monto||vtaPagosFila[i].monto===0){
+    vtaPagosFila[i].monto=pendiente;
+  }
+  renderFilasPago();
+  actualizarTotalesVenta();
+}
 function cambiarMontoPago(i,val){vtaPagosFila[i].monto=Number(val)||0;actualizarTotalesVenta()}
 function quitarFilaPago(i){vtaPagosFila.splice(i,1);renderFilasPago();actualizarTotalesVenta()}
 
@@ -2002,8 +2011,28 @@ async function confirmarVenta(){
 
   const items=vtaItemsCarrito.map(i=>({codigo:i.codigo,cantidad:i.cantidad,precio_unitario:i.precio_unitario,precio_cobrado:i.precio_unitario,costo_unitario:i.costo_unitario,subtotal_cobrado:i.precio_unitario*i.cantidad}));
 
+  // Pago inicial fiado
+  let pago_inicial_fiado=null;
+  if(tipo==='cuenta_por_cobrar'){
+    const montoInicial=Number(document.getElementById('vta-fiado-monto-inicial').value)||0;
+    const medioInicial=document.getElementById('vta-fiado-medio-inicial').value;
+    if(montoInicial>0&&medioInicial){
+      const mp=mediosPagoData.find(m=>String(m[0])===String(medioInicial));
+      const com=mp?Number(mp[4])||0:0,cf=mp?Number(mp[5])||0:0;
+      pago_inicial_fiado={
+        id_medio:medioInicial,
+        id_cuenta:mp?mp[1]:'',
+        monto_bruto:montoInicial,
+        comision_aplicada:com,
+        cf_aplicado:cf,
+        monto_neto:Math.round(montoInicial*(1-(com+cf)/100)),
+        dias_acreditacion:mp?Number(mp[6])||0:0
+      };
+    }
+  }
+
   try{
-    await apiPost('registrarVenta',{fecha,tipo,id_cliente:document.getElementById('vta-cliente').value||'',total_bruto:totalBruto,total_cobrado:totalCobrado,total_neto:totalNeto,notas:document.getElementById('vta-notas').value,items,pagos});
+    await apiPost('registrarVenta',{fecha,tipo,id_cliente:document.getElementById('vta-cliente').value||'',total_bruto:totalBruto,total_cobrado:totalCobrado,total_neto:totalNeto,notas:document.getElementById('vta-notas').value,items,pagos,pago_inicial_fiado});
     showToast('✅ Venta registrada correctamente');
     cacheInvalidar('getVentas','getDetalleVentas','getPagosVenta','getProductos','getCuentasPorCobrar','getMovimientos');
     limpiarVenta();

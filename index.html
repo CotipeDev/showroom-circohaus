@@ -1982,6 +1982,9 @@ async function guardarCliente(){
 }
 
 async function confirmarVenta(){
+  const btnConfirmar=document.querySelector('#panel-ventas .btn-primary');
+  if(btnConfirmar&&btnConfirmar.disabled)return; // evitar doble submit
+  if(btnConfirmar){btnConfirmar.disabled=true;btnConfirmar.textContent='Procesando...';}
   if(!vtaItemsCarrito.length){showToast('Agregá al menos un producto','error');return}
   const tipo=document.getElementById('vta-tipo').value;
   const fecha=document.getElementById('vta-fecha').value;
@@ -2034,10 +2037,14 @@ async function confirmarVenta(){
   try{
     await apiPost('registrarVenta',{fecha,tipo,id_cliente:document.getElementById('vta-cliente').value||'',total_bruto:totalBruto,total_cobrado:totalCobrado,total_neto:totalNeto,notas:document.getElementById('vta-notas').value,items,pagos,pago_inicial_fiado});
     showToast('✅ Venta registrada correctamente');
+    if(btnConfirmar){btnConfirmar.disabled=false;btnConfirmar.textContent='✓ Confirmar venta';}
     cacheInvalidar('getVentas','getDetalleVentas','getPagosVenta','getProductos','getCuentasPorCobrar','getMovimientos');
     limpiarVenta();
     cacheInvalidar("getProductos","getVentas","getDetalleVentas","getPagosVenta");ventasHistData=[];setTimeout(()=>{cargarProductos();},1500);
-  }catch(e){showToast('Error al registrar la venta','error')}
+  }catch(e){
+    showToast('Error al registrar la venta','error');
+    if(btnConfirmar){btnConfirmar.disabled=false;btnConfirmar.textContent='✓ Confirmar venta';}
+  }
 }
 
 function limpiarVenta(){
@@ -2181,6 +2188,9 @@ async function precargarDatos(){
 }
 
 document.addEventListener('DOMContentLoaded',()=>{
+  if(sessionStorage.getItem(LOGIN_KEY)==='1'){
+    document.getElementById('login-screen').style.display='none';
+  }
   setFechaHoy('ing-fecha');
   iniciarHome();
   precargarDatos().then(()=>{
@@ -2296,9 +2306,6 @@ function verificarLogin(){
     document.getElementById('login-pass').value='';
     document.getElementById('login-pass').focus();
   }
-}
-if(sessionStorage.getItem(LOGIN_KEY)==='1'){
-  document.getElementById('login-screen').style.display='none';
 }
 async function eliminarIngreso(idIngreso){
   if(!confirm(`¿Eliminar el ingreso ${idIngreso}?\nEsta acción no se puede deshacer y no revierte el stock.`))return;

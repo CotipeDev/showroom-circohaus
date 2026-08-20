@@ -1,5 +1,6 @@
 // ============================================================
 // api.js — Conexión con Google Apps Script
+// Entorno DEV — Ventas V2
 // ============================================================
 
 const API_URL = 'https://script.google.com/macros/s/AKfycbzUs7BN54n-1snXDYlxUimolaZw3FQSMe5FS_lOF7X1B3NBAyKCzui6DuRIVo3NhtrgrA/exec';

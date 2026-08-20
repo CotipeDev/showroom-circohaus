@@ -909,7 +909,8 @@ if(sessionStorage.getItem(_LOGIN_KEY)==='1'){
         </div>
 
         <div id="vta-seccion-pagos">
-          <div class="form-grid" style="grid-template-columns:1fr 1fr;gap:14px">
+          <!-- Fila 1: Medio de pago principal + descuento adicional -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:12px">
             <div class="field">
               <label>Medio de pago</label>
               <select id="vta-medio-unico" onchange="cambiarMedioUnico(this.value)" style="background:var(--off-white);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none;width:100%">
@@ -927,13 +928,14 @@ if(sessionStorage.getItem(_LOGIN_KEY)==='1'){
             </div>
           </div>
 
-          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:4px">
+          <!-- Resumen de cobro -->
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:12px">
             <div class="field">
               <label>Precio de lista</label>
               <div style="background:var(--off-white);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-size:15px;font-weight:600;color:var(--navy)" id="vta-total-bruto">$0</div>
             </div>
             <div class="field">
-              <label>Total cobrado</label>
+              <label>Total a cobrar</label>
               <div style="background:var(--off-white);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-size:15px;font-weight:600;color:var(--teal)" id="vta-total-cobrado">$0</div>
             </div>
             <div class="field">
@@ -941,8 +943,10 @@ if(sessionStorage.getItem(_LOGIN_KEY)==='1'){
               <div style="background:var(--off-white);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-size:15px;font-weight:600;color:var(--success)" id="vta-total-neto">$0</div>
             </div>
           </div>
-          <div id="vta-pagos-lista" style="display:none"></div>
-          <button class="btn btn-secondary" style="margin-top:6px;font-size:12px;display:none" id="btn-agregar-pago" onclick="agregarPagoVenta()">+ Agregar otro medio de pago</button>
+
+          <!-- Pagos adicionales (para pagos mixtos) -->
+          <div id="vta-pagos-lista"></div>
+          <button class="btn btn-secondary" style="margin-top:6px;font-size:12px" onclick="agregarPagoVenta()">+ Agregar otro medio de pago</button>
         </div>
 
         <div id="vta-cliente-wrap" style="display:none">
@@ -1971,19 +1975,28 @@ function actualizarTotalesVenta(){
   const descMP=mp?Number(mp[3])||0:0;
   const com=mp?Number(mp[4])||0:0;
   const cf=mp?Number(mp[5])||0:0;
-  // Total cobrado = precio lista × (1 - desc MP%) × (1 - desc adicional%)
+
+  // Total a cobrar al cliente = lista × (1 - descMP%) × (1 - descAdicional%)
   const totalCobrado=Math.round(precioLista*(1-descMP/100)*(1-descPct/100));
-  const totalNeto=Math.round(totalCobrado*(1-(com+cf)/100));
-  // Actualizar vtaPagosFila
+  // Sumar pagos adicionales si los hay
+  const pagoAdicionalTotal=vtaPagosFila.reduce((s,f)=>s+(Number(f.monto)||0),0);
+  const totalCobradoFinal=pagoAdicionalTotal>0?pagoAdicionalTotal:totalCobrado;
+  // Neto = lo que entra después de comisiones del medio principal
+  const totalNeto=Math.round(totalCobradoFinal*(1-(com+cf)/100));
+
+  // Actualizar vtaPagosFila[0] para que confirmarVenta lo use
   if(!vtaPagosFila.length) vtaPagosFila=[{id_medio:'',monto:0}];
-  vtaPagosFila[0].id_medio=idMedio;
-  vtaPagosFila[0].monto=totalCobrado;
+  if(!vtaPagosFila[0].id_medio||vtaPagosFila[0].id_medio===idMedio||pagoAdicionalTotal===0){
+    vtaPagosFila[0]={id_medio:idMedio,monto:totalCobrado};
+  }
+
   const elBruto=document.getElementById('vta-total-bruto');
   const elCobrado=document.getElementById('vta-total-cobrado');
   const elNeto=document.getElementById('vta-total-neto');
   if(elBruto) elBruto.textContent=formatPeso(precioLista);
-  if(elCobrado) elCobrado.textContent=formatPeso(totalCobrado);
+  if(elCobrado) elCobrado.textContent=formatPeso(totalCobrado)+(descMP>0||descPct>0?` (−${descMP+descPct}%)` : '');
   if(elNeto) elNeto.textContent=formatPeso(totalNeto);
+
   const visible=precioLista>0;
   const totalesEl=document.getElementById('vta-totales');
   const pagosEl=document.getElementById('vta-card-pagos');

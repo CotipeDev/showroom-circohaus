@@ -2,7 +2,7 @@
 // api.js — Conexión con Google Apps Script
 // ============================================================
 
-const API_URL = 'https://script.google.com/macros/s/AKfycbyy3IwcOoKFq_8LjAo5Me3MvOQe1pMRyVIU15E77DdnMYvndAHTK6W7Jm26rSmtU7bu/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbzUs7BN54n-1snXDYlxUimolaZw3FQSMe5FS_lOF7X1B3NBAyKCzui6DuRIVo3NhtrgrA/exec';
 
 async function apiGet(action) {
   const res = await fetch(`${API_URL}?action=${action}`);

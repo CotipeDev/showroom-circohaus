@@ -11,10 +11,16 @@ async function apiGet(action) {
 }
 
 async function apiPost(action, body) {
-  await fetch(`${API_URL}?action=${action}`, {
+  const res = await fetch(`${API_URL}?action=${encodeURIComponent(action)}`, {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain' },
     body: JSON.stringify(body)
   });
-  return { ok: true };
+  const text = await res.text();
+  let data;
+  try { data = text ? JSON.parse(text) : null; }
+  catch (error) { throw new Error(`Respuesta inválida del backend (${res.status}).`); }
+  if (!res.ok) throw new Error(data?.error || data?.message || `Error HTTP ${res.status}`);
+  if (!data || data.ok !== true) throw new Error(data?.error || data?.message || 'El backend no confirmó la operación.');
+  return data;
 }

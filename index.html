@@ -887,10 +887,7 @@ if(sessionStorage.getItem(_LOGIN_KEY)==='1'){
         </div>
         <div id="vta-producto-preview" style="display:none;margin-top:12px;background:var(--pearl);border-radius:8px;padding:14px 16px">
           <div style="font-size:12px;font-weight:600;color:var(--navy);margin-bottom:8px" id="vta-prod-nombre"></div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-            <div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-light)">Precio tarjeta</div><div style="font-size:15px;font-weight:600;color:var(--navy)" id="vta-precio-tarjeta">—</div></div>
-            <div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-light)">Efectivo (−15%)</div><div style="font-size:15px;font-weight:600;color:var(--success)" id="vta-precio-efectivo">—</div></div>
-          </div>
+          <div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-light)">Precio de lista</div><div style="font-size:15px;font-weight:600;color:var(--navy)" id="vta-precio-lista">—</div></div>
         </div>
       </div>
       <div class="card">
@@ -908,47 +905,27 @@ if(sessionStorage.getItem(_LOGIN_KEY)==='1'){
           <div class="field"><label>Tipo de venta</label><select id="vta-tipo" onchange="toggleTipoVenta()"><option value="venta">Venta normal (cobrada)</option><option value="cuenta_por_cobrar">Fiado (cuenta por cobrar)</option></select></div>
         </div>
 
+        <div style="display:grid;grid-template-columns:160px 1fr;gap:10px;margin-bottom:16px">
+          <div class="field"><label>Descuento general</label><select id="vta-descuento-tipo" onchange="actualizarTotalesVenta()"><option value="pct">Porcentaje (%)</option><option value="importe">Importe ($)</option></select></div>
+          <div class="field"><label>Valor</label><input type="number" id="vta-descuento-general" min="0" value="0" oninput="actualizarTotalesVenta()"></div>
+        </div>
         <div id="vta-seccion-pagos">
-          <!-- Descuento adicional -->
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
-            <label style="font-size:13px;color:var(--text-light);white-space:nowrap">Descuento adicional:</label>
-            <div style="display:flex;align-items:center;gap:6px">
-              <input type="number" id="vta-descuento-pct" min="0" max="100" placeholder="0" value="0"
-                style="width:64px;background:var(--off-white);border:1.5px solid var(--border);border-radius:8px;padding:7px 10px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none;text-align:right"
-                oninput="actualizarTotalesVenta()">
-              <span style="font-size:14px;color:var(--text-mid);font-weight:600">%</span>
-            </div>
-          </div>
-
-          <!-- Filas de pago (cada una con su medio y monto) -->
+          <div style="font-size:12px;color:var(--text-mid);margin-bottom:10px">Elegí cómo paga. El descuento se define únicamente arriba; el medio de pago sólo determina sus costos de cobranza. Si usás un solo medio, el importe se completa automáticamente.</div>
           <div id="vta-pagos-lista"></div>
           <button class="btn btn-secondary" style="margin-top:8px;font-size:12px" onclick="agregarPagoVenta()">+ Agregar otro medio de pago</button>
-
-          <!-- Resumen totales -->
-          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px">
-            <div class="field">
-              <label>Precio de lista</label>
-              <div style="background:var(--off-white);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-size:15px;font-weight:600;color:var(--navy)" id="vta-total-bruto">$0</div>
-            </div>
-            <div class="field">
-              <label>Total a cobrar</label>
-              <div style="background:var(--off-white);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-size:15px;font-weight:600;color:var(--teal)" id="vta-total-cobrado">$0</div>
-            </div>
-            <div class="field">
-              <label>Neto a recibir</label>
-              <div style="background:var(--off-white);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-size:15px;font-weight:600;color:var(--success)" id="vta-total-neto">$0</div>
-            </div>
-          </div>
         </div>
-          <div class="field"><label>Cliente</label><div style="display:flex;gap:8px"><select id="vta-cliente" style="flex:1;background:var(--off-white);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none"><option value="">Seleccioná cliente...</option></select><button class="btn btn-secondary" style="font-size:12px;padding:9px 12px" onclick="abrirModalCliente()">+ Nuevo</button></div></div>
+        <div id="vta-cliente-wrap" style="display:none">
+          <div class="field"><label>Cliente *</label><div style="display:flex;gap:8px"><select id="vta-cliente" style="flex:1;background:var(--off-white);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none"><option value="">Seleccioná cliente...</option></select><button class="btn btn-secondary" style="font-size:12px;padding:9px 12px" onclick="abrirModalCliente()">+ Nuevo</button></div></div>
           <div style="margin-top:12px;background:var(--off-white);border-radius:10px;padding:14px;border:1.5px solid var(--border)">
             <div style="font-size:12px;font-weight:600;color:var(--navy);margin-bottom:10px">¿Entregó algo ahora? (opcional)</div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-              <div class="field" style="margin:0"><label>Monto inicial</label><input type="number" id="vta-fiado-monto-inicial" min="0" placeholder="0" style="width:100%"></div>
+              <div class="field" style="margin:0"><label>Base inicial</label><input type="number" id="vta-fiado-monto-inicial" min="0" placeholder="0" style="width:100%" oninput="actualizarTotalesVenta()"></div>
               <div class="field" style="margin:0"><label>Medio de pago</label><select id="vta-fiado-medio-inicial" style="width:100%;background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none"><option value="">Sin pago inicial</option></select></div>
             </div>
           </div>
         </div>
+
+        <div id="vta-resumen" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:18px;background:var(--pearl);border-radius:10px;padding:14px"></div>
 
         <hr style="margin:16px 0">
         <div class="field"><label>Notas (opcional)</label><input type="text" id="vta-notas" placeholder="Ej: cliente pidió bolsa de regalo"></div>
@@ -1272,7 +1249,14 @@ let colaActualizaciones=[], indexActual=0, fechaIngreso='';
 
 async function cacheGet(a){const r=await fetch(`${API_URL}?action=${a}`);return r.json()}
 async function apiGet(a){const r=await fetch(`${API_URL}?action=${a}`);return r.json()}
-async function apiPost(a,b){await fetch(`${API_URL}?action=${a}`,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(b)});return{ok:true}}
+async function apiPost(a,b){
+  const r=await fetch(`${API_URL}?action=${encodeURIComponent(a)}`,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(b)});
+  const texto=await r.text();let data;
+  try{data=texto?JSON.parse(texto):null;}catch(e){throw new Error(`Respuesta inválida del backend (${r.status}).`)}
+  if(!r.ok)throw new Error(data?.error||data?.message||`Error HTTP ${r.status}`);
+  if(!data||data.ok!==true)throw new Error(data?.error||data?.message||'El backend no confirmó la operación.');
+  return data;
+}
 function showToast(m,t='success'){const el=document.getElementById('toast');el.textContent=m;el.className=`toast ${t} show`;setTimeout(()=>el.className='toast',3500)}
 function formatPeso(n){return'$'+Number(n).toLocaleString('es-AR')}
 function setFechaHoy(id){document.getElementById(id).value=new Date().toISOString().split('T')[0]}
@@ -3059,5 +3043,6 @@ async function confirmarCobroCxc(){
   }
 }
 </script>
+<script src="js/ventas-v2.js"></script>
 </body>
 </html>

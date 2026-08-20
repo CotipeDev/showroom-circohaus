@@ -941,8 +941,8 @@ if(sessionStorage.getItem(_LOGIN_KEY)==='1'){
               <div style="background:var(--off-white);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-size:15px;font-weight:600;color:var(--success)" id="vta-total-neto">$0</div>
             </div>
           </div>
-          <div id="vta-pagos-lista" style="display:none"></div>
-          <button class="btn btn-secondary" style="margin-top:6px;font-size:12px;display:none" id="btn-agregar-pago" onclick="agregarPagoVenta()">+ Agregar otro medio de pago</button>
+          <div id="vta-pagos-lista"></div>
+          <button class="btn btn-secondary" style="margin-top:6px;font-size:12px" onclick="agregarPagoVenta()">+ Agregar otro medio de pago</button>
         </div>
 
         <div id="vta-cliente-wrap" style="display:none">
@@ -2014,21 +2014,23 @@ function agregarPagoVenta(){
 function renderFilasPago(){
   const lista=document.getElementById('vta-pagos-lista');
   if(!lista)return;
-  const activosFiltrados=mediosPagoData.filter(m=>m[7]===true||m[7]==='TRUE');
-  lista.innerHTML=vtaPagosFila.map((fila,i)=>`
-    <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end;margin-bottom:10px">
-      <div class="field">
-        <label>Medio de pago</label>
-        <select onchange="cambiarMedioPago(${i},this.value)" style="background:var(--off-white);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none;width:100%">
+  const pagosAdicionales=vtaPagosFila.slice(1);
+  if(!pagosAdicionales.length){lista.innerHTML='';return;}
+  const activos=mediosPagoData.filter(m=>m[7]===true||m[7]==='TRUE');
+  lista.innerHTML=pagosAdicionales.map((fila,i)=>`
+    <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end;margin-bottom:10px;margin-top:10px">
+      <div class="field" style="margin:0">
+        <label>Medio adicional</label>
+        <select onchange="cambiarMedioPago(${i+1},this.value)" style="background:var(--off-white);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none;width:100%">
           <option value="">Seleccioná...</option>
-          ${activosFiltrados.map(m=>`<option value="${m[0]}" ${String(m[0])===String(fila.id_medio)?'selected':''}>${m[2]}</option>`).join('')}
+          ${activos.map(m=>`<option value="${m[0]}" ${String(m[0])===String(fila.id_medio)?'selected':''}>${m[2]}</option>`).join('')}
         </select>
       </div>
-      <div class="field">
+      <div class="field" style="margin:0">
         <label>Monto ($)</label>
-        <input type="number" min="0" value="${fila.monto||''}" placeholder="0" oninput="cambiarMontoPago(${i},this.value)" style="background:var(--off-white);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none;width:100%">
+        <input type="number" min="0" value="${fila.monto||''}" placeholder="0" oninput="cambiarMontoPago(${i+1},this.value)" style="background:var(--off-white);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none;width:100%">
       </div>
-      ${vtaPagosFila.length>1?`<button class="btn-danger" onclick="quitarFilaPago(${i})" style="margin-bottom:1px">✕</button>`:'<div></div>'}
+      <button class="btn-danger" onclick="quitarFilaPago(${i+1})" style="margin-bottom:1px;height:40px">✕</button>
     </div>
   `).join('');
 }

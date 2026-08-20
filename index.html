@@ -897,8 +897,17 @@ if(sessionStorage.getItem(_LOGIN_KEY)==='1'){
         <div class="card-title">Productos en esta venta</div>
         <div id="vta-items-lista" class="items-list"><div class="items-empty">Todavía no agregaste productos</div></div>
         <div id="vta-totales" style="display:none;background:var(--pearl);border-radius:8px;padding:14px 16px;margin-top:12px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;justify-content:flex-end">
+            <label style="font-size:12px;color:var(--text-light);white-space:nowrap">Descuento adicional:</label>
+            <div style="display:flex;align-items:center;gap:4px">
+              <input type="number" id="vta-descuento-pct" min="0" max="100" placeholder="0" value="0"
+                style="width:60px;padding:5px 8px;border:1.5px solid var(--border);border-radius:6px;font-family:'DM Sans',sans-serif;font-size:13px;text-align:right"
+                oninput="actualizarTotalesVenta()">
+              <span style="font-size:13px;color:var(--text-mid)">%</span>
+            </div>
+          </div>
           <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;text-align:right">
-            <div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-light)">Total tarjeta</div><div style="font-size:16px;font-weight:600;color:var(--navy)" id="vta-total-bruto">$0</div></div>
+            <div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-light)">Precio de venta</div><div style="font-size:16px;font-weight:600;color:var(--navy)" id="vta-total-bruto">$0</div></div>
             <div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-light)">Total cobrado</div><div style="font-size:16px;font-weight:600;color:var(--teal)" id="vta-total-cobrado">$0</div></div>
             <div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-light)">Neto a recibir</div><div style="font-size:16px;font-weight:600;color:var(--success)" id="vta-total-neto">$0</div></div>
           </div>
@@ -1918,9 +1927,15 @@ function renderCarritoVenta(){
 function quitarItemVenta(i){vtaItemsCarrito.splice(i,1);renderCarritoVenta()}
 
 function actualizarTotalesVenta(){
-  const totalBruto=vtaItemsCarrito.reduce((s,i)=>s+i.precio_unitario*i.cantidad,0);
+  // Precio de venta = suma de todos los items
+  const precioVenta=vtaItemsCarrito.reduce((s,i)=>s+i.precio_unitario*i.cantidad,0);
+  // Descuento adicional
+  const descPct=Number(document.getElementById('vta-descuento-pct')?.value)||0;
+  const totalBruto=descPct>0?Math.round(precioVenta*(1-descPct/100)):precioVenta;
+
   let totalCobrado=0,totalNeto=0;
   const hayMontosIngresados=vtaPagosFila.some(f=>Number(f.monto)>0&&f.id_medio);
+
   if(hayMontosIngresados){
     vtaPagosFila.forEach(fila=>{
       const monto=Number(fila.monto)||0;
@@ -1929,18 +1944,27 @@ function actualizarTotalesVenta(){
         const com=Number(mp[4])||0,cf=Number(mp[5])||0;
         totalCobrado+=monto;
         totalNeto+=Math.round(monto*(1-(com+cf)/100));
-      } else if(monto>0){
+      }else if(monto>0){
         totalCobrado+=monto;totalNeto+=monto;
       }
     });
-  } else {
-    totalCobrado=totalBruto;totalNeto=totalBruto;
+  }else{
+    // Sin medios seleccionados: calcular según primer medio de pago si hay uno elegido
+    if(vtaPagosFila.length>0&&vtaPagosFila[0].id_medio){
+      const mp=mediosPagoData.find(m=>String(m[0])===String(vtaPagosFila[0].id_medio));
+      if(mp){
+        const desc=Number(mp[3])||0,com=Number(mp[4])||0,cf=Number(mp[5])||0;
+        totalCobrado=desc>0?Math.round(totalBruto*(1-desc/100)):totalBruto;
+        totalNeto=Math.round(totalCobrado*(1-(com+cf)/100));
+      }else{totalCobrado=totalBruto;totalNeto=totalBruto;}
+    }else{totalCobrado=totalBruto;totalNeto=totalBruto;}
   }
-  document.getElementById('vta-total-bruto').textContent=formatPeso(totalBruto);
+
+  document.getElementById('vta-total-bruto').textContent=formatPeso(precioVenta)+(descPct>0?` → ${formatPeso(totalBruto)} (−${descPct}%)`:'');
   document.getElementById('vta-total-cobrado').textContent=formatPeso(totalCobrado);
   document.getElementById('vta-total-neto').textContent=formatPeso(totalNeto);
-  document.getElementById('vta-totales').style.display=totalBruto>0?'block':'none';
-  document.getElementById('vta-card-pagos').style.display=totalBruto>0?'block':'none';
+  document.getElementById('vta-totales').style.display=precioVenta>0?'block':'none';
+  document.getElementById('vta-card-pagos').style.display=precioVenta>0?'block':'none';
 }
 
 function agregarPagoVenta(){
@@ -1972,10 +1996,15 @@ function renderFilasPago(){
 
 function cambiarMedioPago(i,val){
   vtaPagosFila[i].id_medio=val;
-  // Autocompletar monto con el total pendiente
-  const totalBruto=vtaItemsCarrito.reduce((s,item)=>s+item.precio_unitario*item.cantidad,0);
+  const precioVenta=vtaItemsCarrito.reduce((s,item)=>s+item.precio_unitario*item.cantidad,0);
+  const descPct=Number(document.getElementById('vta-descuento-pct')?.value)||0;
+  const totalBruto=descPct>0?Math.round(precioVenta*(1-descPct/100)):precioVenta;
+  // Calcular total cobrado según descuento del medio de pago
+  const mp=mediosPagoData.find(m=>String(m[0])===String(val));
+  const descMP=mp?Number(mp[3])||0:0;
+  const totalCobrado=descMP>0?Math.round(totalBruto*(1-descMP/100)):totalBruto;
   const yaAsignado=vtaPagosFila.reduce((s,f,j)=>j!==i?s+(Number(f.monto)||0):s,0);
-  const pendiente=Math.max(0,totalBruto-yaAsignado);
+  const pendiente=Math.max(0,totalCobrado-yaAsignado);
   if(!vtaPagosFila[i].monto||vtaPagosFila[i].monto===0){
     vtaPagosFila[i].monto=pendiente;
   }
@@ -2081,6 +2110,7 @@ function limpiarVenta(){
   renderCarritoVenta();
   document.getElementById('vta-buscar').value='';document.getElementById('vta-notas').value='';
   document.getElementById('vta-tipo').value='venta';document.getElementById('vta-cliente-wrap').style.display='none';
+  const descEl=document.getElementById('vta-descuento-pct');if(descEl)descEl.value='0';
   setFechaHoy('vta-fecha');
   agregarPagoVenta();
 }

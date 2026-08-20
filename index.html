@@ -907,11 +907,44 @@ if(sessionStorage.getItem(_LOGIN_KEY)==='1'){
           <div class="field"><label>Fecha</label><input type="date" id="vta-fecha"></div>
           <div class="field"><label>Tipo de venta</label><select id="vta-tipo" onchange="toggleTipoVenta()"><option value="venta">Venta normal (cobrada)</option><option value="cuenta_por_cobrar">Fiado (cuenta por cobrar)</option></select></div>
         </div>
+
         <div id="vta-seccion-pagos">
-          <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text-light);margin-bottom:10px">Forma de pago</div>
-          <div id="vta-pagos-lista"></div>
-          <button class="btn btn-secondary" style="margin-top:10px;font-size:12px" onclick="agregarPagoVenta()">+ Agregar otro medio de pago</button>
+          <div class="form-grid" style="grid-template-columns:1fr 1fr;gap:14px">
+            <div class="field">
+              <label>Medio de pago</label>
+              <select id="vta-medio-unico" onchange="cambiarMedioUnico(this.value)" style="background:var(--off-white);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none;width:100%">
+                <option value="">Seleccioná medio de pago...</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Descuento adicional</label>
+              <div style="display:flex;align-items:center;gap:6px">
+                <input type="number" id="vta-descuento-pct" min="0" max="100" placeholder="0" value="0"
+                  style="flex:1;background:var(--off-white);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none"
+                  oninput="actualizarTotalesVenta()">
+                <span style="font-size:14px;color:var(--text-mid);font-weight:600">%</span>
+              </div>
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:4px">
+            <div class="field">
+              <label>Precio de lista</label>
+              <div style="background:var(--off-white);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-size:15px;font-weight:600;color:var(--navy)" id="vta-total-bruto">$0</div>
+            </div>
+            <div class="field">
+              <label>Total cobrado</label>
+              <div style="background:var(--off-white);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-size:15px;font-weight:600;color:var(--teal)" id="vta-total-cobrado">$0</div>
+            </div>
+            <div class="field">
+              <label>Neto a recibir</label>
+              <div style="background:var(--off-white);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-size:15px;font-weight:600;color:var(--success)" id="vta-total-neto">$0</div>
+            </div>
+          </div>
+          <div id="vta-pagos-lista" style="display:none"></div>
+          <button class="btn btn-secondary" style="margin-top:6px;font-size:12px;display:none" id="btn-agregar-pago" onclick="agregarPagoVenta()">+ Agregar otro medio de pago</button>
         </div>
+
         <div id="vta-cliente-wrap" style="display:none">
           <div class="field"><label>Cliente</label><div style="display:flex;gap:8px"><select id="vta-cliente" style="flex:1;background:var(--off-white);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none"><option value="">Seleccioná cliente...</option></select><button class="btn btn-secondary" style="font-size:12px;padding:9px 12px" onclick="abrirModalCliente()">+ Nuevo</button></div></div>
           <div style="margin-top:12px;background:var(--off-white);border-radius:10px;padding:14px;border:1.5px solid var(--border)">
@@ -920,24 +953,6 @@ if(sessionStorage.getItem(_LOGIN_KEY)==='1'){
               <div class="field" style="margin:0"><label>Monto inicial</label><input type="number" id="vta-fiado-monto-inicial" min="0" placeholder="0" style="width:100%"></div>
               <div class="field" style="margin:0"><label>Medio de pago</label><select id="vta-fiado-medio-inicial" style="width:100%;background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none"><option value="">Sin pago inicial</option></select></div>
             </div>
-          </div>
-        </div>
-
-        <!-- Descuento y resumen de cobro -->
-        <div id="vta-resumen-cobro" style="background:var(--pearl);border-radius:10px;padding:14px 16px;margin-top:16px">
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
-            <label style="font-size:12px;color:var(--text-light);white-space:nowrap">Descuento adicional:</label>
-            <div style="display:flex;align-items:center;gap:4px">
-              <input type="number" id="vta-descuento-pct" min="0" max="100" placeholder="0" value="0"
-                style="width:64px;padding:5px 8px;border:1.5px solid var(--border);border-radius:6px;font-family:'DM Sans',sans-serif;font-size:13px;text-align:right"
-                oninput="actualizarTotalesVenta()">
-              <span style="font-size:13px;color:var(--text-mid)">%</span>
-            </div>
-          </div>
-          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;text-align:right">
-            <div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-light)">Precio de venta</div><div style="font-size:15px;font-weight:600;color:var(--navy)" id="vta-total-cobrado">$0</div></div>
-            <div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-light)">Total cobrado</div><div style="font-size:15px;font-weight:600;color:var(--teal)" id="vta-total-cobrado2">$0</div></div>
-            <div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-light)">Neto a recibir</div><div style="font-size:15px;font-weight:600;color:var(--success)" id="vta-total-neto">$0</div></div>
           </div>
         </div>
 
@@ -1851,8 +1866,8 @@ async function iniciarVentas(){
   setFechaHoy('vta-fecha');
   if(mediosPagoData.length&&cuentasData.length&&clientesData.length){
     llenarSelectClientes();
+    _llenarMedioUnico();
     vtaPagosFila=[];
-    agregarPagoVenta();
     return;
   }
   try{
@@ -1861,9 +1876,17 @@ async function iniciarVentas(){
     cuentasData=dataCuentas.slice(1);
     clientesData=dataCli.slice(1);
     llenarSelectClientes();
+    _llenarMedioUnico();
     vtaPagosFila=[];
-    agregarPagoVenta();
   }catch(e){showToast('Error al cargar datos de ventas','error')}
+}
+
+function _llenarMedioUnico(){
+  const sel=document.getElementById('vta-medio-unico');
+  if(!sel)return;
+  const activos=mediosPagoData.filter(m=>m[7]===true||m[7]==='TRUE');
+  sel.innerHTML='<option value="">Seleccioná medio de pago...</option>'+
+    activos.map(m=>`<option value="${m[0]}">${m[2]}</option>`).join('');
 }
 
 function llenarSelectClientes(){
@@ -1933,46 +1956,39 @@ function renderCarritoVenta(){
 
 function quitarItemVenta(i){vtaItemsCarrito.splice(i,1);renderCarritoVenta()}
 
+function cambiarMedioUnico(idMedio){
+  if(!vtaPagosFila.length) vtaPagosFila=[{id_medio:'',monto:0}];
+  vtaPagosFila[0].id_medio=idMedio;
+  vtaPagosFila[0].monto=0;
+  actualizarTotalesVenta();
+}
+
 function actualizarTotalesVenta(){
-  const precioVenta=vtaItemsCarrito.reduce((s,i)=>s+i.precio_unitario*i.cantidad,0);
+  const precioLista=vtaItemsCarrito.reduce((s,i)=>s+i.precio_unitario*i.cantidad,0);
   const descPct=Number(document.getElementById('vta-descuento-pct')?.value)||0;
-  const totalConDesc=descPct>0?Math.round(precioVenta*(1-descPct/100)):precioVenta;
-
-  // Calcular total cobrado y neto según medio de pago
-  let totalCobrado=totalConDesc,totalNeto=totalConDesc;
-  if(vtaPagosFila.length>0&&vtaPagosFila[0].id_medio){
-    const mp=mediosPagoData.find(m=>String(m[0])===String(vtaPagosFila[0].id_medio));
-    if(mp){
-      const desc=Number(mp[3])||0,com=Number(mp[4])||0,cf=Number(mp[5])||0;
-      totalCobrado=desc>0?Math.round(totalConDesc*(1-desc/100)):totalConDesc;
-      totalNeto=Math.round(totalCobrado*(1-(com+cf)/100));
-    }
-  }
-  // Si hay montos manuales ingresados, usarlos
-  const hayMontos=vtaPagosFila.some(f=>Number(f.monto)>0&&f.id_medio);
-  if(hayMontos){
-    totalCobrado=0;totalNeto=0;
-    vtaPagosFila.forEach(f=>{
-      const monto=Number(f.monto)||0;
-      const mp=mediosPagoData.find(m=>String(m[0])===String(f.id_medio));
-      const com=mp?Number(mp[4])||0:0,cf=mp?Number(mp[5])||0:0;
-      totalCobrado+=monto;
-      totalNeto+=Math.round(monto*(1-(com+cf)/100));
-    });
-  }
-
-  // Actualizar UI
-  document.getElementById('vta-total-bruto').textContent=formatPeso(precioVenta);
+  const idMedio=document.getElementById('vta-medio-unico')?.value||'';
+  const mp=mediosPagoData.find(m=>String(m[0])===String(idMedio));
+  const descMP=mp?Number(mp[3])||0:0;
+  const com=mp?Number(mp[4])||0:0;
+  const cf=mp?Number(mp[5])||0:0;
+  // Total cobrado = precio lista × (1 - desc MP%) × (1 - desc adicional%)
+  const totalCobrado=Math.round(precioLista*(1-descMP/100)*(1-descPct/100));
+  const totalNeto=Math.round(totalCobrado*(1-(com+cf)/100));
+  // Actualizar vtaPagosFila
+  if(!vtaPagosFila.length) vtaPagosFila=[{id_medio:'',monto:0}];
+  vtaPagosFila[0].id_medio=idMedio;
+  vtaPagosFila[0].monto=totalCobrado;
+  const elBruto=document.getElementById('vta-total-bruto');
   const elCobrado=document.getElementById('vta-total-cobrado');
-  const elCobrado2=document.getElementById('vta-total-cobrado2');
   const elNeto=document.getElementById('vta-total-neto');
-  if(elCobrado) elCobrado.textContent=descPct>0?`${formatPeso(totalConDesc)} (−${descPct}%)`:formatPeso(totalConDesc);
-  if(elCobrado2) elCobrado2.textContent=formatPeso(totalCobrado);
+  if(elBruto) elBruto.textContent=formatPeso(precioLista);
+  if(elCobrado) elCobrado.textContent=formatPeso(totalCobrado);
   if(elNeto) elNeto.textContent=formatPeso(totalNeto);
-
-  const visible=precioVenta>0;
-  document.getElementById('vta-totales').style.display=visible?'block':'none';
-  document.getElementById('vta-card-pagos').style.display=visible?'block':'none';
+  const visible=precioLista>0;
+  const totalesEl=document.getElementById('vta-totales');
+  const pagosEl=document.getElementById('vta-card-pagos');
+  if(totalesEl) totalesEl.style.display=visible?'block':'none';
+  if(pagosEl) pagosEl.style.display=visible?'block':'none';
 }
 
 function agregarPagoVenta(){
@@ -1983,6 +1999,7 @@ function agregarPagoVenta(){
 
 function renderFilasPago(){
   const lista=document.getElementById('vta-pagos-lista');
+  if(!lista)return;
   const activosFiltrados=mediosPagoData.filter(m=>m[7]===true||m[7]==='TRUE');
   lista.innerHTML=vtaPagosFila.map((fila,i)=>`
     <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end;margin-bottom:10px">
@@ -2002,23 +2019,10 @@ function renderFilasPago(){
   `).join('');
 }
 
-function cambiarMedioPago(i,val){
-  vtaPagosFila[i].id_medio=val;
-  const precioVenta=vtaItemsCarrito.reduce((s,item)=>s+item.precio_unitario*item.cantidad,0);
-  const descPct=Number(document.getElementById('vta-descuento-pct')?.value)||0;
-  const totalBruto=descPct>0?Math.round(precioVenta*(1-descPct/100)):precioVenta;
-  // Calcular total cobrado según descuento del medio de pago
-  const mp=mediosPagoData.find(m=>String(m[0])===String(val));
-  const descMP=mp?Number(mp[3])||0:0;
-  const totalCobrado=descMP>0?Math.round(totalBruto*(1-descMP/100)):totalBruto;
-  const yaAsignado=vtaPagosFila.reduce((s,f,j)=>j!==i?s+(Number(f.monto)||0):s,0);
-  const pendiente=Math.max(0,totalCobrado-yaAsignado);
-  if(!vtaPagosFila[i].monto||vtaPagosFila[i].monto===0){
-    vtaPagosFila[i].monto=pendiente;
-  }
-  renderFilasPago();
-  actualizarTotalesVenta();
-}
+function cambiarMedioPago(i,val){vtaPagosFila[i].id_medio=val;actualizarTotalesVenta();}
+function cambiarMontoPago(i,val){vtaPagosFila[i].monto=Number(val)||0;actualizarTotalesVenta();}
+function quitarFilaPago(i){vtaPagosFila.splice(i,1);renderFilasPago();actualizarTotalesVenta();}
+
 function cambiarMontoPago(i,val){vtaPagosFila[i].monto=Number(val)||0;actualizarTotalesVenta()}
 function quitarFilaPago(i){vtaPagosFila.splice(i,1);renderFilasPago();actualizarTotalesVenta()}
 
@@ -2116,11 +2120,15 @@ async function confirmarVenta(){
 function limpiarVenta(){
   vtaItemsCarrito=[];vtaPagosFila=[];vtaProductoSel=null;
   renderCarritoVenta();
-  document.getElementById('vta-buscar').value='';document.getElementById('vta-notas').value='';
-  document.getElementById('vta-tipo').value='venta';document.getElementById('vta-cliente-wrap').style.display='none';
+  document.getElementById('vta-buscar').value='';
+  document.getElementById('vta-notas').value='';
+  document.getElementById('vta-tipo').value='venta';
+  document.getElementById('vta-cliente-wrap').style.display='none';
+  document.getElementById('vta-seccion-pagos').style.display='block';
   const descEl=document.getElementById('vta-descuento-pct');if(descEl)descEl.value='0';
+  const medioEl=document.getElementById('vta-medio-unico');if(medioEl)medioEl.value='';
   setFechaHoy('vta-fecha');
-  agregarPagoVenta();
+  actualizarTotalesVenta();
 }
 
 function renderHistorialVentas(rows){

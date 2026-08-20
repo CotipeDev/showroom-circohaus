@@ -2285,6 +2285,7 @@ async function verDetalleVenta(idVenta){
     const totalFinal=esV2?Number(venta[16])||0:Number(venta?.[5])||0;
     const costoCobranza=esV2?Number(venta[19])||0:0;
     const netoEsperado=esV2?Number(venta[20])||0:Number(venta?.[6])||0;
+    const saldoPendiente=esV2?Number(venta[18])||0:0;
     document.getElementById('detalle-vta-titulo').textContent=`Detalle — ${idVenta}`;
     const clienteVenta=venta&&venta[3]?clientesData.find(c=>String(c[0])===String(venta[3])):null;
     document.getElementById('detalle-vta-body').innerHTML=`
@@ -2296,15 +2297,16 @@ async function verDetalleVenta(idVenta){
       <table style="margin-bottom:16px"><thead><tr><th>Código</th><th>Desc</th><th>Cant</th><th>Precio</th><th>Subtotal</th></tr></thead><tbody>
         ${items.map(i=>`<tr><td><code style="color:var(--teal)">${i[1]}</code></td><td>${prodNombre(i[1])}</td><td>${i[2]}</td><td>${formatPeso(i[3])}</td><td>${formatPeso(i[6])}</td></tr>`).join('')}
       </tbody></table>
-      <div style="display:grid;grid-template-columns:repeat(${esV2?5:2},1fr);gap:10px;background:var(--pearl);border-radius:8px;padding:12px;margin-bottom:16px">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;background:var(--pearl);border-radius:8px;padding:12px;margin-bottom:16px">
         <div><div style="font-size:10px;text-transform:uppercase;color:var(--text-light)">Precio de lista</div><strong>${formatPeso(precioLista)}</strong></div>
-        ${esV2?`<div><div style="font-size:10px;text-transform:uppercase;color:var(--text-light)">Descuento general</div><strong>− ${formatPeso(descuentoGeneral)}</strong></div>`:''}
+        ${esV2?`<div><div style="font-size:10px;text-transform:uppercase;color:var(--text-light)">Descuento general</div><strong>${descuentoGeneral>0?'− ':''}${formatPeso(descuentoGeneral)}</strong></div>`:''}
         <div><div style="font-size:10px;text-transform:uppercase;color:var(--text-light)">Total cobrado</div><strong style="color:var(--teal)">${formatPeso(totalFinal)}</strong></div>
         ${esV2?`<div><div style="font-size:10px;text-transform:uppercase;color:var(--text-light)">Costo cobranza</div><strong>${formatPeso(costoCobranza)}</strong></div><div><div style="font-size:10px;text-transform:uppercase;color:var(--text-light)">Neto esperado</div><strong style="color:var(--success)">${formatPeso(netoEsperado)}</strong></div>`:''}
+        ${saldoPendiente>0?`<div><div style="font-size:10px;text-transform:uppercase;color:var(--text-light)">Saldo pendiente</div><strong style="color:var(--error)">${formatPeso(saldoPendiente)}</strong></div>`:''}
       </div>
       <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-mid);margin-bottom:6px">Pagos</div>
       <table><thead><tr><th>Medio</th><th>Monto cobrado</th><th>Neto recibido</th></tr></thead><tbody>
-        ${pagos.map(p=>{const mp=mediosPagoData.find(m=>String(m[0])===String(p[1]));return`<tr><td>${mp?mp[2]:p[1]}</td><td>${formatPeso(p[2])}</td><td style="color:var(--success)">${formatPeso(p[6])}</td></tr>`}).join('')}
+        ${pagos.length?pagos.map(p=>{const mp=mediosPagoData.find(m=>String(m[0])===String(p[1]));return`<tr><td>${mp?mp[2]:p[1]}</td><td>${formatPeso(p[2])}</td><td style="color:var(--success)">${formatPeso(p[6])}</td></tr>`}).join(''):'<tr><td colspan="3" style="text-align:center;color:var(--text-light)">Sin pago inicial</td></tr>'}
       </tbody></table>`;
     const btnCancelar=document.getElementById('btn-cancelar-vta');
     btnCancelar.style.display=estadoVenta==='cancelada'?'none':'';
@@ -2812,7 +2814,8 @@ async function iniciarCxc(){
   document.getElementById('cxc-fichas').innerHTML='<p style="color:var(--text-light);text-align:center;padding:32px;grid-column:span 2">Cargando...</p>';
   try{
     // Usar variables globales si ya están cargadas, si no pedir al API
-    const cpcs=cuentasPorCobrarData.length?cuentasPorCobrarData:(await cacheGet('getCuentasPorCobrar')).slice(1);
+    const cpcsTodas=cuentasPorCobrarData.length?cuentasPorCobrarData:(await cacheGet('getCuentasPorCobrar')).slice(1);
+    const cpcs=cpcsTodas.filter(c=>String(c[6]||'').toLowerCase()!=='cancelada');
     const ventas=ventasData.length?ventasData:(await cacheGet('getVentas')).slice(1);
     const clientes=clientesData.length?clientesData:(await cacheGet('getClientes')).slice(1);
     const pagos=pagosVentaData.length?pagosVentaData:(await cacheGet('getPagosVenta')).slice(1);
@@ -2820,7 +2823,7 @@ async function iniciarCxc(){
     const cuentas=cuentasData.length?cuentasData:(await cacheGet('getCuentas')).slice(1);
 
     // Actualizar variables globales
-    if(!cuentasPorCobrarData.length)cuentasPorCobrarData=cpcs;
+    if(!cuentasPorCobrarData.length)cuentasPorCobrarData=cpcsTodas;
     if(!ventasData.length)ventasData=ventas;
     if(!pagosVentaData.length)pagosVentaData=pagos;
 

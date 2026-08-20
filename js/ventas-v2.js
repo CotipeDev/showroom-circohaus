@@ -187,6 +187,7 @@
         pagos:pagosEntrada.filter(p=>p.id_medio&&n(p.base_asignada)>0).map(p=>({id_medio:p.id_medio,base_asignada:redondear(p.base_asignada)}))};
       const res=await apiPost('registrarVentaV2',payload);
       showToast(`✅ Venta ${res.id||res.id_venta||''} registrada`); cacheInvalidar('getVentas','getDetalleVentas','getPagosVenta','getProductos','getCuentasPorCobrar','getMovimientos');
+      ventasData=[];detalleVentasData=[];pagosVentaData=[];cuentasPorCobrarData=[];cxcDataGlobal={};
       ventasHistData=[]; limpiarVenta(); setTimeout(()=>cargarProductos(),1500);
     } catch(e) { showToast(e.message||'Error al registrar la venta','error'); }
     finally { if(btn){btn.disabled=false;btn.textContent='✓ Confirmar venta';} }

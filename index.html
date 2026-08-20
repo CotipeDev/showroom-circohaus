@@ -896,21 +896,9 @@ if(sessionStorage.getItem(_LOGIN_KEY)==='1'){
       <div class="card">
         <div class="card-title">Productos en esta venta</div>
         <div id="vta-items-lista" class="items-list"><div class="items-empty">Todavía no agregaste productos</div></div>
-        <div id="vta-totales" style="display:none;background:var(--pearl);border-radius:8px;padding:14px 16px;margin-top:12px">
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;justify-content:flex-end">
-            <label style="font-size:12px;color:var(--text-light);white-space:nowrap">Descuento adicional:</label>
-            <div style="display:flex;align-items:center;gap:4px">
-              <input type="number" id="vta-descuento-pct" min="0" max="100" placeholder="0" value="0"
-                style="width:60px;padding:5px 8px;border:1.5px solid var(--border);border-radius:6px;font-family:'DM Sans',sans-serif;font-size:13px;text-align:right"
-                oninput="actualizarTotalesVenta()">
-              <span style="font-size:13px;color:var(--text-mid)">%</span>
-            </div>
-          </div>
-          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;text-align:right">
-            <div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-light)">Precio de venta</div><div style="font-size:16px;font-weight:600;color:var(--navy)" id="vta-total-bruto">$0</div></div>
-            <div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-light)">Total cobrado</div><div style="font-size:16px;font-weight:600;color:var(--teal)" id="vta-total-cobrado">$0</div></div>
-            <div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-light)">Neto a recibir</div><div style="font-size:16px;font-weight:600;color:var(--success)" id="vta-total-neto">$0</div></div>
-          </div>
+        <div id="vta-totales" style="display:none;background:var(--pearl);border-radius:8px;padding:12px 16px;margin-top:12px;text-align:right">
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-light)">Total de lista</div>
+          <div style="font-size:20px;font-weight:700;color:var(--navy)" id="vta-total-bruto">$0</div>
         </div>
       </div>
       <div class="card" id="vta-card-pagos" style="display:none">
@@ -934,6 +922,25 @@ if(sessionStorage.getItem(_LOGIN_KEY)==='1'){
             </div>
           </div>
         </div>
+
+        <!-- Descuento y resumen de cobro -->
+        <div id="vta-resumen-cobro" style="background:var(--pearl);border-radius:10px;padding:14px 16px;margin-top:16px">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+            <label style="font-size:12px;color:var(--text-light);white-space:nowrap">Descuento adicional:</label>
+            <div style="display:flex;align-items:center;gap:4px">
+              <input type="number" id="vta-descuento-pct" min="0" max="100" placeholder="0" value="0"
+                style="width:64px;padding:5px 8px;border:1.5px solid var(--border);border-radius:6px;font-family:'DM Sans',sans-serif;font-size:13px;text-align:right"
+                oninput="actualizarTotalesVenta()">
+              <span style="font-size:13px;color:var(--text-mid)">%</span>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;text-align:right">
+            <div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-light)">Precio de venta</div><div style="font-size:15px;font-weight:600;color:var(--navy)" id="vta-total-cobrado">$0</div></div>
+            <div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-light)">Total cobrado</div><div style="font-size:15px;font-weight:600;color:var(--teal)" id="vta-total-cobrado2">$0</div></div>
+            <div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-light)">Neto a recibir</div><div style="font-size:15px;font-weight:600;color:var(--success)" id="vta-total-neto">$0</div></div>
+          </div>
+        </div>
+
         <hr style="margin:16px 0">
         <div class="field"><label>Notas (opcional)</label><input type="text" id="vta-notas" placeholder="Ej: cliente pidió bolsa de regalo"></div>
         <div class="form-actions" style="margin-top:16px">
@@ -1927,44 +1934,45 @@ function renderCarritoVenta(){
 function quitarItemVenta(i){vtaItemsCarrito.splice(i,1);renderCarritoVenta()}
 
 function actualizarTotalesVenta(){
-  // Precio de venta = suma de todos los items
   const precioVenta=vtaItemsCarrito.reduce((s,i)=>s+i.precio_unitario*i.cantidad,0);
-  // Descuento adicional
   const descPct=Number(document.getElementById('vta-descuento-pct')?.value)||0;
-  const totalBruto=descPct>0?Math.round(precioVenta*(1-descPct/100)):precioVenta;
+  const totalConDesc=descPct>0?Math.round(precioVenta*(1-descPct/100)):precioVenta;
 
-  let totalCobrado=0,totalNeto=0;
-  const hayMontosIngresados=vtaPagosFila.some(f=>Number(f.monto)>0&&f.id_medio);
-
-  if(hayMontosIngresados){
-    vtaPagosFila.forEach(fila=>{
-      const monto=Number(fila.monto)||0;
-      const mp=mediosPagoData.find(m=>String(m[0])===String(fila.id_medio));
-      if(mp&&monto>0){
-        const com=Number(mp[4])||0,cf=Number(mp[5])||0;
-        totalCobrado+=monto;
-        totalNeto+=Math.round(monto*(1-(com+cf)/100));
-      }else if(monto>0){
-        totalCobrado+=monto;totalNeto+=monto;
-      }
+  // Calcular total cobrado y neto según medio de pago
+  let totalCobrado=totalConDesc,totalNeto=totalConDesc;
+  if(vtaPagosFila.length>0&&vtaPagosFila[0].id_medio){
+    const mp=mediosPagoData.find(m=>String(m[0])===String(vtaPagosFila[0].id_medio));
+    if(mp){
+      const desc=Number(mp[3])||0,com=Number(mp[4])||0,cf=Number(mp[5])||0;
+      totalCobrado=desc>0?Math.round(totalConDesc*(1-desc/100)):totalConDesc;
+      totalNeto=Math.round(totalCobrado*(1-(com+cf)/100));
+    }
+  }
+  // Si hay montos manuales ingresados, usarlos
+  const hayMontos=vtaPagosFila.some(f=>Number(f.monto)>0&&f.id_medio);
+  if(hayMontos){
+    totalCobrado=0;totalNeto=0;
+    vtaPagosFila.forEach(f=>{
+      const monto=Number(f.monto)||0;
+      const mp=mediosPagoData.find(m=>String(m[0])===String(f.id_medio));
+      const com=mp?Number(mp[4])||0:0,cf=mp?Number(mp[5])||0:0;
+      totalCobrado+=monto;
+      totalNeto+=Math.round(monto*(1-(com+cf)/100));
     });
-  }else{
-    // Sin medios seleccionados: calcular según primer medio de pago si hay uno elegido
-    if(vtaPagosFila.length>0&&vtaPagosFila[0].id_medio){
-      const mp=mediosPagoData.find(m=>String(m[0])===String(vtaPagosFila[0].id_medio));
-      if(mp){
-        const desc=Number(mp[3])||0,com=Number(mp[4])||0,cf=Number(mp[5])||0;
-        totalCobrado=desc>0?Math.round(totalBruto*(1-desc/100)):totalBruto;
-        totalNeto=Math.round(totalCobrado*(1-(com+cf)/100));
-      }else{totalCobrado=totalBruto;totalNeto=totalBruto;}
-    }else{totalCobrado=totalBruto;totalNeto=totalBruto;}
   }
 
-  document.getElementById('vta-total-bruto').textContent=formatPeso(precioVenta)+(descPct>0?` → ${formatPeso(totalBruto)} (−${descPct}%)`:'');
-  document.getElementById('vta-total-cobrado').textContent=formatPeso(totalCobrado);
-  document.getElementById('vta-total-neto').textContent=formatPeso(totalNeto);
-  document.getElementById('vta-totales').style.display=precioVenta>0?'block':'none';
-  document.getElementById('vta-card-pagos').style.display=precioVenta>0?'block':'none';
+  // Actualizar UI
+  document.getElementById('vta-total-bruto').textContent=formatPeso(precioVenta);
+  const elCobrado=document.getElementById('vta-total-cobrado');
+  const elCobrado2=document.getElementById('vta-total-cobrado2');
+  const elNeto=document.getElementById('vta-total-neto');
+  if(elCobrado) elCobrado.textContent=descPct>0?`${formatPeso(totalConDesc)} (−${descPct}%)`:formatPeso(totalConDesc);
+  if(elCobrado2) elCobrado2.textContent=formatPeso(totalCobrado);
+  if(elNeto) elNeto.textContent=formatPeso(totalNeto);
+
+  const visible=precioVenta>0;
+  document.getElementById('vta-totales').style.display=visible?'block':'none';
+  document.getElementById('vta-card-pagos').style.display=visible?'block':'none';
 }
 
 function agregarPagoVenta(){

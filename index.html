@@ -909,31 +909,29 @@ if(sessionStorage.getItem(_LOGIN_KEY)==='1'){
         </div>
 
         <div id="vta-seccion-pagos">
-          <div class="form-grid" style="grid-template-columns:1fr 1fr;gap:14px">
-            <div class="field">
-              <label>Medio de pago</label>
-              <select id="vta-medio-unico" onchange="cambiarMedioUnico(this.value)" style="background:var(--off-white);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none;width:100%">
-                <option value="">Seleccioná medio de pago...</option>
-              </select>
-            </div>
-            <div class="field">
-              <label>Descuento adicional</label>
-              <div style="display:flex;align-items:center;gap:6px">
-                <input type="number" id="vta-descuento-pct" min="0" max="100" placeholder="0" value="0"
-                  style="flex:1;background:var(--off-white);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none"
-                  oninput="actualizarTotalesVenta()">
-                <span style="font-size:14px;color:var(--text-mid);font-weight:600">%</span>
-              </div>
+          <!-- Descuento adicional -->
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+            <label style="font-size:13px;color:var(--text-light);white-space:nowrap">Descuento adicional:</label>
+            <div style="display:flex;align-items:center;gap:6px">
+              <input type="number" id="vta-descuento-pct" min="0" max="100" placeholder="0" value="0"
+                style="width:64px;background:var(--off-white);border:1.5px solid var(--border);border-radius:8px;padding:7px 10px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none;text-align:right"
+                oninput="actualizarTotalesVenta()">
+              <span style="font-size:14px;color:var(--text-mid);font-weight:600">%</span>
             </div>
           </div>
 
-          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:4px">
+          <!-- Filas de pago (cada una con su medio y monto) -->
+          <div id="vta-pagos-lista"></div>
+          <button class="btn btn-secondary" style="margin-top:8px;font-size:12px" onclick="agregarPagoVenta()">+ Agregar otro medio de pago</button>
+
+          <!-- Resumen totales -->
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px">
             <div class="field">
               <label>Precio de lista</label>
               <div style="background:var(--off-white);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-size:15px;font-weight:600;color:var(--navy)" id="vta-total-bruto">$0</div>
             </div>
             <div class="field">
-              <label>Total cobrado</label>
+              <label>Total a cobrar</label>
               <div style="background:var(--off-white);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-size:15px;font-weight:600;color:var(--teal)" id="vta-total-cobrado">$0</div>
             </div>
             <div class="field">
@@ -941,11 +939,7 @@ if(sessionStorage.getItem(_LOGIN_KEY)==='1'){
               <div style="background:var(--off-white);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-size:15px;font-weight:600;color:var(--success)" id="vta-total-neto">$0</div>
             </div>
           </div>
-          <div id="vta-pagos-lista"></div>
-          <button class="btn btn-secondary" style="margin-top:6px;font-size:12px" onclick="agregarPagoVenta()">+ Agregar otro medio de pago</button>
         </div>
-
-        <div id="vta-cliente-wrap" style="display:none">
           <div class="field"><label>Cliente</label><div style="display:flex;gap:8px"><select id="vta-cliente" style="flex:1;background:var(--off-white);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none"><option value="">Seleccioná cliente...</option></select><button class="btn btn-secondary" style="font-size:12px;padding:9px 12px" onclick="abrirModalCliente()">+ Nuevo</button></div></div>
           <div style="margin-top:12px;background:var(--off-white);border-radius:10px;padding:14px;border:1.5px solid var(--border)">
             <div style="font-size:12px;font-weight:600;color:var(--navy);margin-bottom:10px">¿Entregó algo ahora? (opcional)</div>
@@ -1867,8 +1861,8 @@ async function iniciarVentas(){
   if(mediosPagoData.length&&cuentasData.length&&clientesData.length){
     llenarSelectClientes();
     _llenarMedioUnico();
-    vtaPagosFila=[];
-    return;
+    vtaPagosFila=[{id_medio:'',monto:0}];
+    renderFilasPago();
   }
   try{
     const[dataMp,dataCuentas,dataCli]=await Promise.all([cacheGet('getMediosPago'),cacheGet('getCuentas'),cacheGet('getClientes')]);
@@ -1956,11 +1950,102 @@ function renderCarritoVenta(){
 
 function quitarItemVenta(i){vtaItemsCarrito.splice(i,1);renderCarritoVenta()}
 
-function cambiarMedioUnico(idMedio){
-  if(!vtaPagosFila.length) vtaPagosFila=[{id_medio:'',monto:0}];
-  vtaPagosFila[0].id_medio=idMedio;
-  vtaPagosFila[0].monto=0;
+function cambiarMedioUnico(v){}// legacy, no usado
+
+function agregarPagoVenta(){
+  if(!vtaPagosFila.length){
+    vtaPagosFila=[{id_medio:'',monto:0}];
+  } else {
+    vtaPagosFila.push({id_medio:'',monto:0});
+  }
+  renderFilasPago();
   actualizarTotalesVenta();
+}
+
+function renderFilasPago(){
+  const lista=document.getElementById('vta-pagos-lista');
+  if(!lista)return;
+  const activos=mediosPagoData.filter(m=>m[7]===true||m[7]==='TRUE');
+  lista.innerHTML=vtaPagosFila.map((fila,i)=>`
+    <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end;margin-bottom:10px">
+      <div class="field" style="margin:0">
+        <label style="font-size:12px">Medio de pago</label>
+        <select onchange="cambiarMedioPago(${i},this.value)" style="background:var(--off-white);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none;width:100%">
+          <option value="">Seleccioná...</option>
+          ${activos.map(m=>`<option value="${m[0]}" ${String(m[0])===String(fila.id_medio)?'selected':''}>${m[2]}</option>`).join('')}
+        </select>
+      </div>
+      <div class="field" style="margin:0">
+        <label style="font-size:12px">Monto ($)</label>
+        <input type="number" min="0" value="${fila.monto||''}" placeholder="0"
+          oninput="cambiarMontoPago(${i},this.value)"
+          style="background:var(--off-white);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none;width:100%">
+      </div>
+      ${vtaPagosFila.length>1
+        ?`<button class="btn-danger" onclick="quitarFilaPago(${i})" style="height:40px;margin-top:20px">✕</button>`
+        :'<div></div>'}
+    </div>
+  `).join('');
+}
+
+function cambiarMedioPago(i,val){
+  vtaPagosFila[i].id_medio=val;
+  // Autocompletar monto: precio de lista menos descuentos menos lo que ya está asignado en otras filas
+  const precioLista=vtaItemsCarrito.reduce((s,x)=>s+x.precio_unitario*x.cantidad,0);
+  const descPct=Number(document.getElementById('vta-descuento-pct')?.value)||0;
+  const mp=mediosPagoData.find(m=>String(m[0])===String(val));
+  const esEfectivo=(mp?String(mp[2]):'').toLowerCase().includes('efectivo');
+  const descMP=esEfectivo?(Number(mp[3])||0):0;
+  const totalConDesc=Math.round(precioLista*(1-descMP/100)*(1-descPct/100));
+  const yaAsignado=vtaPagosFila.reduce((s,f,j)=>j!==i?s+(Number(f.monto)||0):s,0);
+  if(!vtaPagosFila[i].monto) vtaPagosFila[i].monto=Math.max(0,totalConDesc-yaAsignado);
+  renderFilasPago();
+  actualizarTotalesVenta();
+}
+
+function cambiarMontoPago(i,val){vtaPagosFila[i].monto=Number(val)||0;actualizarTotalesVenta();}
+function quitarFilaPago(i){vtaPagosFila.splice(i,1);renderFilasPago();actualizarTotalesVenta();}
+
+function actualizarTotalesVenta(){
+  const precioLista=vtaItemsCarrito.reduce((s,i)=>s+i.precio_unitario*i.cantidad,0);
+  const descPct=Number(document.getElementById('vta-descuento-pct')?.value)||0;
+
+  // Calcular total cobrado y neto sumando todas las filas de pago
+  let totalCobrado=0,totalNeto=0;
+  const hayPagos=vtaPagosFila.some(f=>f.id_medio&&Number(f.monto)>0);
+
+  if(hayPagos){
+    vtaPagosFila.forEach(f=>{
+      const monto=Number(f.monto)||0;
+      const mp=mediosPagoData.find(m=>String(m[0])===String(f.id_medio));
+      const esEfectivo=(mp?String(mp[2]):'').toLowerCase().includes('efectivo');
+      const descMP=esEfectivo?(Number(mp?mp[3]:0)||0):0;
+      const com=mp?Number(mp[4])||0:0;
+      const cf=mp?Number(mp[5])||0:0;
+      // Aplicar descuento adicional sobre el monto de cada fila
+      const montoConDesc=Math.round(monto*(1-descPct/100)*(1-descMP/100));
+      totalCobrado+=montoConDesc;
+      totalNeto+=Math.round(montoConDesc*(1-(com+cf)/100));
+    });
+  } else {
+    totalCobrado=Math.round(precioLista*(1-descPct/100));
+    totalNeto=totalCobrado;
+  }
+
+  const elLista=document.getElementById('vta-lista-bruto');
+  const elBruto=document.getElementById('vta-total-bruto');
+  const elCobrado=document.getElementById('vta-total-cobrado');
+  const elNeto=document.getElementById('vta-total-neto');
+  if(elLista) elLista.textContent=formatPeso(precioLista);
+  if(elBruto) elBruto.textContent=formatPeso(precioLista);
+  if(elCobrado) elCobrado.textContent=formatPeso(totalCobrado);
+  if(elNeto) elNeto.textContent=formatPeso(totalNeto);
+
+  const visible=precioLista>0;
+  const totalesEl=document.getElementById('vta-totales');
+  const pagosEl=document.getElementById('vta-card-pagos');
+  if(totalesEl) totalesEl.style.display=visible?'block':'none';
+  if(pagosEl) pagosEl.style.display=visible?'block':'none';
 }
 
 function actualizarTotalesVenta(){

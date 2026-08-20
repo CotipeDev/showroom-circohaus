@@ -201,12 +201,17 @@
 
   window.cancelarVenta = async function (idVenta) {
     if(!confirm(`¿Cancelar la venta ${idVenta}? Esto reintegrará el stock.`))return;
+    showToast('Cancelando venta...');
     try {
       let venta=ventasHistData.find(v=>String(v[0])===String(idVenta));
       if(!venta){const data=await cacheGet('getVentas');venta=data.slice(1).find(v=>String(v[0])===String(idVenta));}
       const action=String(venta?.[25]||'').trim()==='V2'?'cancelarVentaV2':'cancelarVenta';
       await apiPost(action,{id_venta:idVenta,fecha:fechaLocal(),motivo:'Cancelación desde showroom'});
-      showToast('Venta cancelada. Stock reintegrado.');ventasHistData=[];
+      if(venta){venta[7]='cancelada';if(venta.length>24)venta[24]='CANCELADA';}
+      const ventaVisible=ventasHistData.find(v=>String(v[0])===String(idVenta));
+      if(ventaVisible){ventaVisible[7]='cancelada';if(ventaVisible.length>24)ventaVisible[24]='CANCELADA';}
+      renderHistorialVentas(ventasHistData);
+      showToast('✅ Venta cancelada. Stock reintegrado.');
       cacheInvalidar('getProductos','getVentas','getDetalleVentas','getPagosVenta','getMovimientos','getCuentasPorCobrar');setTimeout(()=>cargarProductos(),1500);
     } catch(e){showToast(e.message||'Error al cancelar la venta','error');}
   };

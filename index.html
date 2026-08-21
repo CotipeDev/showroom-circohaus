@@ -2226,9 +2226,9 @@ function renderHistorialVentas(rows){
       const estado=v[7]||'cobrada';
       const esV2=String(v[25]||'').trim()==='V2';
       const totalVenta=esV2?Number(v[16])||0:Number(v[5])||0;
-      const montoPagado=esV2?Number(v[17])||0:(estado==='cobrada'?Number(v[5])||0:null);
-      const saldo=esV2?Number(v[18])||0:null;
-      const netoEsperado=esV2?Number(v[20])||0:Number(v[6])||0;
+      const montoPagado=estado==='cancelada'?0:(esV2?Number(v[17])||0:(estado==='cobrada'?Number(v[5])||0:null));
+      const saldo=estado==='cancelada'?0:(esV2?Number(v[18])||0:null);
+      const netoEsperado=estado==='cancelada'?0:(esV2?Number(v[20])||0:Number(v[6])||0);
       const facturada=v[9]===true||v[9]==='TRUE';
       const badgeCls=estado==='cobrada'?'badge-ok':estado==='pendiente'?'badge-low':'badge-zero';
       const estadoLabel=estado==='cobrada'?'Cobrada':estado==='pendiente'?'Fiado pendiente':'Cancelada';

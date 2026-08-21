@@ -208,9 +208,15 @@
       if(!venta){const data=await cacheGet('getVentas');venta=data.slice(1).find(v=>String(v[0])===String(idVenta));}
       const action=String(venta?.[25]||'').trim()==='V2'?'cancelarVentaV2':'cancelarVenta';
       await apiPost(action,{id_venta:idVenta,fecha:fechaLocal(),motivo:'Cancelación desde showroom'});
-      if(venta){venta[7]='cancelada';if(venta.length>24)venta[24]='CANCELADA';}
+      if(venta){
+        venta[7]='cancelada';
+        if(venta.length>24){venta[6]=0;venta[17]=0;venta[18]=0;venta[19]=0;venta[20]=0;venta[24]='CANCELADA';}
+      }
       const ventaVisible=ventasHistData.find(v=>String(v[0])===String(idVenta));
-      if(ventaVisible){ventaVisible[7]='cancelada';if(ventaVisible.length>24)ventaVisible[24]='CANCELADA';}
+      if(ventaVisible){
+        ventaVisible[7]='cancelada';
+        if(ventaVisible.length>24){ventaVisible[6]=0;ventaVisible[17]=0;ventaVisible[18]=0;ventaVisible[19]=0;ventaVisible[20]=0;ventaVisible[24]='CANCELADA';}
+      }
       renderHistorialVentas(ventasHistData);
       showToast('✅ Venta cancelada. Stock reintegrado.');
       cacheInvalidar('getProductos','getVentas','getDetalleVentas','getPagosVenta','getMovimientos','getCuentasPorCobrar');setTimeout(()=>cargarProductos(),1500);

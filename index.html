@@ -515,6 +515,7 @@ if(sessionStorage.getItem(_LOGIN_KEY)==='1'){
           <button class="btn btn-secondary" onclick="agregarItemIngreso()">+ Agregar</button>
         </div>
         <div id="ing-producto-seleccionado" style="display:none;margin-top:8px;font-size:12px;color:var(--success)">✓ Seleccionado: <span id="ing-prod-nombre"></span></div>
+        <button class="btn btn-secondary" style="margin-top:10px" onclick="abrirNuevoProductoIngreso()">+ Crear producto nuevo para este ingreso</button>
         <div class="form-actions">
           <button class="btn btn-primary" onclick="conBotonCargando(this,'Procesando...',confirmarIngreso)">Confirmar ingreso</button>
           <button class="btn btn-secondary" onclick="limpiarIngreso()">Limpiar</button>
@@ -545,6 +546,28 @@ if(sessionStorage.getItem(_LOGIN_KEY)==='1'){
         <div style="margin-top:16px;display:flex;justify-content:space-between;align-items:center">
           <button class="btn btn-danger" onclick="eliminarIngreso(document.getElementById('ing-det-titulo').dataset.id)">🗑 Eliminar ingreso</button>
           <button class="btn btn-secondary" onclick="cerrarModal('modal-detalle-ingreso')">Cerrar</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="modal-nuevo-producto-ingreso" class="modal-overlay" onclick="if(event.target===this)cerrarModal('modal-nuevo-producto-ingreso')">
+      <div class="modal" style="max-width:680px">
+        <div class="modal-title">Nuevo producto del pedido</div>
+        <div class="modal-sub">Se creará con stock cero. La cantidad se sumará al confirmar el ingreso completo.</div>
+        <div class="form-grid">
+          <div class="field"><label>Código</label><input type="text" id="ing-nuevo-codigo" placeholder="Ej: PQY-0001"></div>
+          <div class="field"><label>Descripción</label><input type="text" id="ing-nuevo-desc" placeholder="Nombre del producto"></div>
+          <div class="field"><label>Proveedor</label><input type="text" id="ing-nuevo-proveedor" readonly class="readonly"></div>
+          <div class="field"><label>Categoría</label><select id="ing-nuevo-categoria"><option value="">Seleccioná...</option></select></div>
+          <div class="field"><label>Cantidad del pedido</label><input type="number" id="ing-nuevo-cantidad" min="1" step="1" placeholder="0"></div>
+          <div class="field"><label>Precio costo unitario ($)</label><input type="number" id="ing-nuevo-costo" min="0" oninput="calcularPrecioNuevoIngreso()" placeholder="0"></div>
+          <div class="field"><label>Margen (%)</label><input type="number" id="ing-nuevo-margen" min="0" oninput="calcularPrecioNuevoIngreso()" placeholder="Ej: 150"></div>
+          <div class="field"><label>Precio venta ($)</label><input type="number" id="ing-nuevo-pventa" readonly class="readonly" placeholder="Se calcula solo"></div>
+          <div class="field"><label>Stock mínimo</label><input type="number" id="ing-nuevo-stock-min" min="0" step="1" placeholder="Ej: 3"></div>
+        </div>
+        <div class="modal-actions">
+          <button class="btn btn-primary" onclick="conBotonCargando(this,'Creando...',guardarNuevoProductoIngreso)">Crear y agregar al pedido</button>
+          <button class="btn btn-secondary" onclick="cerrarModal('modal-nuevo-producto-ingreso')">Cancelar</button>
         </div>
       </div>
     </div>
@@ -1451,6 +1474,59 @@ function filtrarProductosIngreso(){
   lista.style.display='block';
 }
 function selProd(codigo,desc){ingProductoSel={codigo,desc};document.getElementById('ing-buscar').value=`${codigo} — ${desc}`;document.getElementById('ing-autocomplete').style.display='none';document.getElementById('ing-prod-nombre').textContent=`${codigo} — ${desc}`;document.getElementById('ing-producto-seleccionado').style.display='block'}
+function abrirNuevoProductoIngreso(){
+  const idProveedor=document.getElementById('ing-proveedor').value;
+  if(!idProveedor){showToast('Primero seleccioná el proveedor del ingreso','error');return}
+  const proveedor=proveedoresData.find(p=>String(p[0])===String(idProveedor));
+  const busqueda=document.getElementById('ing-buscar').value.trim();
+  document.getElementById('ing-nuevo-codigo').value=busqueda.includes(' — ')?'':busqueda;
+  ['ing-nuevo-desc','ing-nuevo-cantidad','ing-nuevo-costo','ing-nuevo-margen','ing-nuevo-pventa','ing-nuevo-stock-min'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('ing-nuevo-proveedor').value=proveedor?proveedor[1]:idProveedor;
+  const categoria=document.getElementById('ing-nuevo-categoria');
+  categoria.innerHTML='<option value="">Seleccioná...</option>'+categoriasData.map(c=>`<option value="${c}">${c}</option>`).join('');
+  document.getElementById('modal-nuevo-producto-ingreso').dataset.proveedor=idProveedor;
+  document.getElementById('modal-nuevo-producto-ingreso').classList.add('open');
+}
+function calcularPrecioNuevoIngreso(){
+  const costo=Number(document.getElementById('ing-nuevo-costo').value);
+  const margen=Number(document.getElementById('ing-nuevo-margen').value);
+  document.getElementById('ing-nuevo-pventa').value=costo>0&&margen>=0?Math.round(costo*(1+margen/100)):'';
+}
+async function guardarNuevoProductoIngreso(){
+  const codigo=document.getElementById('ing-nuevo-codigo').value.trim();
+  const descripcion=document.getElementById('ing-nuevo-desc').value.trim();
+  const proveedor=document.getElementById('modal-nuevo-producto-ingreso').dataset.proveedor||'';
+  const categoria=document.getElementById('ing-nuevo-categoria').value;
+  const cantidad=Number(document.getElementById('ing-nuevo-cantidad').value);
+  const precio_costo=Number(document.getElementById('ing-nuevo-costo').value);
+  const margenValor=document.getElementById('ing-nuevo-margen').value;
+  const margen_pct=Number(margenValor);
+  const precio_venta=Number(document.getElementById('ing-nuevo-pventa').value);
+  const stock_minimo=Number(document.getElementById('ing-nuevo-stock-min').value)||0;
+  if(!codigo||!descripcion){showToast('Completá código y descripción','error');return}
+  if(!Number.isInteger(cantidad)||cantidad<1){showToast('Ingresá una cantidad entera mayor a cero','error');return}
+  if(!Number.isFinite(precio_costo)||precio_costo<=0){showToast('Ingresá el precio de costo unitario','error');return}
+  if(margenValor===''||!Number.isFinite(margen_pct)||margen_pct<0||!precio_venta){showToast('Ingresá un margen válido','error');return}
+  if(productosData.some(p=>String(p[0]).trim().toLowerCase()===codigo.toLowerCase())){showToast(`El código ${codigo} ya existe`,'error');return}
+  const normalizar=s=>String(s||'').trim().toLowerCase();
+  const parecido=productosData.find(p=>{
+    const existente=normalizar(p[1]),nuevo=normalizar(descripcion);
+    return existente===nuevo||(nuevo.length>=5&&existente.includes(nuevo))||(existente.length>=5&&nuevo.includes(existente));
+  });
+  if(parecido&&!confirm(`Ya existe “${parecido[1]}” (${parecido[0]}). ¿Crear igualmente el producto ${codigo}?`))return;
+  try{
+    await apiPost('agregarProducto',{codigo,descripcion,proveedor,precio_venta,precio_costo,margen_pct,stock:0,stock_minimo,categoria});
+    productosData.push([codigo,descripcion,proveedor,precio_venta,precio_costo,0,stock_minimo,categoria,margen_pct]);
+    const existente=itemsIngreso.find(item=>String(item.codigo)===String(codigo));
+    if(existente){existente.cantidad+=cantidad;existente.precio_costo=precio_costo;}
+    else itemsIngreso.push({codigo,desc:descripcion,cantidad,precio_costo});
+    renderItemsIngreso();
+    document.getElementById('ing-buscar').value='';
+    cerrarModal('modal-nuevo-producto-ingreso');
+    cacheInvalidar('getProductos');
+    showToast('Producto creado y agregado al pedido');
+  }catch(e){showToast(e?.message||'No se pudo crear el producto','error')}
+}
 function agregarItemIngreso(){
   if(!ingProductoSel){showToast('Seleccioná un producto','error');return}
   const cantidad=Number(document.getElementById('ing-cantidad').value),costo=Number(document.getElementById('ing-costo').value);

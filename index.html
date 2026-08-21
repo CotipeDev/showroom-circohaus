@@ -511,10 +511,10 @@ if(sessionStorage.getItem(_LOGIN_KEY)==='1'){
         <div class="add-item-row">
           <div class="field"><label>Buscar producto</label><div class="autocomplete-wrap"><input type="text" id="ing-buscar" placeholder="Escribí código o nombre..." oninput="filtrarProductosIngreso()" autocomplete="off"><div id="ing-autocomplete" class="autocomplete-list" style="display:none"></div></div></div>
           <div class="field"><label>Cantidad</label><input type="number" id="ing-cantidad" min="1" placeholder="0"></div>
-          <div class="field"><label>Precio costo ($)</label><input type="number" id="ing-costo" min="0" placeholder="0"></div>
+          <div class="field"><label>Precio costo ($)</label><input type="number" id="ing-costo" min="0" placeholder="0" oninput="actualizarPreviewCostoIngreso()"></div>
           <button class="btn btn-secondary" onclick="agregarItemIngreso()">+ Agregar</button>
         </div>
-        <div id="ing-producto-seleccionado" style="display:none;margin-top:8px;font-size:12px;color:var(--success)">✓ Seleccionado: <span id="ing-prod-nombre"></span></div>
+        <div id="ing-producto-seleccionado" style="display:none;margin-top:8px;font-size:12px;color:var(--success)">✓ Seleccionado: <span id="ing-prod-nombre"></span><div id="ing-prod-datos" style="margin-top:5px;color:var(--text-mid)"></div></div>
         <button class="btn btn-secondary" style="margin-top:10px" onclick="abrirNuevoProductoIngreso()">+ Crear producto nuevo para este ingreso</button>
         <div class="form-actions">
           <button class="btn btn-primary" onclick="conBotonCargando(this,'Procesando...',confirmarIngreso)">Confirmar ingreso</button>
@@ -562,7 +562,7 @@ if(sessionStorage.getItem(_LOGIN_KEY)==='1'){
           <div class="field"><label>Cantidad del pedido</label><input type="number" id="ing-nuevo-cantidad" min="1" step="1" placeholder="0"></div>
           <div class="field"><label>Precio costo unitario ($)</label><input type="number" id="ing-nuevo-costo" min="0" oninput="calcularPrecioNuevoIngreso()" placeholder="0"></div>
           <div class="field"><label>Margen (%)</label><input type="number" id="ing-nuevo-margen" min="0" oninput="calcularPrecioNuevoIngreso()" placeholder="Ej: 150"></div>
-          <div class="field"><label>Precio venta ($)</label><input type="number" id="ing-nuevo-pventa" readonly class="readonly" placeholder="Se calcula solo"></div>
+          <div class="field"><label>Precio venta ($)</label><input type="number" id="ing-nuevo-pventa" min="0" oninput="calcularMargenNuevoIngreso()" placeholder="Podés editarlo"></div>
           <div class="field"><label>Stock mínimo</label><input type="number" id="ing-nuevo-stock-min" min="0" step="1" placeholder="Ej: 3"></div>
         </div>
         <div class="modal-actions">
@@ -599,7 +599,7 @@ if(sessionStorage.getItem(_LOGIN_KEY)==='1'){
           <div class="field"><label>Categoría</label><select id="prod-categoria"><option value="">Seleccioná...</option></select></div>
           <div class="field"><label>Precio costo ($)</label><input type="number" id="prod-pcosto" min="0" placeholder="0" oninput="calcularPrecioVenta()"></div>
           <div class="field"><label>Margen (%)</label><input type="number" id="prod-margen" min="0" placeholder="Ej: 150" oninput="calcularPrecioVenta()"></div>
-          <div class="field"><label>Precio venta ($)</label><input type="number" id="prod-pventa" readonly class="readonly" placeholder="Se calcula solo"></div>
+          <div class="field"><label>Precio venta ($)</label><input type="number" id="prod-pventa" min="0" placeholder="Podés editarlo" oninput="calcularMargenProducto()"></div>
           <div class="field"><label>Stock inicial</label><input type="number" id="prod-stock" min="0" placeholder="0"></div>
           <div class="field"><label>Stock mínimo</label><input type="number" id="prod-stock-min" min="0" placeholder="Ej: 3"></div>
         </div>
@@ -1073,13 +1073,22 @@ if(sessionStorage.getItem(_LOGIN_KEY)==='1'){
       <div class="field"><label>Categoría</label><select id="edit-categoria"><option value="">Seleccioná...</option></select></div>
       <div class="field"><label>Precio costo ($)</label><input type="number" id="edit-pcosto" min="0" oninput="calcularPrecioVentaEdit()"></div>
       <div class="field"><label>Margen (%)</label><input type="number" id="edit-margen" min="0" oninput="calcularPrecioVentaEdit()"></div>
-      <div class="field"><label>Precio venta ($)</label><input type="number" id="edit-pventa" readonly class="readonly"></div>
+      <div class="field"><label>Precio venta ($)</label><input type="number" id="edit-pventa" min="0" oninput="calcularMargenProductoEdit()"></div>
       <div class="field"><label>Stock mínimo</label><input type="number" id="edit-stock-min" min="0" placeholder="0"></div>
     </div>
     <div class="modal-actions">
       <button class="btn btn-primary" onclick="conBotonCargando(this,'Guardando...',guardarEdicion)">Guardar cambios</button>
+      <button class="btn btn-secondary" onclick="verHistorialProducto(document.getElementById('edit-codigo').value)">Ver historial</button>
       <button class="btn btn-secondary" onclick="cerrarModal('modal-editar')">Cancelar</button>
     </div>
+  </div>
+</div>
+
+<div id="modal-historial-producto" class="modal-overlay" onclick="if(event.target===this)cerrarModal('modal-historial-producto')">
+  <div class="modal" style="max-width:820px;max-height:88vh;overflow-y:auto">
+    <div class="modal-title" id="hist-prod-titulo">Historial del producto</div>
+    <div id="hist-prod-body" style="margin-top:14px"><div class="spinner-wrap"><div class="spinner"></div> Cargando...</div></div>
+    <div class="modal-actions"><button class="btn btn-secondary" onclick="cerrarModal('modal-historial-producto')">Cerrar</button></div>
   </div>
 </div>
 
@@ -1402,12 +1411,14 @@ function renderTablaProductos(rows){
   }).join('');
 }
 function filtrarTablaProductos(){const q=document.getElementById('prod-buscar').value.toLowerCase(),cat=document.getElementById('prod-filtro-cat').value;renderTablaProductos(prodTablaData.filter(p=>(p[0].toString().toLowerCase().includes(q)||p[1].toString().toLowerCase().includes(q))&&(!cat||p[7]===cat)))}
-function calcularPrecioVenta(){const c=Number(document.getElementById('prod-pcosto').value),m=Number(document.getElementById('prod-margen').value);document.getElementById('prod-pventa').value=(c>0&&m>0)?Math.round(c*(1+m/100)):''}
+function calcularPrecioVenta(){const c=Number(document.getElementById('prod-pcosto').value),mv=document.getElementById('prod-margen').value,m=Number(mv);document.getElementById('prod-pventa').value=(c>0&&mv!==''&&m>=0)?Math.round(c*(1+m/100)):''}
+function calcularMargenProducto(){const c=Number(document.getElementById('prod-pcosto').value),v=Number(document.getElementById('prod-pventa').value);document.getElementById('prod-margen').value=(c>0&&v>0)?Math.round(((v/c)-1)*1000)/10:''}
 
 async function agregarProducto(){
   const codigo=document.getElementById('prod-codigo').value.trim(),descripcion=document.getElementById('prod-desc').value.trim(),proveedor=document.getElementById('prod-proveedor').value,categoria=document.getElementById('prod-categoria').value,precio_costo=Number(document.getElementById('prod-pcosto').value),margen_pct=Number(document.getElementById('prod-margen').value)||0,precio_venta=Number(document.getElementById('prod-pventa').value),stock=Number(document.getElementById('prod-stock').value)||0,stock_minimo=Number(document.getElementById('prod-stock-min').value)||0;
   if(!codigo||!descripcion){showToast('Completá código y descripción','error');return}
   if(!precio_costo){showToast('Ingresá el precio de costo','error');return}
+  if(!precio_venta){showToast('Ingresá el margen o el precio de venta','error');return}
   try{const data=await cacheGet('getProductos');if(data.slice(1).some(p=>p[0].toString().trim().toLowerCase()===codigo.toLowerCase())){showToast(`El código ${codigo} ya existe`,'error');return}}catch(e){showToast('No se pudo verificar el código','error');return}
   try{await apiPost('agregarProducto',{codigo,descripcion,proveedor,precio_venta,precio_costo,margen_pct,stock,stock_minimo,categoria});showToast('Producto guardado');['prod-codigo','prod-desc','prod-pcosto','prod-margen','prod-pventa','prod-stock','prod-stock-min'].forEach(id=>document.getElementById(id).value='');document.getElementById('prod-proveedor').value='';document.getElementById('prod-categoria').value='';cacheInvalidar('getProductos');setTimeout(()=>{cargarProductos();iniciarProductos()},1500)}catch(e){showToast('Error','error')}
 }
@@ -1428,11 +1439,60 @@ function abrirEditar(codigo){
   document.getElementById('edit-margen').value=margenGuardado||'';
   document.getElementById('modal-editar').classList.add('open');
 }
-function calcularPrecioVentaEdit(){const c=Number(document.getElementById('edit-pcosto').value),m=Number(document.getElementById('edit-margen').value);document.getElementById('edit-pventa').value=(c>0&&m>0)?Math.round(c*(1+m/100)):''}
+function calcularPrecioVentaEdit(){const c=Number(document.getElementById('edit-pcosto').value),mv=document.getElementById('edit-margen').value,m=Number(mv);document.getElementById('edit-pventa').value=(c>0&&mv!==''&&m>=0)?Math.round(c*(1+m/100)):''}
+function calcularMargenProductoEdit(){const c=Number(document.getElementById('edit-pcosto').value),v=Number(document.getElementById('edit-pventa').value);document.getElementById('edit-margen').value=(c>0&&v>0)?Math.round(((v/c)-1)*1000)/10:''}
 async function guardarEdicion(){
   const codigo=document.getElementById('edit-codigo').value.trim(),descripcion=document.getElementById('edit-desc').value.trim(),proveedor=document.getElementById('edit-proveedor').value,categoria=document.getElementById('edit-categoria').value,precio_costo=Number(document.getElementById('edit-pcosto').value),margen_pct=Number(document.getElementById('edit-margen').value)||0,precio_venta=Number(document.getElementById('edit-pventa').value),stock_minimo=Number(document.getElementById('edit-stock-min').value)||0;
   if(!descripcion){showToast('Completá la descripción','error');return}
+  if(!precio_costo||!precio_venta){showToast('Completá costo y precio de venta','error');return}
   try{await apiPost('editarProducto',{codigo,descripcion,proveedor,precio_venta,precio_costo,margen_pct,stock_minimo,categoria});showToast('Producto actualizado');cerrarModal('modal-editar');cacheInvalidar('getProductos');setTimeout(()=>{cargarProductos();iniciarProductos()},1500)}catch(e){showToast('Error','error')}
+}
+async function verHistorialProducto(codigo){
+  const producto=productosData.find(p=>String(p[0])===String(codigo))||prodTablaData.find(p=>String(p[0])===String(codigo));
+  if(!producto){showToast('No se encontró el producto','error');return}
+  document.getElementById('hist-prod-titulo').textContent=`Historial — ${producto[0]} · ${producto[1]}`;
+  document.getElementById('hist-prod-body').innerHTML='<div class="spinner-wrap"><div class="spinner"></div> Cargando...</div>';
+  document.getElementById('modal-historial-producto').classList.add('open');
+  try{
+    const[dataIng,dataDetIng,dataVentas,dataDetVentas]=await Promise.all([
+      cacheGet('getIngresos'),cacheGet('getDetalleIngresos'),cacheGet('getVentas'),cacheGet('getDetalleVentas')
+    ]);
+    const ingresos=(Array.isArray(dataIng)?dataIng.slice(1):[]);
+    const detIngresos=(Array.isArray(dataDetIng)?dataDetIng.slice(1):[]).filter(d=>String(d[1]).trim()===String(codigo).trim());
+    const ventas=(Array.isArray(dataVentas)?dataVentas.slice(1):[]);
+    const detVentas=(Array.isArray(dataDetVentas)?dataDetVentas.slice(1):[]).filter(d=>String(d[1]).trim()===String(codigo).trim());
+    const movimientos=[];
+    detIngresos.forEach(d=>{
+      const ingreso=ingresos.find(i=>String(i[0]).trim()===String(d[0]).trim());
+      const proveedor=ingreso?proveedoresData.find(p=>String(p[0])===String(ingreso[2])):null;
+      movimientos.push({fecha:ingreso?fechaStr(ingreso[1]):'',tipo:'Ingreso',cantidad:Number(d[2])||0,importe:Number(d[3])||0,estado:'Registrado',detalle:proveedor?proveedor[1]:(ingreso?.[2]||'—'),referencia:d[0]});
+    });
+    detVentas.forEach(d=>{
+      const venta=ventas.find(v=>String(v[0]).trim()===String(d[0]).trim());
+      const cancelada=String(venta?.[7]||'').toLowerCase()==='cancelada';
+      movimientos.push({fecha:venta?fechaStr(venta[1]):'',tipo:'Venta',cantidad:Number(d[2])||0,importe:Number(d[3])||0,estado:cancelada?'Cancelada':'Registrada',detalle:cancelada?'Stock reintegrado':'Stock descontado',referencia:d[0]});
+    });
+    movimientos.sort((a,b)=>String(b.fecha).localeCompare(String(a.fecha))||String(b.referencia).localeCompare(String(a.referencia)));
+    const unidadesIngresadas=detIngresos.reduce((s,d)=>s+(Number(d[2])||0),0);
+    const unidadesVendidas=detVentas.reduce((s,d)=>{
+      const venta=ventas.find(v=>String(v[0]).trim()===String(d[0]).trim());
+      return String(venta?.[7]||'').toLowerCase()==='cancelada'?s:s+(Number(d[2])||0);
+    },0);
+    const costo=Number(producto[4])||0,precio=Number(producto[3])||0,margen=getMargen(producto),stock=Number(producto[5])||0;
+    document.getElementById('hist-prod-body').innerHTML=`
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:10px;background:var(--pearl);border-radius:9px;padding:14px;margin-bottom:16px">
+        <div><div style="font-size:10px;text-transform:uppercase;color:var(--text-light)">Stock actual</div><strong>${stock}</strong></div>
+        <div><div style="font-size:10px;text-transform:uppercase;color:var(--text-light)">Ingresadas</div><strong>${unidadesIngresadas}</strong></div>
+        <div><div style="font-size:10px;text-transform:uppercase;color:var(--text-light)">Vendidas vigentes</div><strong>${unidadesVendidas}</strong></div>
+        <div><div style="font-size:10px;text-transform:uppercase;color:var(--text-light)">Costo actual</div><strong>${formatPeso(costo)}</strong></div>
+        <div><div style="font-size:10px;text-transform:uppercase;color:var(--text-light)">Margen actual</div><strong>${margen}%</strong></div>
+        <div><div style="font-size:10px;text-transform:uppercase;color:var(--text-light)">Precio actual</div><strong>${formatPeso(precio)}</strong></div>
+      </div>
+      <div style="font-size:11px;color:var(--text-light);margin-bottom:10px">Los costos históricos se reconstruyen desde los ingresos registrados. Las ediciones manuales anteriores no cuentan todavía con auditoría propia.</div>
+      <table style="width:100%"><thead><tr><th>Fecha</th><th>Movimiento</th><th>Detalle</th><th>Cantidad</th><th>Valor unit.</th><th>Estado</th></tr></thead><tbody>
+        ${movimientos.length?movimientos.map(m=>`<tr><td>${m.fecha||'—'}</td><td><strong style="color:${m.tipo==='Ingreso'?'var(--teal)':'var(--navy)'}">${m.tipo}</strong><div style="font-size:10px;color:var(--text-light)">${m.referencia}</div></td><td>${m.detalle}</td><td>${m.tipo==='Ingreso'?'+':'−'}${m.cantidad}</td><td>${formatPeso(m.importe)}</td><td><span class="badge ${m.estado==='Cancelada'?'badge-zero':'badge-ok'}">${m.estado}</span></td></tr>`).join(''):'<tr><td colspan="6" style="text-align:center;color:var(--text-light);padding:24px">Todavía no hay ingresos ni ventas registrados para este producto.</td></tr>'}
+      </tbody></table>`;
+  }catch(e){document.getElementById('hist-prod-body').innerHTML=`<div style="color:var(--error);padding:20px;text-align:center">${e?.message||'No se pudo cargar el historial'}</div>`;}
 }
 
 async function iniciarStock(){
@@ -1473,7 +1533,28 @@ function filtrarProductosIngreso(){
   lista.innerHTML=f.map(p=>`<div class="autocomplete-item" onclick="selProd('${p[0]}','${p[1].replace(/'/g,"\\'")}')" ><code>${p[0]}</code> — ${p[1]}</div>`).join('');
   lista.style.display='block';
 }
-function selProd(codigo,desc){ingProductoSel={codigo,desc};document.getElementById('ing-buscar').value=`${codigo} — ${desc}`;document.getElementById('ing-autocomplete').style.display='none';document.getElementById('ing-prod-nombre').textContent=`${codigo} — ${desc}`;document.getElementById('ing-producto-seleccionado').style.display='block'}
+function selProd(codigo,desc){
+  const producto=productosData.find(p=>String(p[0])===String(codigo));
+  ingProductoSel={codigo,desc};
+  document.getElementById('ing-buscar').value=`${codigo} — ${desc}`;
+  document.getElementById('ing-autocomplete').style.display='none';
+  document.getElementById('ing-prod-nombre').textContent=`${codigo} — ${desc}`;
+  if(producto){
+    const costo=Number(producto[4])||0;
+    document.getElementById('ing-costo').value=costo||'';
+    actualizarPreviewCostoIngreso();
+  }else document.getElementById('ing-prod-datos').textContent='';
+  document.getElementById('ing-producto-seleccionado').style.display='block';
+}
+function actualizarPreviewCostoIngreso(){
+  if(!ingProductoSel)return;
+  const producto=productosData.find(p=>String(p[0])===String(ingProductoSel.codigo));
+  if(!producto)return;
+  const costoActual=Number(producto[4])||0,venta=Number(producto[3])||0,margen=getMargen(producto);
+  const costoNuevo=Number(document.getElementById('ing-costo').value)||0;
+  const proyeccion=costoNuevo>0&&costoNuevo!==costoActual?` · Con el costo nuevo: ${formatPeso(Math.round(costoNuevo*(1+margen/100)))} manteniendo ${margen}%`:'';
+  document.getElementById('ing-prod-datos').textContent=`Costo actual: ${formatPeso(costoActual)} · Margen: ${margen}% · Precio de venta: ${formatPeso(venta)}${proyeccion}`;
+}
 function abrirNuevoProductoIngreso(){
   const idProveedor=document.getElementById('ing-proveedor').value;
   if(!idProveedor){showToast('Primero seleccioná el proveedor del ingreso','error');return}
@@ -1489,8 +1570,14 @@ function abrirNuevoProductoIngreso(){
 }
 function calcularPrecioNuevoIngreso(){
   const costo=Number(document.getElementById('ing-nuevo-costo').value);
-  const margen=Number(document.getElementById('ing-nuevo-margen').value);
-  document.getElementById('ing-nuevo-pventa').value=costo>0&&margen>=0?Math.round(costo*(1+margen/100)):'';
+  const margenValor=document.getElementById('ing-nuevo-margen').value;
+  const margen=Number(margenValor);
+  document.getElementById('ing-nuevo-pventa').value=costo>0&&margenValor!==''&&margen>=0?Math.round(costo*(1+margen/100)):'';
+}
+function calcularMargenNuevoIngreso(){
+  const costo=Number(document.getElementById('ing-nuevo-costo').value);
+  const venta=Number(document.getElementById('ing-nuevo-pventa').value);
+  document.getElementById('ing-nuevo-margen').value=costo>0&&venta>0?Math.round(((venta/costo)-1)*1000)/10:'';
 }
 async function guardarNuevoProductoIngreso(){
   const codigo=document.getElementById('ing-nuevo-codigo').value.trim();

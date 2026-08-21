@@ -1454,14 +1454,24 @@ function selProd(codigo,desc){ingProductoSel={codigo,desc};document.getElementBy
 function agregarItemIngreso(){
   if(!ingProductoSel){showToast('Seleccioná un producto','error');return}
   const cantidad=Number(document.getElementById('ing-cantidad').value),costo=Number(document.getElementById('ing-costo').value);
-  if(!cantidad||cantidad<1){showToast('Ingresá una cantidad válida','error');return}
-  itemsIngreso.push({codigo:ingProductoSel.codigo,desc:ingProductoSel.desc,cantidad,precio_costo:costo});
+  if(!Number.isInteger(cantidad)||cantidad<1){showToast('Ingresá una cantidad entera mayor a cero','error');return}
+  if(!Number.isFinite(costo)||costo<=0){showToast('Ingresá el precio de costo unitario','error');return}
+  const existente=itemsIngreso.find(item=>String(item.codigo)===String(ingProductoSel.codigo));
+  if(existente){
+    existente.cantidad+=cantidad;
+    existente.precio_costo=costo;
+  }else{
+    itemsIngreso.push({codigo:ingProductoSel.codigo,desc:ingProductoSel.desc,cantidad,precio_costo:costo});
+  }
   renderItemsIngreso();document.getElementById('ing-cantidad').value='';document.getElementById('ing-costo').value='';document.getElementById('ing-buscar').value='';document.getElementById('ing-producto-seleccionado').style.display='none';ingProductoSel=null;
 }
 function renderItemsIngreso(){
   const l=document.getElementById('items-lista');
   if(!itemsIngreso.length){l.innerHTML='<div class="items-empty">Todavía no agregaste productos</div>';return}
-  l.innerHTML=itemsIngreso.map((item,i)=>`<div class="item-row"><span><code style="color:var(--teal);font-size:11px">${item.codigo}</code> ${item.desc}</span><span>${item.cantidad} unid.</span><span>${item.precio_costo?formatPeso(item.precio_costo):'—'}</span><button class="btn-danger" onclick="quitarItemIngreso(${i})">✕</button></div>`).join('');
+  const unidades=itemsIngreso.reduce((s,item)=>s+item.cantidad,0);
+  const total=itemsIngreso.reduce((s,item)=>s+item.cantidad*item.precio_costo,0);
+  l.innerHTML=itemsIngreso.map((item,i)=>`<div class="item-row"><span><code style="color:var(--teal);font-size:11px">${item.codigo}</code> ${item.desc}</span><span>${item.cantidad} unid.</span><span>${formatPeso(item.precio_costo)} c/u · ${formatPeso(item.cantidad*item.precio_costo)}</span><button class="btn-danger" onclick="quitarItemIngreso(${i})">✕</button></div>`).join('')+
+    `<div style="display:flex;justify-content:flex-end;gap:24px;padding:14px 4px 2px;font-size:13px;color:var(--text-mid)"><span>${unidades} unidad${unidades!==1?'es':''}</span><strong style="color:var(--navy)">Total del ingreso: ${formatPeso(total)}</strong></div>`;
 }
 function quitarItemIngreso(i){itemsIngreso.splice(i,1);renderItemsIngreso()}
 
@@ -1470,6 +1480,9 @@ async function confirmarIngreso(){
   if(!fecha){showToast('Seleccioná una fecha','error');return}
   if(!proveedor){showToast('Seleccioná un proveedor','error');return}
   if(!itemsIngreso.length){showToast('Agregá al menos un producto','error');return}
+  const unidades=itemsIngreso.reduce((s,item)=>s+item.cantidad,0);
+  const total=itemsIngreso.reduce((s,item)=>s+item.cantidad*item.precio_costo,0);
+  if(!confirm(`¿Confirmar el ingreso de ${unidades} unidad${unidades!==1?'es':''} por ${formatPeso(total)}?`))return;
 
   // Registrar ingreso
   try{
@@ -1500,14 +1513,14 @@ async function confirmarIngreso(){
     });
 
     limpiarIngreso();
-    cacheInvalidar('getIngresos','getDetalleIngresos','getProductos');setTimeout(()=>cargarProductos(),1500);
-    cargarHistorialIngresos();
+    cacheInvalidar('getIngresos','getDetalleIngresos','getProductos');
+    await Promise.all([cargarProductos(),cargarHistorialIngresos()]);
 
     if(colaActualizaciones.length>0){
       indexActual=0;
       mostrarPopupCosto();
     }
-  }catch(e){showToast('Error al registrar el ingreso','error')}
+  }catch(e){showToast(e?.message||'Error al registrar el ingreso','error')}
 }
 
 function mostrarPopupCosto(){

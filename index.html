@@ -561,8 +561,9 @@ if(sessionStorage.getItem(_LOGIN_KEY)==='1'){
           <div class="field"><label>Categoría</label><select id="ing-nuevo-categoria"><option value="">Seleccioná...</option></select></div>
           <div class="field"><label>Cantidad del pedido</label><input type="number" id="ing-nuevo-cantidad" min="1" step="1" placeholder="0"></div>
           <div class="field"><label>Precio costo unitario ($)</label><input type="number" id="ing-nuevo-costo" min="0" oninput="calcularPrecioNuevoIngreso()" placeholder="0"></div>
-          <div class="field"><label>Margen (%)</label><input type="number" id="ing-nuevo-margen" min="0" oninput="calcularPrecioNuevoIngreso()" placeholder="Ej: 150"></div>
+          <div class="field"><label>Recargo sobre costo (%)</label><input type="number" id="ing-nuevo-margen" min="0" oninput="calcularPrecioNuevoIngreso()" placeholder="Ej: 150"></div>
           <div class="field"><label>Precio venta ($)</label><input type="number" id="ing-nuevo-pventa" min="0" oninput="calcularMargenNuevoIngreso()" placeholder="Podés editarlo"></div>
+          <div class="field"><label>Margen bruto real (%)</label><input type="number" id="ing-nuevo-margen-bruto" readonly class="readonly" placeholder="Se calcula solo"></div>
           <div class="field"><label>Stock mínimo</label><input type="number" id="ing-nuevo-stock-min" min="0" step="1" placeholder="Ej: 3"></div>
         </div>
         <div class="modal-actions">
@@ -582,7 +583,7 @@ if(sessionStorage.getItem(_LOGIN_KEY)==='1'){
           <select id="stock-filtro-cat" onchange="filtrarStock()" style="background:var(--off-white);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none;color:var(--text-main)"><option value="">Todas las categorías</option></select>
         </div>
         <div id="stock-loading" class="spinner-wrap"><div class="spinner"></div> Cargando...</div>
-        <table id="stock-table" style="display:none"><thead><tr><th>Código</th><th>Descripción</th><th>Categoría</th><th>P. Costo</th><th>Margen</th><th>P. Venta</th><th>Stock</th><th>Mínimo</th></tr></thead><tbody id="stock-body"></tbody></table>
+        <table id="stock-table" style="display:none"><thead><tr><th>Código</th><th>Descripción</th><th>Categoría</th><th>P. Costo</th><th>Recargo</th><th>Margen bruto</th><th>P. Venta</th><th>Stock</th><th>Mínimo</th></tr></thead><tbody id="stock-body"></tbody></table>
       </div>
     </div>
 
@@ -598,8 +599,9 @@ if(sessionStorage.getItem(_LOGIN_KEY)==='1'){
           <div class="field"><label>Proveedor</label><select id="prod-proveedor"><option value="">Seleccioná...</option></select></div>
           <div class="field"><label>Categoría</label><select id="prod-categoria"><option value="">Seleccioná...</option></select></div>
           <div class="field"><label>Precio costo ($)</label><input type="number" id="prod-pcosto" min="0" placeholder="0" oninput="calcularPrecioVenta()"></div>
-          <div class="field"><label>Margen (%)</label><input type="number" id="prod-margen" min="0" placeholder="Ej: 150" oninput="calcularPrecioVenta()"></div>
+          <div class="field"><label>Recargo sobre costo (%)</label><input type="number" id="prod-margen" min="0" placeholder="Ej: 150" oninput="calcularPrecioVenta()"></div>
           <div class="field"><label>Precio venta ($)</label><input type="number" id="prod-pventa" min="0" placeholder="Podés editarlo" oninput="calcularMargenProducto()"></div>
+          <div class="field"><label>Margen bruto real (%)</label><input type="number" id="prod-margen-bruto" readonly class="readonly" placeholder="Se calcula solo"></div>
           <div class="field"><label>Stock inicial</label><input type="number" id="prod-stock" min="0" placeholder="0"></div>
           <div class="field"><label>Stock mínimo</label><input type="number" id="prod-stock-min" min="0" placeholder="Ej: 3"></div>
         </div>
@@ -612,7 +614,7 @@ if(sessionStorage.getItem(_LOGIN_KEY)==='1'){
           <select id="prod-filtro-cat" onchange="filtrarTablaProductos()" style="background:var(--off-white);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none;color:var(--text-main)"><option value="">Todas las categorías</option></select>
         </div>
         <div id="prod-loading" class="spinner-wrap"><div class="spinner"></div> Cargando...</div>
-        <table id="prod-table" style="display:none"><thead><tr><th>Código</th><th>Descripción</th><th>Categoría</th><th>P. Costo</th><th>Margen</th><th>P. Venta</th><th>Stock</th><th></th></tr></thead><tbody id="prod-body"></tbody></table>
+        <table id="prod-table" style="display:none"><thead><tr><th>Código</th><th>Descripción</th><th>Categoría</th><th>P. Costo</th><th>Recargo</th><th>Margen bruto</th><th>P. Venta</th><th>Stock</th><th></th></tr></thead><tbody id="prod-body"></tbody></table>
       </div>
     </div>
 
@@ -1072,8 +1074,9 @@ if(sessionStorage.getItem(_LOGIN_KEY)==='1'){
       <div class="field"><label>Proveedor</label><select id="edit-proveedor"><option value="">Seleccioná...</option></select></div>
       <div class="field"><label>Categoría</label><select id="edit-categoria"><option value="">Seleccioná...</option></select></div>
       <div class="field"><label>Precio costo ($)</label><input type="number" id="edit-pcosto" min="0" oninput="calcularPrecioVentaEdit()"></div>
-      <div class="field"><label>Margen (%)</label><input type="number" id="edit-margen" min="0" oninput="calcularPrecioVentaEdit()"></div>
+      <div class="field"><label>Recargo sobre costo (%)</label><input type="number" id="edit-margen" min="0" oninput="calcularPrecioVentaEdit()"></div>
       <div class="field"><label>Precio venta ($)</label><input type="number" id="edit-pventa" min="0" oninput="calcularMargenProductoEdit()"></div>
+      <div class="field"><label>Margen bruto real (%)</label><input type="number" id="edit-margen-bruto" readonly class="readonly"></div>
       <div class="field"><label>Stock mínimo</label><input type="number" id="edit-stock-min" min="0" placeholder="0"></div>
     </div>
     <div class="modal-actions">
@@ -1109,12 +1112,12 @@ if(sessionStorage.getItem(_LOGIN_KEY)==='1'){
         <span id="op2-desc"></span>
       </button>
       <button class="costo-opcion" id="op3" onclick="seleccionarOpcion(3)">
-        <strong>Definir nuevo margen</strong>
+        <strong>Definir nuevo recargo</strong>
         <span>Ingresás el porcentaje que querés aplicar</span>
       </button>
       <div class="costo-margen-custom" id="costo-margen-custom">
         <div class="field" style="max-width:200px">
-          <label>Nuevo margen (%)</label>
+          <label>Nuevo recargo sobre costo (%)</label>
           <input type="number" id="costo-margen-input" min="0" placeholder="Ej: 150" oninput="calcularCostoCustom()">
         </div>
         <div style="font-size:12px;color:var(--text-mid);margin-top:8px">Nuevo precio de venta: <strong id="costo-pventa-preview" style="color:var(--navy)">—</strong></div>
@@ -1390,7 +1393,8 @@ async function agregarCategoria(){
 
 async function cargarProductos(){try{const data=await cacheGet('getProductos');productosData=data.slice(1)}catch(e){}}
 
-function calcMargen(costo,venta){return(costo>0&&venta>0)?Math.round(((venta/costo)-1)*100):0}
+function calcMargen(costo,venta){return(costo>0&&venta>0)?Math.round(((venta/costo)-1)*1000)/10:0}
+function calcMargenBruto(costo,venta){return(costo>0&&venta>0)?Math.round(((venta-costo)/venta)*1000)/10:0}
 function getMargen(p){return p[8]&&Number(p[8])>0?Number(p[8]):calcMargen(Number(p[4]),Number(p[3]))}
 
 async function iniciarProductos(){
@@ -1405,22 +1409,23 @@ async function iniciarProductos(){
   try{const data=await cacheGet('getProductos');prodTablaData=data.slice(1);renderTablaProductos(prodTablaData);document.getElementById('prod-loading').style.display='none';document.getElementById('prod-table').style.display='table'}catch(e){showToast('Error','error')}
 }
 function renderTablaProductos(rows){
-  document.getElementById('prod-body').innerHTML=rows.length===0?'<tr><td colspan="8" style="text-align:center;color:var(--text-mid);padding:20px">No hay productos</td></tr>':rows.map(p=>{
-    const margen=getMargen(p);
-    return`<tr><td><code style="color:var(--teal);font-size:12px">${p[0]}</code></td><td>${p[1]}</td><td>${p[7]||'—'}</td><td>${formatPeso(p[4])}</td><td><span class="badge badge-margen">${margen}%</span></td><td>${formatPeso(p[3])}</td><td>${p[5]||0}</td><td style="display:flex;gap:6px"><button class="btn-warning" onclick="abrirEditar('${p[0]}')">✏️</button><button class="btn-danger" onclick="eliminarProducto('${p[0]}')">🗑️</button></td></tr>`;
+  document.getElementById('prod-body').innerHTML=rows.length===0?'<tr><td colspan="9" style="text-align:center;color:var(--text-mid);padding:20px">No hay productos</td></tr>':rows.map(p=>{
+    const margen=getMargen(p),margenBruto=calcMargenBruto(Number(p[4]),Number(p[3]));
+    return`<tr><td><code style="color:var(--teal);font-size:12px">${p[0]}</code></td><td>${p[1]}</td><td>${p[7]||'—'}</td><td>${formatPeso(p[4])}</td><td><span class="badge badge-margen">${margen}%</span></td><td>${margenBruto}%</td><td>${formatPeso(p[3])}</td><td>${p[5]||0}</td><td style="display:flex;gap:6px"><button class="btn-warning" onclick="abrirEditar('${p[0]}')">✏️</button><button class="btn-danger" onclick="eliminarProducto('${p[0]}')">🗑️</button></td></tr>`;
   }).join('');
 }
 function filtrarTablaProductos(){const q=document.getElementById('prod-buscar').value.toLowerCase(),cat=document.getElementById('prod-filtro-cat').value;renderTablaProductos(prodTablaData.filter(p=>(p[0].toString().toLowerCase().includes(q)||p[1].toString().toLowerCase().includes(q))&&(!cat||p[7]===cat)))}
-function calcularPrecioVenta(){const c=Number(document.getElementById('prod-pcosto').value),mv=document.getElementById('prod-margen').value,m=Number(mv);document.getElementById('prod-pventa').value=(c>0&&mv!==''&&m>=0)?Math.round(c*(1+m/100)):''}
-function calcularMargenProducto(){const c=Number(document.getElementById('prod-pcosto').value),v=Number(document.getElementById('prod-pventa').value);document.getElementById('prod-margen').value=(c>0&&v>0)?Math.round(((v/c)-1)*1000)/10:''}
+function actualizarMargenBrutoCampo(costoId,ventaId,salidaId){const c=Number(document.getElementById(costoId).value),v=Number(document.getElementById(ventaId).value);document.getElementById(salidaId).value=(c>0&&v>0)?calcMargenBruto(c,v):''}
+function calcularPrecioVenta(){const c=Number(document.getElementById('prod-pcosto').value),mv=document.getElementById('prod-margen').value,m=Number(mv);document.getElementById('prod-pventa').value=(c>0&&mv!==''&&m>=0)?Math.round(c*(1+m/100)):'';actualizarMargenBrutoCampo('prod-pcosto','prod-pventa','prod-margen-bruto')}
+function calcularMargenProducto(){const c=Number(document.getElementById('prod-pcosto').value),v=Number(document.getElementById('prod-pventa').value);document.getElementById('prod-margen').value=(c>0&&v>0)?Math.round(((v/c)-1)*1000)/10:'';actualizarMargenBrutoCampo('prod-pcosto','prod-pventa','prod-margen-bruto')}
 
 async function agregarProducto(){
   const codigo=document.getElementById('prod-codigo').value.trim(),descripcion=document.getElementById('prod-desc').value.trim(),proveedor=document.getElementById('prod-proveedor').value,categoria=document.getElementById('prod-categoria').value,precio_costo=Number(document.getElementById('prod-pcosto').value),margen_pct=Number(document.getElementById('prod-margen').value)||0,precio_venta=Number(document.getElementById('prod-pventa').value),stock=Number(document.getElementById('prod-stock').value)||0,stock_minimo=Number(document.getElementById('prod-stock-min').value)||0;
   if(!codigo||!descripcion){showToast('Completá código y descripción','error');return}
   if(!precio_costo){showToast('Ingresá el precio de costo','error');return}
-  if(!precio_venta){showToast('Ingresá el margen o el precio de venta','error');return}
+  if(!precio_venta){showToast('Ingresá el recargo o el precio de venta','error');return}
   try{const data=await cacheGet('getProductos');if(data.slice(1).some(p=>p[0].toString().trim().toLowerCase()===codigo.toLowerCase())){showToast(`El código ${codigo} ya existe`,'error');return}}catch(e){showToast('No se pudo verificar el código','error');return}
-  try{await apiPost('agregarProducto',{codigo,descripcion,proveedor,precio_venta,precio_costo,margen_pct,stock,stock_minimo,categoria});showToast('Producto guardado');['prod-codigo','prod-desc','prod-pcosto','prod-margen','prod-pventa','prod-stock','prod-stock-min'].forEach(id=>document.getElementById(id).value='');document.getElementById('prod-proveedor').value='';document.getElementById('prod-categoria').value='';cacheInvalidar('getProductos');setTimeout(()=>{cargarProductos();iniciarProductos()},1500)}catch(e){showToast('Error','error')}
+  try{await apiPost('agregarProducto',{codigo,descripcion,proveedor,precio_venta,precio_costo,margen_pct,stock,stock_minimo,categoria});showToast('Producto guardado');['prod-codigo','prod-desc','prod-pcosto','prod-margen','prod-pventa','prod-margen-bruto','prod-stock','prod-stock-min'].forEach(id=>document.getElementById(id).value='');document.getElementById('prod-proveedor').value='';document.getElementById('prod-categoria').value='';cacheInvalidar('getProductos');setTimeout(()=>{cargarProductos();iniciarProductos()},1500)}catch(e){showToast('Error','error')}
 }
 async function eliminarProducto(codigo){
   if(!confirm(`¿Seguro que querés eliminar ${codigo}?`))return;
@@ -1437,10 +1442,11 @@ function abrirEditar(codigo){
   document.getElementById('edit-pventa').value=pvCalculado;
   document.getElementById('edit-stock-min').value=p[6]||'';document.getElementById('edit-categoria').value=p[7]||'';
   document.getElementById('edit-margen').value=margenGuardado||'';
+  document.getElementById('edit-margen-bruto').value=calcMargenBruto(Number(p[4]),Number(p[3]));
   document.getElementById('modal-editar').classList.add('open');
 }
-function calcularPrecioVentaEdit(){const c=Number(document.getElementById('edit-pcosto').value),mv=document.getElementById('edit-margen').value,m=Number(mv);document.getElementById('edit-pventa').value=(c>0&&mv!==''&&m>=0)?Math.round(c*(1+m/100)):''}
-function calcularMargenProductoEdit(){const c=Number(document.getElementById('edit-pcosto').value),v=Number(document.getElementById('edit-pventa').value);document.getElementById('edit-margen').value=(c>0&&v>0)?Math.round(((v/c)-1)*1000)/10:''}
+function calcularPrecioVentaEdit(){const c=Number(document.getElementById('edit-pcosto').value),mv=document.getElementById('edit-margen').value,m=Number(mv);document.getElementById('edit-pventa').value=(c>0&&mv!==''&&m>=0)?Math.round(c*(1+m/100)):'';actualizarMargenBrutoCampo('edit-pcosto','edit-pventa','edit-margen-bruto')}
+function calcularMargenProductoEdit(){const c=Number(document.getElementById('edit-pcosto').value),v=Number(document.getElementById('edit-pventa').value);document.getElementById('edit-margen').value=(c>0&&v>0)?Math.round(((v/c)-1)*1000)/10:'';actualizarMargenBrutoCampo('edit-pcosto','edit-pventa','edit-margen-bruto')}
 async function guardarEdicion(){
   const codigo=document.getElementById('edit-codigo').value.trim(),descripcion=document.getElementById('edit-desc').value.trim(),proveedor=document.getElementById('edit-proveedor').value,categoria=document.getElementById('edit-categoria').value,precio_costo=Number(document.getElementById('edit-pcosto').value),margen_pct=Number(document.getElementById('edit-margen').value)||0,precio_venta=Number(document.getElementById('edit-pventa').value),stock_minimo=Number(document.getElementById('edit-stock-min').value)||0;
   if(!descripcion){showToast('Completá la descripción','error');return}
@@ -1478,14 +1484,15 @@ async function verHistorialProducto(codigo){
       const venta=ventas.find(v=>String(v[0]).trim()===String(d[0]).trim());
       return String(venta?.[7]||'').toLowerCase()==='cancelada'?s:s+(Number(d[2])||0);
     },0);
-    const costo=Number(producto[4])||0,precio=Number(producto[3])||0,margen=getMargen(producto),stock=Number(producto[5])||0;
+    const costo=Number(producto[4])||0,precio=Number(producto[3])||0,margen=getMargen(producto),margenBruto=calcMargenBruto(costo,precio),stock=Number(producto[5])||0;
     document.getElementById('hist-prod-body').innerHTML=`
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:10px;background:var(--pearl);border-radius:9px;padding:14px;margin-bottom:16px">
         <div><div style="font-size:10px;text-transform:uppercase;color:var(--text-light)">Stock actual</div><strong>${stock}</strong></div>
         <div><div style="font-size:10px;text-transform:uppercase;color:var(--text-light)">Ingresadas</div><strong>${unidadesIngresadas}</strong></div>
         <div><div style="font-size:10px;text-transform:uppercase;color:var(--text-light)">Vendidas vigentes</div><strong>${unidadesVendidas}</strong></div>
         <div><div style="font-size:10px;text-transform:uppercase;color:var(--text-light)">Costo actual</div><strong>${formatPeso(costo)}</strong></div>
-        <div><div style="font-size:10px;text-transform:uppercase;color:var(--text-light)">Margen actual</div><strong>${margen}%</strong></div>
+        <div><div style="font-size:10px;text-transform:uppercase;color:var(--text-light)">Recargo actual</div><strong>${margen}%</strong></div>
+        <div><div style="font-size:10px;text-transform:uppercase;color:var(--text-light)">Margen bruto real</div><strong>${margenBruto}%</strong></div>
         <div><div style="font-size:10px;text-transform:uppercase;color:var(--text-light)">Precio actual</div><strong>${formatPeso(precio)}</strong></div>
       </div>
       <div style="font-size:11px;color:var(--text-light);margin-bottom:10px">Los costos históricos se reconstruyen desde los ingresos registrados. Las ediciones manuales anteriores no cuentan todavía con auditoría propia.</div>
@@ -1515,10 +1522,10 @@ async function iniciarStock(){
   }catch(e){showToast('Error','error')}
 }
 function renderStock(rows){
-  document.getElementById('stock-body').innerHTML=rows.length===0?'<tr><td colspan="8" style="text-align:center;color:var(--text-mid);padding:20px">No hay productos</td></tr>':rows.map(p=>{
-    const s=Number(p[5])||0,m=Number(p[6])||0,margen=getMargen(p);
+  document.getElementById('stock-body').innerHTML=rows.length===0?'<tr><td colspan="9" style="text-align:center;color:var(--text-mid);padding:20px">No hay productos</td></tr>':rows.map(p=>{
+    const s=Number(p[5])||0,m=Number(p[6])||0,margen=getMargen(p),margenBruto=calcMargenBruto(Number(p[4]),Number(p[3]));
     const badge=s===0?`<span class="badge badge-zero">Sin stock</span>`:(m>0&&s<=m)?`<span class="badge badge-low">${s} ⚠️</span>`:`<span class="badge badge-ok">${s}</span>`;
-    return`<tr><td><code style="color:var(--teal);font-size:12px">${p[0]}</code></td><td>${p[1]}</td><td>${p[7]||'—'}</td><td>${formatPeso(p[4])}</td><td><span class="badge badge-margen">${margen}%</span></td><td>${formatPeso(p[3])}</td><td>${badge}</td><td style="color:var(--text-mid);font-size:12px">${m>0?'Mín: '+m:'—'}</td></tr>`;
+    return`<tr><td><code style="color:var(--teal);font-size:12px">${p[0]}</code></td><td>${p[1]}</td><td>${p[7]||'—'}</td><td>${formatPeso(p[4])}</td><td><span class="badge badge-margen">${margen}%</span></td><td>${margenBruto}%</td><td>${formatPeso(p[3])}</td><td>${badge}</td><td style="color:var(--text-mid);font-size:12px">${m>0?'Mín: '+m:'—'}</td></tr>`;
   }).join('');
 }
 function filtrarStock(){const q=document.getElementById('stock-buscar').value.toLowerCase(),cat=document.getElementById('stock-filtro-cat').value;renderStock(stockData.filter(p=>(p[0].toString().toLowerCase().includes(q)||p[1].toString().toLowerCase().includes(q))&&(!cat||p[7]===cat)))}
@@ -1550,10 +1557,10 @@ function actualizarPreviewCostoIngreso(){
   if(!ingProductoSel)return;
   const producto=productosData.find(p=>String(p[0])===String(ingProductoSel.codigo));
   if(!producto)return;
-  const costoActual=Number(producto[4])||0,venta=Number(producto[3])||0,margen=getMargen(producto);
+  const costoActual=Number(producto[4])||0,venta=Number(producto[3])||0,margen=getMargen(producto),margenBruto=calcMargenBruto(costoActual,venta);
   const costoNuevo=Number(document.getElementById('ing-costo').value)||0;
-  const proyeccion=costoNuevo>0&&costoNuevo!==costoActual?` · Con el costo nuevo: ${formatPeso(Math.round(costoNuevo*(1+margen/100)))} manteniendo ${margen}%`:'';
-  document.getElementById('ing-prod-datos').textContent=`Costo actual: ${formatPeso(costoActual)} · Margen: ${margen}% · Precio de venta: ${formatPeso(venta)}${proyeccion}`;
+  const proyeccion=costoNuevo>0&&costoNuevo!==costoActual?` · Con el costo nuevo: ${formatPeso(Math.round(costoNuevo*(1+margen/100)))} manteniendo ${margen}% de recargo`:'';
+  document.getElementById('ing-prod-datos').textContent=`Costo actual: ${formatPeso(costoActual)} · Recargo: ${margen}% · Margen bruto: ${margenBruto}% · Precio de venta: ${formatPeso(venta)}${proyeccion}`;
 }
 function prefijoSugeridoProveedor(nombre){
   const palabra=String(nombre||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/[^A-Z0-9 ]/g,' ').trim().split(/\s+/)[0]||'PROD';
@@ -1591,7 +1598,7 @@ function abrirNuevoProductoIngreso(){
   const proveedor=proveedoresData.find(p=>String(p[0])===String(idProveedor));
   const busqueda=document.getElementById('ing-buscar').value.trim();
   document.getElementById('ing-nuevo-codigo').value=/^[A-Za-z0-9_-]*\d[A-Za-z0-9_-]*$/.test(busqueda)&&!busqueda.includes(' — ')?busqueda:'';
-  ['ing-nuevo-desc','ing-nuevo-cantidad','ing-nuevo-costo','ing-nuevo-margen','ing-nuevo-pventa','ing-nuevo-stock-min'].forEach(id=>document.getElementById(id).value='');
+  ['ing-nuevo-desc','ing-nuevo-cantidad','ing-nuevo-costo','ing-nuevo-margen','ing-nuevo-pventa','ing-nuevo-margen-bruto','ing-nuevo-stock-min'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('ing-nuevo-proveedor').value=proveedor?proveedor[1]:idProveedor;
   const categoria=document.getElementById('ing-nuevo-categoria');
   categoria.innerHTML='<option value="">Seleccioná...</option>'+categoriasData.map(c=>`<option value="${c}">${c}</option>`).join('');
@@ -1604,11 +1611,13 @@ function calcularPrecioNuevoIngreso(){
   const margenValor=document.getElementById('ing-nuevo-margen').value;
   const margen=Number(margenValor);
   document.getElementById('ing-nuevo-pventa').value=costo>0&&margenValor!==''&&margen>=0?Math.round(costo*(1+margen/100)):'';
+  actualizarMargenBrutoCampo('ing-nuevo-costo','ing-nuevo-pventa','ing-nuevo-margen-bruto');
 }
 function calcularMargenNuevoIngreso(){
   const costo=Number(document.getElementById('ing-nuevo-costo').value);
   const venta=Number(document.getElementById('ing-nuevo-pventa').value);
   document.getElementById('ing-nuevo-margen').value=costo>0&&venta>0?Math.round(((venta/costo)-1)*1000)/10:'';
+  actualizarMargenBrutoCampo('ing-nuevo-costo','ing-nuevo-pventa','ing-nuevo-margen-bruto');
 }
 async function guardarNuevoProductoIngreso(){
   const codigo=document.getElementById('ing-nuevo-codigo').value.trim();
@@ -1624,7 +1633,7 @@ async function guardarNuevoProductoIngreso(){
   if(!codigo||!descripcion){showToast('Completá código y descripción','error');return}
   if(!Number.isInteger(cantidad)||cantidad<1){showToast('Ingresá una cantidad entera mayor a cero','error');return}
   if(!Number.isFinite(precio_costo)||precio_costo<=0){showToast('Ingresá el precio de costo unitario','error');return}
-  if(margenValor===''||!Number.isFinite(margen_pct)||margen_pct<0||!precio_venta){showToast('Ingresá un margen válido','error');return}
+  if(margenValor===''||!Number.isFinite(margen_pct)||margen_pct<0||!precio_venta){showToast('Ingresá un recargo válido','error');return}
   if(productosData.some(p=>String(p[0]).trim().toLowerCase()===codigo.toLowerCase())){showToast(`El código ${codigo} ya existe`,'error');return}
   const normalizar=s=>String(s||'').trim().toLowerCase();
   const parecido=productosData.find(p=>{
@@ -1731,16 +1740,17 @@ function mostrarPopupCosto(){
   document.getElementById('costo-info').innerHTML=`
     <div class="costo-info-item"><label>Costo anterior</label><span>${formatPeso(item.costoAnterior)}</span></div>
     <div class="costo-info-item"><label>Costo nuevo</label><span style="color:var(--teal)">${formatPeso(item.costoNuevo)}</span></div>
-    <div class="costo-info-item"><label>Margen actual</label><span>${margenActual}%</span></div>
+    <div class="costo-info-item"><label>Recargo actual</label><span>${margenActual}%</span></div>
+    <div class="costo-info-item"><label>Margen bruto real</label><span>${calcMargenBruto(item.costoAnterior,item.precioVentaActual)}%</span></div>
     <div class="costo-info-item"><label>Precio venta actual</label><span>${formatPeso(item.precioVentaActual)}</span></div>
   `;
 
-  document.getElementById('op1-title').textContent=`Mantener margen (${margenActual}%)`;
-  document.getElementById('op1-desc').textContent=`El precio de venta cambia a ${formatPeso(pvConMargenActual)}`;
+  document.getElementById('op1-title').textContent=`Mantener recargo (${margenActual}%)`;
+  document.getElementById('op1-desc').textContent=`Precio ${formatPeso(pvConMargenActual)} · Margen bruto ${calcMargenBruto(item.costoNuevo,pvConMargenActual)}%`;
   document.getElementById('op1').dataset.pv=pvConMargenActual;document.getElementById('op1').dataset.margen=margenActual;
 
   document.getElementById('op2-title').textContent=`Mantener precio de venta (${formatPeso(item.precioVentaActual)})`;
-  document.getElementById('op2-desc').textContent=`El margen baja a ${nuevoMargenSiMantienePV}%`;
+  document.getElementById('op2-desc').textContent=`Recargo ${nuevoMargenSiMantienePV}% · Margen bruto ${calcMargenBruto(item.costoNuevo,item.precioVentaActual)}%`;
   document.getElementById('op2').dataset.pv=item.precioVentaActual;document.getElementById('op2').dataset.margen=nuevoMargenSiMantienePV;
 
   document.getElementById('costo-margen-custom').style.display='none';
@@ -1772,7 +1782,7 @@ async function confirmarCambioSiguiente(){
   let nuevoPV,nuevoMargen;
   if(opcionSeleccionada===1){nuevoPV=Number(document.getElementById('op1').dataset.pv);nuevoMargen=Number(document.getElementById('op1').dataset.margen)}
   else if(opcionSeleccionada===2){nuevoPV=Number(document.getElementById('op2').dataset.pv);nuevoMargen=Number(document.getElementById('op2').dataset.margen)}
-  else{nuevoMargen=Number(document.getElementById('costo-margen-input').value);if(!nuevoMargen){showToast('Ingresá el margen','error');return}nuevoPV=Math.round(item.costoNuevo*(1+nuevoMargen/100))}
+  else{nuevoMargen=Number(document.getElementById('costo-margen-input').value);if(!nuevoMargen){showToast('Ingresá el recargo','error');return}nuevoPV=Math.round(item.costoNuevo*(1+nuevoMargen/100))}
 
   try{
     await apiPost('actualizarCosto',{codigo:item.codigo,nuevo_costo:item.costoNuevo,nuevo_precio_venta:nuevoPV,nuevo_margen:nuevoMargen,fecha:fechaIngreso});
@@ -2864,8 +2874,8 @@ async function generarReportes(){
     :Object.entries(margenData).sort((a,b)=>b[1].netoTotal-a[1].netoTotal).slice(0,15).map(([cod,v])=>{
       const costoRepo=v.costoActual;
       const costoHistProm=v.uds>0?v.costoHistTotal/v.uds:0;
-      const margenBruto=costoHistProm>0?Math.round(((v.cobradoTotal/v.uds-costoHistProm)/costoHistProm)*100):0;
-      const margenNeto=v.costoHistTotal>0?Math.round(((v.netoTotal-v.costoHistTotal)/v.costoHistTotal)*100):0;
+      const margenBruto=v.cobradoTotal>0?Math.round(((v.cobradoTotal-v.costoHistTotal)/v.cobradoTotal)*1000)/10:0;
+      const margenNeto=v.netoTotal>0?Math.round(((v.netoTotal-v.costoHistTotal)/v.netoTotal)*1000)/10:0;
       const subioCosto=costoRepo>0&&costoHistProm>0&&costoRepo>costoHistProm*1.05;
       const bajoCosto=costoRepo>0&&costoHistProm>0&&costoRepo<costoHistProm*0.95;
       const alerta=subioCosto?`<span style="color:#C44F4F;font-weight:600">🔴 Subió</span>`:bajoCosto?`<span style="color:var(--teal);font-weight:600">🟢 Bajó</span>`:`<span style="color:var(--text-light)">—</span>`;
@@ -2889,7 +2899,7 @@ async function generarReportes(){
       const costoTotal=costoTotalPorVenta[idVenta]||0;
       const cobrado=Number(v[5])||0;
       const neto=ventaInfo.netoReal||Number(v[6])||0;
-      const margenVenta=costoTotal>0?Math.round(((neto-costoTotal)/costoTotal)*100):null;
+      const margenVenta=neto>0?Math.round(((neto-costoTotal)/neto)*1000)/10:null;
       const colorMargen=margenVenta===null?'var(--text-light)':margenVenta<0?'#C44F4F':margenVenta<30?'#E8A838':'var(--teal)';
       const mediosUsados=ventaInfo.pagos.map(p=>medioNombreCorto(p[1])).filter((x,i,a)=>a.indexOf(x)===i).join(', ')||'—';
       const fechaVenta=new Date(fechaStr(v[1])).toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'});

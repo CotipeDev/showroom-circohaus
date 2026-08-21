@@ -219,6 +219,7 @@
       }
       renderHistorialVentas(ventasHistData);
       showToast('✅ Venta cancelada. Stock reintegrado.');
+      ventasData=[];detalleVentasData=[];pagosVentaData=[];cuentasPorCobrarData=[];cxcDataGlobal={};
       cacheInvalidar('getProductos','getVentas','getDetalleVentas','getPagosVenta','getMovimientos','getCuentasPorCobrar');setTimeout(()=>cargarProductos(),1500);
     } catch(e){showToast(e.message||'Error al cancelar la venta','error');}
   };

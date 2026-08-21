@@ -2314,8 +2314,8 @@ async function verDetalleVenta(idVenta){
         ${saldoPendiente>0?`<div><div style="font-size:10px;text-transform:uppercase;color:var(--text-light)">Saldo pendiente</div><strong style="color:var(--error)">${formatPeso(saldoPendiente)}</strong></div>`:''}
       </div>
       <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-mid);margin-bottom:6px">Pagos</div>
-      <table><thead><tr><th>Medio</th><th>Monto cobrado</th><th>Neto recibido</th></tr></thead><tbody>
-        ${pagos.length?pagos.map(p=>{const mp=mediosPagoData.find(m=>String(m[0])===String(p[1]));return`<tr><td>${mp?mp[2]:p[1]}</td><td>${formatPeso(p[2])}</td><td style="color:var(--success)">${formatPeso(p[6])}</td></tr>`}).join(''):'<tr><td colspan="3" style="text-align:center;color:var(--text-light)">Sin pago inicial</td></tr>'}
+      <table><thead><tr><th>Medio</th><th>Importe original</th><th>Neto efectivo</th><th>Estado</th></tr></thead><tbody>
+        ${pagos.length?pagos.map(p=>{const mp=mediosPagoData.find(m=>String(m[0])===String(p[1]));const pagoCancelado=estadoVenta==='cancelada'||String(p[21]||'').toUpperCase()==='CANCELADO';return`<tr style="${pagoCancelado?'opacity:.65':''}"><td>${mp?mp[2]:p[1]}</td><td>${formatPeso(p[2])}</td><td style="color:${pagoCancelado?'var(--text-light)':'var(--success)'}">${formatPeso(pagoCancelado?0:p[6])}</td><td><span class="badge ${pagoCancelado?'badge-zero':'badge-ok'}">${pagoCancelado?'Cancelado':(p[21]||'Registrado')}</span></td></tr>`}).join(''):'<tr><td colspan="4" style="text-align:center;color:var(--text-light)">Sin pago inicial</td></tr>'}
       </tbody></table>`;
     const btnCancelar=document.getElementById('btn-cancelar-vta');
     btnCancelar.style.display=estadoVenta==='cancelada'?'none':'';
@@ -3070,6 +3070,6 @@ async function confirmarCobroCxc(){
   }
 }
 </script>
-<script src="js/ventas-v2.js?v=20260820-2"></script>
+<script src="js/ventas-v2.js?v=20260821-3"></script>
 </body>
 </html>

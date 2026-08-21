@@ -555,7 +555,7 @@ if(sessionStorage.getItem(_LOGIN_KEY)==='1'){
         <div class="modal-title">Nuevo producto del pedido</div>
         <div class="modal-sub">Se creará con stock cero. La cantidad se sumará al confirmar el ingreso completo.</div>
         <div class="form-grid">
-          <div class="field"><label>Código</label><input type="text" id="ing-nuevo-codigo" placeholder="Ej: PQY-0001"></div>
+          <div class="field"><label>Código</label><input type="text" id="ing-nuevo-codigo" placeholder="Ej: PQY-0001"><div id="ing-nuevo-codigo-ayuda" style="font-size:11px;color:var(--text-light);margin-top:5px"></div><button type="button" class="btn btn-secondary" style="padding:5px 9px;margin-top:7px;font-size:11px" onclick="sugerirCodigoNuevoIngreso(true)">Sugerir siguiente código</button></div>
           <div class="field"><label>Descripción</label><input type="text" id="ing-nuevo-desc" placeholder="Nombre del producto"></div>
           <div class="field"><label>Proveedor</label><input type="text" id="ing-nuevo-proveedor" readonly class="readonly"></div>
           <div class="field"><label>Categoría</label><select id="ing-nuevo-categoria"><option value="">Seleccioná...</option></select></div>
@@ -1555,17 +1555,48 @@ function actualizarPreviewCostoIngreso(){
   const proyeccion=costoNuevo>0&&costoNuevo!==costoActual?` · Con el costo nuevo: ${formatPeso(Math.round(costoNuevo*(1+margen/100)))} manteniendo ${margen}%`:'';
   document.getElementById('ing-prod-datos').textContent=`Costo actual: ${formatPeso(costoActual)} · Margen: ${margen}% · Precio de venta: ${formatPeso(venta)}${proyeccion}`;
 }
+function prefijoSugeridoProveedor(nombre){
+  const palabra=String(nombre||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/[^A-Z0-9 ]/g,' ').trim().split(/\s+/)[0]||'PROD';
+  const consonantes=palabra.slice(1).replace(/[AEIOU]/g,'');
+  return (palabra[0]+consonantes+palabra.slice(1)).slice(0,3).padEnd(3,'X');
+}
+function sugerirCodigoNuevoIngreso(forzar=false){
+  const modal=document.getElementById('modal-nuevo-producto-ingreso');
+  const idProveedor=modal.dataset.proveedor||'';
+  const proveedor=proveedoresData.find(p=>String(p[0])===String(idProveedor));
+  const relacionados=productosData.filter(p=>String(p[2])===String(idProveedor));
+  const separar=codigo=>{
+    const match=String(codigo||'').trim().match(/^(.*?)(\d+)$/);
+    return match?{codigo:String(codigo).trim(),prefijo:match[1],numero:Number(match[2]),digitos:match[2].length}:null;
+  };
+  const codigosRelacionados=relacionados.map(p=>separar(p[0])).filter(Boolean);
+  let prefijo='';
+  if(codigosRelacionados.length){
+    const conteo={};codigosRelacionados.forEach(c=>conteo[c.prefijo]=(conteo[c.prefijo]||0)+1);
+    prefijo=Object.keys(conteo).sort((a,b)=>conteo[b]-conteo[a])[0];
+  }else prefijo=prefijoSugeridoProveedor(proveedor?.[1])+'-';
+  let candidatos=productosData.map(p=>separar(p[0])).filter(c=>c&&c.prefijo.toUpperCase()===prefijo.toUpperCase());
+  if(!candidatos.length&&codigosRelacionados.length)candidatos=codigosRelacionados.filter(c=>c.prefijo===prefijo);
+  const ultimo=candidatos.sort((a,b)=>b.numero-a.numero)[0];
+  const siguiente=(ultimo?.numero||0)+1;
+  const digitos=Math.max(4,ultimo?.digitos||0);
+  const sugerido=`${prefijo}${String(siguiente).padStart(digitos,'0')}`;
+  const campo=document.getElementById('ing-nuevo-codigo');
+  if(forzar||!campo.value.trim())campo.value=sugerido;
+  document.getElementById('ing-nuevo-codigo-ayuda').textContent=ultimo?`Último código con este prefijo: ${ultimo.codigo} · Siguiente sugerido: ${sugerido}`:`No encontré códigos anteriores · Sugerido inicial: ${sugerido}`;
+}
 function abrirNuevoProductoIngreso(){
   const idProveedor=document.getElementById('ing-proveedor').value;
   if(!idProveedor){showToast('Primero seleccioná el proveedor del ingreso','error');return}
   const proveedor=proveedoresData.find(p=>String(p[0])===String(idProveedor));
   const busqueda=document.getElementById('ing-buscar').value.trim();
-  document.getElementById('ing-nuevo-codigo').value=busqueda.includes(' — ')?'':busqueda;
+  document.getElementById('ing-nuevo-codigo').value=/^[A-Za-z0-9_-]*\d[A-Za-z0-9_-]*$/.test(busqueda)&&!busqueda.includes(' — ')?busqueda:'';
   ['ing-nuevo-desc','ing-nuevo-cantidad','ing-nuevo-costo','ing-nuevo-margen','ing-nuevo-pventa','ing-nuevo-stock-min'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('ing-nuevo-proveedor').value=proveedor?proveedor[1]:idProveedor;
   const categoria=document.getElementById('ing-nuevo-categoria');
   categoria.innerHTML='<option value="">Seleccioná...</option>'+categoriasData.map(c=>`<option value="${c}">${c}</option>`).join('');
   document.getElementById('modal-nuevo-producto-ingreso').dataset.proveedor=idProveedor;
+  sugerirCodigoNuevoIngreso(false);
   document.getElementById('modal-nuevo-producto-ingreso').classList.add('open');
 }
 function calcularPrecioNuevoIngreso(){

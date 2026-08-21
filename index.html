@@ -1425,7 +1425,7 @@ async function agregarProducto(){
   if(!precio_costo){showToast('Ingresá el precio de costo','error');return}
   if(!precio_venta){showToast('Ingresá el recargo o el precio de venta','error');return}
   try{const data=await cacheGet('getProductos');if(data.slice(1).some(p=>p[0].toString().trim().toLowerCase()===codigo.toLowerCase())){showToast(`El código ${codigo} ya existe`,'error');return}}catch(e){showToast('No se pudo verificar el código','error');return}
-  try{await apiPost('agregarProducto',{codigo,descripcion,proveedor,precio_venta,precio_costo,margen_pct,stock,stock_minimo,categoria});showToast('Producto guardado');['prod-codigo','prod-desc','prod-pcosto','prod-margen','prod-pventa','prod-margen-bruto','prod-stock','prod-stock-min'].forEach(id=>document.getElementById(id).value='');document.getElementById('prod-proveedor').value='';document.getElementById('prod-categoria').value='';cacheInvalidar('getProductos');setTimeout(()=>{cargarProductos();iniciarProductos()},1500)}catch(e){showToast('Error','error')}
+  try{await apiPost('agregarProducto',{codigo,descripcion,proveedor,precio_venta,precio_costo,margen_pct,stock,stock_minimo,categoria});showToast('Producto guardado');['prod-codigo','prod-desc','prod-pcosto','prod-margen','prod-pventa','prod-margen-bruto','prod-stock','prod-stock-min'].forEach(id=>document.getElementById(id).value='');document.getElementById('prod-proveedor').value='';document.getElementById('prod-categoria').value='';cacheInvalidar('getProductos','getHistorialCostos');setTimeout(()=>{cargarProductos();iniciarProductos()},1500)}catch(e){showToast('Error','error')}
 }
 async function eliminarProducto(codigo){
   if(!confirm(`¿Seguro que querés eliminar ${codigo}?`))return;
@@ -1451,7 +1451,7 @@ async function guardarEdicion(){
   const codigo=document.getElementById('edit-codigo').value.trim(),descripcion=document.getElementById('edit-desc').value.trim(),proveedor=document.getElementById('edit-proveedor').value,categoria=document.getElementById('edit-categoria').value,precio_costo=Number(document.getElementById('edit-pcosto').value),margen_pct=Number(document.getElementById('edit-margen').value)||0,precio_venta=Number(document.getElementById('edit-pventa').value),stock_minimo=Number(document.getElementById('edit-stock-min').value)||0;
   if(!descripcion){showToast('Completá la descripción','error');return}
   if(!precio_costo||!precio_venta){showToast('Completá costo y precio de venta','error');return}
-  try{await apiPost('editarProducto',{codigo,descripcion,proveedor,precio_venta,precio_costo,margen_pct,stock_minimo,categoria});showToast('Producto actualizado');cerrarModal('modal-editar');cacheInvalidar('getProductos');setTimeout(()=>{cargarProductos();iniciarProductos()},1500)}catch(e){showToast('Error','error')}
+  try{await apiPost('editarProducto',{codigo,descripcion,proveedor,precio_venta,precio_costo,margen_pct,stock_minimo,categoria});showToast('Producto actualizado');cerrarModal('modal-editar');cacheInvalidar('getProductos','getHistorialCostos');setTimeout(()=>{cargarProductos();iniciarProductos()},1500)}catch(e){showToast('Error','error')}
 }
 async function verHistorialProducto(codigo){
   const producto=productosData.find(p=>String(p[0])===String(codigo))||prodTablaData.find(p=>String(p[0])===String(codigo));
@@ -1460,13 +1460,19 @@ async function verHistorialProducto(codigo){
   document.getElementById('hist-prod-body').innerHTML='<div class="spinner-wrap"><div class="spinner"></div> Cargando...</div>';
   document.getElementById('modal-historial-producto').classList.add('open');
   try{
-    const[dataIng,dataDetIng,dataVentas,dataDetVentas]=await Promise.all([
-      cacheGet('getIngresos'),cacheGet('getDetalleIngresos'),cacheGet('getVentas'),cacheGet('getDetalleVentas')
+    const[dataIng,dataDetIng,dataVentas,dataDetVentas,dataHistCostos]=await Promise.all([
+      cacheGet('getIngresos'),cacheGet('getDetalleIngresos'),cacheGet('getVentas'),cacheGet('getDetalleVentas'),cacheGet('getHistorialCostos')
     ]);
     const ingresos=(Array.isArray(dataIng)?dataIng.slice(1):[]);
     const detIngresos=(Array.isArray(dataDetIng)?dataDetIng.slice(1):[]).filter(d=>String(d[1]).trim()===String(codigo).trim());
     const ventas=(Array.isArray(dataVentas)?dataVentas.slice(1):[]);
     const detVentas=(Array.isArray(dataDetVentas)?dataDetVentas.slice(1):[]).filter(d=>String(d[1]).trim()===String(codigo).trim());
+    const historialCostos=(Array.isArray(dataHistCostos)?dataHistCostos.slice(1):[]).filter(h=>String(h[1]).trim()===String(codigo).trim()).map(h=>{
+      const costoAnterior=Number(h[3])||0,costoNuevo=Number(h[4])||0,recargoAnterior=Number(h[5])||0,recargoNuevo=Number(h[6])||0;
+      const precioAnterior=Number(h[7])||Math.round(costoAnterior*(1+recargoAnterior/100));
+      const precioNuevo=Number(h[8])||Math.round(costoNuevo*(1+recargoNuevo/100));
+      return{fecha:fechaStr(h[0])||String(h[0]||'').slice(0,10),costoAnterior,costoNuevo,recargoAnterior,recargoNuevo,precioAnterior,precioNuevo,margenBrutoAnterior:Number(h[9])||calcMargenBruto(costoAnterior,precioAnterior),margenBrutoNuevo:Number(h[10])||calcMargenBruto(costoNuevo,precioNuevo),motivo:h[11]||'cambio_costo'};
+    }).sort((a,b)=>String(b.fecha).localeCompare(String(a.fecha)));
     const movimientos=[];
     detIngresos.forEach(d=>{
       const ingreso=ingresos.find(i=>String(i[0]).trim()===String(d[0]).trim());
@@ -1495,7 +1501,11 @@ async function verHistorialProducto(codigo){
         <div><div style="font-size:10px;text-transform:uppercase;color:var(--text-light)">Margen bruto real</div><strong>${margenBruto}%</strong></div>
         <div><div style="font-size:10px;text-transform:uppercase;color:var(--text-light)">Precio actual</div><strong>${formatPeso(precio)}</strong></div>
       </div>
-      <div style="font-size:11px;color:var(--text-light);margin-bottom:10px">Los costos históricos se reconstruyen desde los ingresos registrados. Las ediciones manuales anteriores no cuentan todavía con auditoría propia.</div>
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-mid);margin:4px 0 8px">Evolución de costos y precios</div>
+      <table style="width:100%;margin-bottom:18px"><thead><tr><th>Fecha</th><th>Motivo</th><th>Costo</th><th>Recargo</th><th>Precio venta</th><th>Margen bruto</th></tr></thead><tbody>
+        ${historialCostos.length?historialCostos.map(h=>`<tr><td>${h.fecha||'—'}</td><td>${String(h.motivo).replace(/_/g,' ')}</td><td>${formatPeso(h.costoAnterior)} → <strong>${formatPeso(h.costoNuevo)}</strong></td><td>${h.recargoAnterior}% → <strong>${h.recargoNuevo}%</strong></td><td>${formatPeso(h.precioAnterior)} → <strong>${formatPeso(h.precioNuevo)}</strong></td><td>${h.margenBrutoAnterior}% → <strong>${h.margenBrutoNuevo}%</strong></td></tr>`).join(''):'<tr><td colspan="6" style="text-align:center;color:var(--text-light);padding:18px">No hay cambios económicos auditados todavía.</td></tr>'}
+      </tbody></table>
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-mid);margin-bottom:8px">Movimientos de stock</div>
       <table style="width:100%"><thead><tr><th>Fecha</th><th>Movimiento</th><th>Detalle</th><th>Cantidad</th><th>Valor unit.</th><th>Estado</th></tr></thead><tbody>
         ${movimientos.length?movimientos.map(m=>`<tr><td>${m.fecha||'—'}</td><td><strong style="color:${m.tipo==='Ingreso'?'var(--teal)':'var(--navy)'}">${m.tipo}</strong><div style="font-size:10px;color:var(--text-light)">${m.referencia}</div></td><td>${m.detalle}</td><td>${m.tipo==='Ingreso'?'+':'−'}${m.cantidad}</td><td>${formatPeso(m.importe)}</td><td><span class="badge ${m.estado==='Cancelada'?'badge-zero':'badge-ok'}">${m.estado}</span></td></tr>`).join(''):'<tr><td colspan="6" style="text-align:center;color:var(--text-light);padding:24px">Todavía no hay ingresos ni ventas registrados para este producto.</td></tr>'}
       </tbody></table>`;
@@ -1650,7 +1660,7 @@ async function guardarNuevoProductoIngreso(){
     renderItemsIngreso();
     document.getElementById('ing-buscar').value='';
     cerrarModal('modal-nuevo-producto-ingreso');
-    cacheInvalidar('getProductos');
+    cacheInvalidar('getProductos','getHistorialCostos');
     showToast('Producto creado y agregado al pedido');
   }catch(e){showToast(e?.message||'No se pudo crear el producto','error')}
 }
@@ -1786,6 +1796,7 @@ async function confirmarCambioSiguiente(){
 
   try{
     await apiPost('actualizarCosto',{codigo:item.codigo,nuevo_costo:item.costoNuevo,nuevo_precio_venta:nuevoPV,nuevo_margen:nuevoMargen,fecha:fechaIngreso});
+    cacheInvalidar('getProductos','getHistorialCostos');
     showToast(`${item.codigo} actualizado correctamente`);
   }catch(e){showToast('Error al actualizar costo','error')}
 

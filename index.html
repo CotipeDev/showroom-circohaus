@@ -1392,6 +1392,15 @@ async function agregarCategoria(){
 }
 
 async function cargarProductos(){try{const data=await cacheGet('getProductos');productosData=data.slice(1)}catch(e){}}
+async function refrescarProductosUI(){
+  const data=await apiGet('getProductos');
+  cache.set('getProductos',data);
+  productosData=data.slice(1);
+  prodTablaData=[...productosData];
+  stockData=[...productosData];
+  renderTablaProductos(prodTablaData);
+  renderStock(stockData);
+}
 
 function calcMargen(costo,venta){return(costo>0&&venta>0)?Math.round(((venta/costo)-1)*1000)/10:0}
 function calcMargenBruto(costo,venta){return(costo>0&&venta>0)?Math.round(((venta-costo)/venta)*1000)/10:0}
@@ -1425,11 +1434,11 @@ async function agregarProducto(){
   if(!precio_costo){showToast('Ingresá el precio de costo','error');return}
   if(!precio_venta){showToast('Ingresá el recargo o el precio de venta','error');return}
   try{const data=await cacheGet('getProductos');if(data.slice(1).some(p=>p[0].toString().trim().toLowerCase()===codigo.toLowerCase())){showToast(`El código ${codigo} ya existe`,'error');return}}catch(e){showToast('No se pudo verificar el código','error');return}
-  try{await apiPost('agregarProducto',{codigo,descripcion,proveedor,precio_venta,precio_costo,margen_pct,stock,stock_minimo,categoria});showToast('Producto guardado');['prod-codigo','prod-desc','prod-pcosto','prod-margen','prod-pventa','prod-margen-bruto','prod-stock','prod-stock-min'].forEach(id=>document.getElementById(id).value='');document.getElementById('prod-proveedor').value='';document.getElementById('prod-categoria').value='';cacheInvalidar('getProductos','getHistorialCostos');setTimeout(()=>{cargarProductos();iniciarProductos()},1500)}catch(e){showToast('Error','error')}
+  try{await apiPost('agregarProducto',{codigo,descripcion,proveedor,precio_venta,precio_costo,margen_pct,stock,stock_minimo,categoria});cache.invalidar('getHistorialCostos');await refrescarProductosUI();showToast('Producto guardado');['prod-codigo','prod-desc','prod-pcosto','prod-margen','prod-pventa','prod-margen-bruto','prod-stock','prod-stock-min'].forEach(id=>document.getElementById(id).value='');document.getElementById('prod-proveedor').value='';document.getElementById('prod-categoria').value=''}catch(e){showToast(e?.message||'Error al guardar el producto','error')}
 }
 async function eliminarProducto(codigo){
   if(!confirm(`¿Seguro que querés eliminar ${codigo}?`))return;
-  try{await apiPost('eliminarProducto',{codigo});showToast('Producto eliminado');cacheInvalidar('getProductos');setTimeout(()=>{cargarProductos();iniciarProductos()},1500)}catch(e){showToast('Error','error')}
+  try{await apiPost('eliminarProducto',{codigo});await refrescarProductosUI();showToast('Producto eliminado')}catch(e){showToast(e?.message||'Error al eliminar el producto','error')}
 }
 function abrirEditar(codigo){
   const p=prodTablaData.find(x=>x[0].toString()===codigo.toString());if(!p)return;
@@ -1451,7 +1460,7 @@ async function guardarEdicion(){
   const codigo=document.getElementById('edit-codigo').value.trim(),descripcion=document.getElementById('edit-desc').value.trim(),proveedor=document.getElementById('edit-proveedor').value,categoria=document.getElementById('edit-categoria').value,precio_costo=Number(document.getElementById('edit-pcosto').value),margen_pct=Number(document.getElementById('edit-margen').value)||0,precio_venta=Number(document.getElementById('edit-pventa').value),stock_minimo=Number(document.getElementById('edit-stock-min').value)||0;
   if(!descripcion){showToast('Completá la descripción','error');return}
   if(!precio_costo||!precio_venta){showToast('Completá costo y precio de venta','error');return}
-  try{await apiPost('editarProducto',{codigo,descripcion,proveedor,precio_venta,precio_costo,margen_pct,stock_minimo,categoria});showToast('Producto actualizado');cerrarModal('modal-editar');cacheInvalidar('getProductos','getHistorialCostos');setTimeout(()=>{cargarProductos();iniciarProductos()},1500)}catch(e){showToast('Error','error')}
+  try{await apiPost('editarProducto',{codigo,descripcion,proveedor,precio_venta,precio_costo,margen_pct,stock_minimo,categoria});cache.invalidar('getHistorialCostos');await refrescarProductosUI();showToast('Producto actualizado');cerrarModal('modal-editar')}catch(e){showToast(e?.message||'Error al actualizar el producto','error')}
 }
 async function verHistorialProducto(codigo){
   const producto=productosData.find(p=>String(p[0])===String(codigo))||prodTablaData.find(p=>String(p[0])===String(codigo));

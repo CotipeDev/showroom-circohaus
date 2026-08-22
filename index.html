@@ -532,6 +532,7 @@ if(sessionStorage.getItem(_LOGIN_KEY)==='1'){
             <th style="text-align:left;padding:8px 0;color:var(--text-light);font-size:11px;text-transform:uppercase;border-bottom:1px solid var(--border)">Fecha</th>
             <th style="text-align:left;padding:8px 0;color:var(--text-light);font-size:11px;text-transform:uppercase;border-bottom:1px solid var(--border)">Proveedor</th>
             <th style="text-align:left;padding:8px 0;color:var(--text-light);font-size:11px;text-transform:uppercase;border-bottom:1px solid var(--border)">Remito</th>
+            <th style="text-align:left;padding:8px 0;color:var(--text-light);font-size:11px;text-transform:uppercase;border-bottom:1px solid var(--border)">Estado</th>
           </tr></thead>
           <tbody id="ing-hist-body"></tbody>
         </table>
@@ -544,7 +545,7 @@ if(sessionStorage.getItem(_LOGIN_KEY)==='1'){
         <div class="modal-title" id="ing-det-titulo">Detalle del ingreso</div>
         <div id="ing-det-body" style="margin-top:12px"></div>
         <div style="margin-top:16px;display:flex;justify-content:space-between;align-items:center">
-          <button class="btn btn-danger" onclick="eliminarIngreso(document.getElementById('ing-det-titulo').dataset.id)">🗑 Eliminar ingreso</button>
+          <button class="btn btn-danger" id="btn-cancelar-ingreso" onclick="cancelarIngreso(document.getElementById('ing-det-titulo').dataset.id)">Cancelar ingreso</button>
           <button class="btn btn-secondary" onclick="cerrarModal('modal-detalle-ingreso')">Cerrar</button>
         </div>
       </div>
@@ -1230,7 +1231,8 @@ const cache={
       'Medios_Pago':'getMediosPago','Cuentas':'getCuentas','Clientes':'getClientes',
       'Ventas':'getVentas','Detalle_Ventas':'getDetalleVentas','Pagos_Venta':'getPagosVenta',
       'Cuentas_Por_Cobrar':'getCuentasPorCobrar','Movimientos':'getMovimientos',
-      'Categorias_Movimientos':'getCategoriasMovimientos'
+      'Categorias_Movimientos':'getCategoriasMovimientos','Ingresos':'getIngresos',
+      'Detalle_Ingresos':'getDetalleIngresos','Historial_Costos':'getHistorialCostos'
     };
     Object.entries(mapeo).forEach(([hoja,key])=>{
       if(datosCompletos[hoja]){this.data[key]=datosCompletos[hoja];this.ts[key]=Date.now();}
@@ -2632,16 +2634,20 @@ function verificarLogin(){
     document.getElementById('login-pass').focus();
   }
 }
-async function eliminarIngreso(idIngreso){
-  if(!confirm(`¿Eliminar el ingreso ${idIngreso}?\nEsta acción no se puede deshacer y no revierte el stock.`))return;
+async function cancelarIngreso(idIngreso){
+  if(!confirm(`¿Cancelar el ingreso ${idIngreso}?\nEl stock incorporado será retirado y el registro quedará visible como cancelado.`))return;
+  const motivo=prompt('Motivo de la cancelación (opcional):','Ingreso cargado por error');
+  if(motivo===null)return;
+  const btn=document.getElementById('btn-cancelar-ingreso');
+  if(btn){btn.disabled=true;btn.textContent='Cancelando...';}
   try{
-    await apiPost('eliminarIngreso',{id_ingreso:idIngreso});
-    showToast('Ingreso eliminado');
+    await apiPost('cancelarIngreso',{id_ingreso:idIngreso,motivo:motivo.trim()||'Cancelación de ingreso'});
+    cache.invalidar('getIngresos','getDetalleIngresos');
+    await Promise.all([refrescarProductosUI(),cargarHistorialIngresos()]);
     cerrarModal('modal-detalle-ingreso');
-    ingresosData=ingresosData.filter(x=>String(x[0])!==String(idIngreso));
-    detalleIngresosData=detalleIngresosData.filter(x=>String(x[0])!==String(idIngreso));
-    renderHistorialIngresos();
-  }catch(e){showToast('Error al eliminar','error');}
+    showToast('Ingreso cancelado. Stock revertido.');
+  }catch(e){showToast(e?.message||'Error al cancelar el ingreso','error');}
+  finally{if(btn){btn.disabled=false;btn.textContent='Cancelar ingreso';}}
 }
 
 let ingresosData=[], detalleIngresosData=[];
@@ -2665,15 +2671,17 @@ function renderHistorialIngresos(){
   const sorted=[...ingresosData].reverse().slice(0,50);
   const provNombre=id=>{const p=proveedoresData.find(x=>String(x[0])===String(id));return p?p[1]:id||'—'};
   document.getElementById('ing-hist-body').innerHTML=sorted.length===0
-    ?'<tr><td colspan="4" style="text-align:center;color:var(--text-light);padding:20px">No hay ingresos registrados</td></tr>'
+    ?'<tr><td colspan="5" style="text-align:center;color:var(--text-light);padding:20px">No hay ingresos registrados</td></tr>'
     :sorted.map(ing=>{
       const idEscapado=String(ing[0]).replace(/'/g,"\\'");
       const provNombreVal=provNombre(ing[2]);
-      return`<tr style="border-bottom:1px solid var(--border);cursor:pointer" onclick="verDetalleIngreso('${idEscapado}')" onmouseover="this.style.background='var(--off-white)'" onmouseout="this.style.background=''">
+      const cancelada=String(ing[4]||'').toLowerCase()==='cancelada';
+      return`<tr style="border-bottom:1px solid var(--border);cursor:pointer;${cancelada?'opacity:.65':''}" onclick="verDetalleIngreso('${idEscapado}')" onmouseover="this.style.background='var(--off-white)'" onmouseout="this.style.background=''">
         <td style="padding:9px 0"><code style="color:var(--teal);font-size:11px">${ing[0]}</code></td>
         <td style="padding:9px 0;color:var(--text-mid)">${fechaStr(ing[1])||'—'}</td>
         <td style="padding:9px 0;font-weight:500">${provNombreVal}</td>
         <td style="padding:9px 0;color:var(--text-light)">${ing[3]||'—'}</td>
+        <td style="padding:9px 0"><span class="badge ${cancelada?'badge-zero':'badge-ok'}">${cancelada?'Cancelado':'Activo'}</span></td>
       </tr>`;
     }).join('');
 }
@@ -2684,13 +2692,16 @@ function verDetalleIngreso(idIngreso){
   console.log('ID buscado:', idIngreso, '| Items encontrados:', items.length, '| Total detalle:', detalleIngresosData.length, '| Primer item:', detalleIngresosData[0]);
   const provNombre=id=>{const p=proveedoresData.find(x=>String(x[0])===String(id));return p?p[1]:id||'—'};
   const prodNombre=cod=>{const p=productosData.find(x=>String(x[0])===String(cod));return p?p[1]:cod};
+  const cancelada=String(ing?.[4]||'').toLowerCase()==='cancelada';
   document.getElementById('ing-det-titulo').textContent=`Ingreso — ${idIngreso}`;
   document.getElementById('ing-det-titulo').dataset.id=idIngreso;
   document.getElementById('ing-det-body').innerHTML=`
     <div style="font-size:13px;color:var(--text-mid);margin-bottom:16px">
       <strong>Fecha:</strong> ${ing?fechaStr(ing[1]):'—'} &nbsp;|&nbsp;
-      <strong>Proveedor:</strong> ${ing?provNombre(ing[2]):'—'}
+      <strong>Proveedor:</strong> ${ing?provNombre(ing[2]):'—'} &nbsp;|&nbsp;
+      <strong>Estado:</strong> ${cancelada?'Cancelado':'Activo'}
       ${ing&&ing[3]?`&nbsp;|&nbsp; <strong>Remito:</strong> ${ing[3]}`:''}
+      ${cancelada&&ing[6]?`<div style="margin-top:5px"><strong>Motivo:</strong> ${ing[6]}</div>`:''}
     </div>
     <table style="width:100%;border-collapse:collapse;font-size:13px">
       <thead><tr>
@@ -2713,6 +2724,7 @@ function verDetalleIngreso(idIngreso){
     <div style="text-align:right;margin-top:12px;font-size:14px;font-weight:700;color:var(--navy)">
       Total: ${formatPeso(items.reduce((s,d)=>s+Number(d[2])*Number(d[3]),0))}
     </div>`;
+  document.getElementById('btn-cancelar-ingreso').style.display=cancelada?'none':'';
   document.getElementById('modal-detalle-ingreso').classList.add('open');
 }
 

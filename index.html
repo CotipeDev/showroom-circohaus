@@ -301,6 +301,13 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
 .toggle.on{background:var(--teal)}
 .toggle::after{content:'';position:absolute;width:14px;height:14px;background:white;border-radius:50%;top:3px;left:3px;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
 .toggle.on::after{left:19px}
+.usuario-sesion{display:flex;align-items:center;gap:9px;padding:5px 6px 5px 11px;border:1px solid rgba(255,255,255,.18);border-radius:10px;background:rgba(255,255,255,.07)}
+.usuario-sesion-datos{display:flex;flex-direction:column;line-height:1.15;text-align:right}
+.usuario-sesion-nombre{font-size:12px;font-weight:600;color:white}
+.usuario-sesion-rol{font-size:9px;text-transform:uppercase;letter-spacing:.07em;color:rgba(255,255,255,.6)}
+.btn-cerrar-sesion{border:0;border-left:1px solid rgba(255,255,255,.16);background:transparent;color:var(--blue-mist);font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;padding:5px 7px 5px 10px;cursor:pointer}
+.btn-cerrar-sesion:hover{color:white}
+@media(max-width:700px){.usuario-sesion-datos{display:none}.btn-cerrar-sesion{border-left:0;padding-left:6px}.usuario-sesion{padding-left:6px}}
 
 /* CUENTAS CARDS */
 .cuentas-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px}
@@ -356,6 +363,10 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
       <div style="position:relative">
         <button class="notif-btn" onclick="toggleNotif('home')">🔔 <span id="nb1" style="display:none;background:#C44F4F;color:white;font-size:10px;font-weight:700;border-radius:10px;padding:1px 6px"></span></button>
         <div class="notif-panel" id="np1"><div class="notif-panel-title">Alertas de stock</div><div id="nl1" style="max-height:280px;overflow-y:auto;padding:8px 0"></div></div>
+      </div>
+      <div class="usuario-sesion">
+        <div class="usuario-sesion-datos"><span class="usuario-sesion-nombre" id="usuario-home-nombre"></span><span class="usuario-sesion-rol" id="usuario-home-rol"></span></div>
+        <button class="btn-cerrar-sesion" onclick="cerrarSesion()">Cerrar sesión</button>
       </div>
     </div>
   </div>
@@ -467,7 +478,10 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
         <button class="notif-btn" onclick="toggleNotif('app')">🔔 <span id="nb2" style="display:none;background:#C44F4F;color:white;font-size:10px;font-weight:700;border-radius:10px;padding:1px 6px"></span></button>
         <div class="notif-panel" id="np2"><div class="notif-panel-title">Alertas de stock</div><div id="nl2" style="max-height:280px;overflow-y:auto;padding:8px 0"></div></div>
       </div>
-      <button onclick="cerrarSesion()" title="Cerrar sesión" style="background:none;border:none;cursor:pointer;color:var(--blue-mist);font-size:20px;padding:4px 6px;opacity:.6;transition:opacity .2s;line-height:1" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.6">⏏</button>
+      <div class="usuario-sesion">
+        <div class="usuario-sesion-datos"><span class="usuario-sesion-nombre" id="usuario-app-nombre"></span><span class="usuario-sesion-rol" id="usuario-app-rol"></span></div>
+        <button class="btn-cerrar-sesion" onclick="cerrarSesion()">Cerrar sesión</button>
+      </div>
     </div>
   </div>
 
@@ -2632,7 +2646,9 @@ async function verificarLogin(){
   finally{btn.disabled=false;btn.textContent='Ingresar';}
 }
 function aplicarPermisosUI(){
-  const vendedor=esVendedor();
+  const vendedor=esVendedor(),usuario=sesionActual()?.usuario||{};
+  ['usuario-home-nombre','usuario-app-nombre'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=usuario.nombre||usuario.usuario||'Usuario';});
+  ['usuario-home-rol','usuario-app-rol'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=usuario.rol==='administrador'?'Administrador':'Vendedor';});
   document.querySelectorAll('.launcher-item').forEach(el=>{const destino=(el.getAttribute('onclick')||'').match(/irA\('([^']+)'\)/)?.[1];if(destino)el.style.display=vendedor&&!modulosVendedor.has(destino)?'none':'';});
   const altaProductos=document.querySelector('#panel-productos > .card:first-of-type');if(altaProductos)altaProductos.style.display=vendedor?'none':'';
   const kpiProveedores=document.getElementById('kpi-proveedores-wrap');if(kpiProveedores)kpiProveedores.style.display=vendedor?'none':'';

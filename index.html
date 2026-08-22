@@ -329,32 +329,12 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
     </div>
     <div style="font-family:'DM Sans',sans-serif;font-size:22px;font-weight:700;color:var(--navy);margin-bottom:4px">CircoHaus</div>
     <div style="font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--text-light);margin-bottom:28px">Casa Atelier</div>
-    <input type="password" id="login-pass" placeholder="Contraseña" style="width:100%;padding:12px 16px;border:1.5px solid var(--border);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:15px;outline:none;box-sizing:border-box;margin-bottom:10px" onkeydown="if(event.key==='Enter')verificarLogin()">
-    <div id="login-error" style="display:none;font-size:12px;color:#C44F4F;margin-bottom:10px">Contraseña incorrecta</div>
-    <button onclick="verificarLogin()" style="width:100%;padding:12px;background:var(--navy);color:white;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;cursor:pointer">Ingresar</button>
+    <input type="text" id="login-usuario" autocomplete="username" placeholder="Usuario" style="width:100%;padding:12px 16px;border:1.5px solid var(--border);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:15px;outline:none;box-sizing:border-box;margin-bottom:10px">
+    <input type="password" id="login-pass" autocomplete="current-password" placeholder="Contraseña" style="width:100%;padding:12px 16px;border:1.5px solid var(--border);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:15px;outline:none;box-sizing:border-box;margin-bottom:10px" onkeydown="if(event.key==='Enter')verificarLogin()">
+    <div id="login-error" style="display:none;font-size:12px;color:#C44F4F;margin-bottom:10px">Usuario o contraseña incorrectos</div>
+    <button id="login-btn" onclick="verificarLogin()" style="width:100%;padding:12px;background:var(--navy);color:white;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;cursor:pointer">Ingresar</button>
   </div>
 </div>
-
-<!-- HOME -->
-<script>
-// Login inline — disponible inmediatamente al cargar
-var _LOGIN_KEY='circohaus_auth';
-var _PASSWORD='Circo2026*';
-function verificarLogin(){
-  var pass=document.getElementById('login-pass').value;
-  if(pass===_PASSWORD){
-    sessionStorage.setItem(_LOGIN_KEY,'1');
-    document.getElementById('login-screen').style.display='none';
-  }else{
-    document.getElementById('login-error').style.display='block';
-    document.getElementById('login-pass').value='';
-    document.getElementById('login-pass').focus();
-  }
-}
-if(sessionStorage.getItem(_LOGIN_KEY)==='1'){
-  document.getElementById('login-screen').style.display='none';
-}
-</script>
 
 <!-- HOME -->
 <div id="home">
@@ -393,7 +373,7 @@ if(sessionStorage.getItem(_LOGIN_KEY)==='1'){
       <div class="kpi-value" id="kpi-productos">—</div>
       <div class="kpi-sub">productos en el catálogo</div>
     </div>
-    <div class="kpi-card">
+    <div class="kpi-card" id="kpi-proveedores-wrap">
       <div class="kpi-label">Proveedores</div>
       <div class="kpi-value" id="kpi-proveedores">—</div>
       <div class="kpi-sub">proveedores registrados</div>
@@ -1284,14 +1264,27 @@ const filtrarCxcD=debounce(()=>filtrarCxc());
 // Cola de cambios de costo pendientes
 let colaActualizaciones=[], indexActual=0, fechaIngreso='';
 
-async function cacheGet(a){const r=await fetch(`${API_URL}?action=${a}`);return r.json()}
-async function apiGet(a){const r=await fetch(`${API_URL}?action=${a}`);return r.json()}
+function sesionActual(){try{return JSON.parse(sessionStorage.getItem(LOGIN_KEY)||'null')}catch(e){return null}}
+function esVendedor(){return sesionActual()?.usuario?.rol==='vendedor'}
+function tokenSesion(){return sesionActual()?.token||''}
+function manejarSesionVencida(data){
+  const mensaje=String(data?.error||data?.message||'');
+  if(/sesi[oó]n|token|autentic/i.test(mensaje)){cerrarSesion(false);throw new Error('La sesión venció. Ingresá nuevamente.');}
+}
+async function apiGet(a){
+  const r=await fetch(`${API_URL}?action=${encodeURIComponent(a)}&token=${encodeURIComponent(tokenSesion())}`);
+  const texto=await r.text();let data;
+  try{data=texto?JSON.parse(texto):null}catch(e){throw new Error(`Respuesta inválida del backend (${r.status}).`)}
+  if(!r.ok||data?.ok===false||data?.error){manejarSesionVencida(data);throw new Error(data?.error||data?.message||`Error HTTP ${r.status}`)}
+  return data;
+}
 async function apiPost(a,b){
-  const r=await fetch(`${API_URL}?action=${encodeURIComponent(a)}`,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(b)});
+  const payload={...(b||{}),token:tokenSesion()};
+  const r=await fetch(`${API_URL}?action=${encodeURIComponent(a)}`,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(payload)});
   const texto=await r.text();let data;
   try{data=texto?JSON.parse(texto):null;}catch(e){throw new Error(`Respuesta inválida del backend (${r.status}).`)}
   if(!r.ok)throw new Error(data?.error||data?.message||`Error HTTP ${r.status}`);
-  if(!data||data.ok!==true)throw new Error(data?.error||data?.message||'El backend no confirmó la operación.');
+  if(!data||data.ok!==true){manejarSesionVencida(data);throw new Error(data?.error||data?.message||'El backend no confirmó la operación.');}
   return data;
 }
 function showToast(m,t='success'){const el=document.getElementById('toast');el.textContent=m;el.className=`toast ${t} show`;setTimeout(()=>el.className='toast',3500)}
@@ -1299,9 +1292,11 @@ function formatPeso(n){return'$'+Number(n).toLocaleString('es-AR')}
 function setFechaHoy(id){document.getElementById(id).value=new Date().toISOString().split('T')[0]}
 
 const moduloNombres={ingresos:'📦 Ingresos',stock:'📊 Stock',productos:'🏷️ Productos',ventas:'🛒 Ventas','historial-ventas':'🧾 Ventas',cuentas:'💰 Cuentas',proveedores:'🤝 Proveedores',categorias:'🗂️ Categorías','medios-pago':'💳 Medios de pago',reportes:'📈 Reportes',cxc:'📋 Cuentas por cobrar',facturas:'🧾 Facturas',instructivos:'📚 Instructivos'};
-function irA(nombre){document.getElementById('home').style.display='none';document.getElementById('app-main').style.display='flex';showPanel(nombre);}
+const modulosVendedor=new Set(['ventas','historial-ventas','stock','productos','cxc']);
+function irA(nombre){if(esVendedor()&&!modulosVendedor.has(nombre)){showToast('Tu perfil no tiene acceso a este módulo','error');return;}document.getElementById('home').style.display='none';document.getElementById('app-main').style.display='flex';showPanel(nombre);}
 function volverHome(){document.getElementById('home').style.display='';document.getElementById('app-main').style.display='none';iniciarHome()}
 function showPanel(name){
+  if(esVendedor()&&!modulosVendedor.has(name)){showToast('Tu perfil no tiene acceso a este módulo','error');return;}
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   document.getElementById('panel-'+name).classList.add('active');
   document.getElementById('modulo-topbar-nombre').textContent=moduloNombres[name]||'';
@@ -1420,7 +1415,11 @@ async function iniciarProductos(){
   try{const data=await cacheGet('getProductos');prodTablaData=data.slice(1);renderTablaProductos(prodTablaData);document.getElementById('prod-loading').style.display='none';document.getElementById('prod-table').style.display='table'}catch(e){showToast('Error','error')}
 }
 function renderTablaProductos(rows){
+  const vendedor=esVendedor();
+  const encabezado=document.querySelector('#prod-table thead tr');
+  if(encabezado)encabezado.innerHTML=vendedor?'<th>Código</th><th>Descripción</th><th>Categoría</th><th>P. Venta</th><th>Stock</th>':'<th>Código</th><th>Descripción</th><th>Categoría</th><th>P. Costo</th><th>Recargo</th><th>Margen bruto</th><th>P. Venta</th><th>Stock</th><th></th>';
   document.getElementById('prod-body').innerHTML=rows.length===0?'<tr><td colspan="9" style="text-align:center;color:var(--text-mid);padding:20px">No hay productos</td></tr>':rows.map(p=>{
+    if(vendedor)return`<tr><td><code style="color:var(--teal);font-size:12px">${p[0]}</code></td><td>${p[1]}</td><td>${p[7]||'—'}</td><td>${formatPeso(p[3])}</td><td>${p[5]||0}</td></tr>`;
     const margen=getMargen(p),margenBruto=calcMargenBruto(Number(p[4]),Number(p[3]));
     return`<tr><td><code style="color:var(--teal);font-size:12px">${p[0]}</code></td><td>${p[1]}</td><td>${p[7]||'—'}</td><td>${formatPeso(p[4])}</td><td><span class="badge badge-margen">${margen}%</span></td><td>${margenBruto}%</td><td>${formatPeso(p[3])}</td><td>${p[5]||0}</td><td style="display:flex;gap:6px"><button class="btn-warning" onclick="abrirEditar('${p[0]}')">✏️</button><button class="btn-danger" onclick="eliminarProducto('${p[0]}')">🗑️</button></td></tr>`;
   }).join('');
@@ -1546,6 +1545,7 @@ function renderStock(rows){
   document.getElementById('stock-body').innerHTML=rows.length===0?'<tr><td colspan="9" style="text-align:center;color:var(--text-mid);padding:20px">No hay productos</td></tr>':rows.map(p=>{
     const s=Number(p[5])||0,m=Number(p[6])||0,margen=getMargen(p),margenBruto=calcMargenBruto(Number(p[4]),Number(p[3]));
     const badge=s===0?`<span class="badge badge-zero">Sin stock</span>`:(m>0&&s<=m)?`<span class="badge badge-low">${s} ⚠️</span>`:`<span class="badge badge-ok">${s}</span>`;
+    if(esVendedor())return`<tr><td><code style="color:var(--teal);font-size:12px">${p[0]}</code></td><td>${p[1]}</td><td>${p[7]||'—'}</td><td>${formatPeso(p[3])}</td><td>${badge}</td><td style="color:var(--text-mid);font-size:12px">${m>0?'Mín: '+m:'—'}</td></tr>`;
     return`<tr><td><code style="color:var(--teal);font-size:12px">${p[0]}</code></td><td>${p[1]}</td><td>${p[7]||'—'}</td><td>${formatPeso(p[4])}</td><td><span class="badge badge-margen">${margen}%</span></td><td>${margenBruto}%</td><td>${formatPeso(p[3])}</td><td>${badge}</td><td style="color:var(--text-mid);font-size:12px">${m>0?'Mín: '+m:'—'}</td></tr>`;
   }).join('');
 }
@@ -2372,7 +2372,7 @@ function renderHistorialVentas(rows){
       const facturada=v[9]===true||v[9]==='TRUE';
       const badgeCls=estado==='cobrada'?'badge-ok':estado==='pendiente'?'badge-low':'badge-zero';
       const estadoLabel=estado==='cobrada'?'Cobrada':estado==='pendiente'?'Fiado pendiente':'Cancelada';
-      const factBadge=estado==='cancelada'?'—':facturada
+      const factBadge=esVendedor()?'—':estado==='cancelada'?'—':facturada
         ?`<span style="color:var(--teal);font-size:11px;font-weight:600">✅ Facturada</span>`
         :`<button class="btn-warning" style="font-size:11px;padding:3px 8px" onclick="emitirFactura('${v[0]}',${v[5]})">🧾 Facturar</button>`;
       return`<tr>
@@ -2381,10 +2381,10 @@ function renderHistorialVentas(rows){
         <td>${formatPeso(totalVenta)}</td>
         <td>${montoPagado===null?'—':formatPeso(montoPagado)}</td>
         <td style="color:${saldo>0?'var(--error)':'var(--text-light)'};font-weight:${saldo>0?'600':'400'}">${saldo===null?'—':formatPeso(saldo)}</td>
-        <td style="color:var(--success);font-weight:600">${formatPeso(netoEsperado)}</td>
+        <td style="color:var(--success);font-weight:600">${esVendedor()?'—':formatPeso(netoEsperado)}</td>
         <td><span class="badge ${badgeCls}">${estadoLabel}</span></td>
         <td>${factBadge}</td>
-        <td><button class="btn-warning" onclick="verDetalleVenta('${v[0]}')">👁</button>${estado!=='cancelada'?`<button class="btn-danger" style="margin-left:6px" onclick="cancelarVenta('${v[0]}')">✕</button>`:''}</td>
+        <td><button class="btn-warning" onclick="verDetalleVenta('${v[0]}')">👁</button>${!esVendedor()&&estado!=='cancelada'?`<button class="btn-danger" style="margin-left:6px" onclick="cancelarVenta('${v[0]}')">✕</button>`:''}</td>
       </tr>`;
     }).join('');
 }
@@ -2409,6 +2409,7 @@ function filtrarHistorialVentas(){
 }
 
 async function cancelarVenta(idVenta){
+  if(esVendedor()){showToast('Tu perfil no puede cancelar ventas','error');return;}
   if(!confirm(`¿Cancelar la venta ${idVenta}? Esto reintegrará el stock.`))return;
   try{
     await apiPost('cancelarVenta',{id_venta:idVenta});
@@ -2450,7 +2451,7 @@ async function verDetalleVenta(idVenta){
         ${esV2?`<div><div style="font-size:10px;text-transform:uppercase;color:var(--text-light)">Descuento general</div><strong>${descuentoGeneral>0?'− ':''}${formatPeso(descuentoGeneral)}</strong></div>`:''}
         <div><div style="font-size:10px;text-transform:uppercase;color:var(--text-light)">Total venta</div><strong style="color:var(--teal)">${formatPeso(totalFinal)}</strong></div>
         ${esV2?`<div><div style="font-size:10px;text-transform:uppercase;color:var(--text-light)">Monto pagado</div><strong>${formatPeso(montoPagado)}</strong></div>`:''}
-        ${esV2?`<div><div style="font-size:10px;text-transform:uppercase;color:var(--text-light)">Costo cobranza</div><strong>${formatPeso(costoCobranza)}</strong></div><div><div style="font-size:10px;text-transform:uppercase;color:var(--text-light)">Neto esperado</div><strong style="color:var(--success)">${formatPeso(netoEsperado)}</strong></div>`:''}
+        ${esV2&&!esVendedor()?`<div><div style="font-size:10px;text-transform:uppercase;color:var(--text-light)">Costo cobranza</div><strong>${formatPeso(costoCobranza)}</strong></div><div><div style="font-size:10px;text-transform:uppercase;color:var(--text-light)">Neto esperado</div><strong style="color:var(--success)">${formatPeso(netoEsperado)}</strong></div>`:''}
         ${saldoPendiente>0?`<div><div style="font-size:10px;text-transform:uppercase;color:var(--text-light)">Saldo pendiente</div><strong style="color:var(--error)">${formatPeso(saldoPendiente)}</strong></div>`:''}
       </div>
       <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-mid);margin-bottom:6px">Pagos</div>
@@ -2458,11 +2459,11 @@ async function verDetalleVenta(idVenta){
         ${pagos.length?pagos.map(p=>{const mp=mediosPagoData.find(m=>String(m[0])===String(p[1]));const pagoCancelado=estadoVenta==='cancelada'||String(p[21]||'').toUpperCase()==='CANCELADO';return`<tr style="${pagoCancelado?'opacity:.65':''}"><td>${mp?mp[2]:p[1]}</td><td>${formatPeso(p[2])}</td><td style="color:${pagoCancelado?'var(--text-light)':'var(--success)'}">${formatPeso(pagoCancelado?0:p[6])}</td><td><span class="badge ${pagoCancelado?'badge-zero':'badge-ok'}">${pagoCancelado?'Cancelado':(p[21]||'Registrado')}</span></td></tr>`}).join(''):'<tr><td colspan="4" style="text-align:center;color:var(--text-light)">Sin pago inicial</td></tr>'}
       </tbody></table>`;
     const btnCancelar=document.getElementById('btn-cancelar-vta');
-    btnCancelar.style.display=estadoVenta==='cancelada'?'none':'';
+    btnCancelar.style.display=estadoVenta==='cancelada'||esVendedor()?'none':'';
     btnCancelar.onclick=()=>{cerrarModal('modal-detalle-venta');cancelarVenta(idVenta)};
     const facturada=venta&&(venta[9]===true||venta[9]==='TRUE');
     const btnFact=document.getElementById('btn-facturar-vta');
-    if(facturada||estadoVenta==='cancelada'){btnFact.style.display='none';}
+    if(facturada||estadoVenta==='cancelada'||esVendedor()){btnFact.style.display='none';}
     else{btnFact.style.display='';btnFact.onclick=()=>emitirFactura(idVenta,venta?Number(venta[5]):0);}
     document.getElementById('modal-detalle-venta').classList.add('open');
   }catch(e){showToast('Error al cargar detalle','error')}
@@ -2514,18 +2515,14 @@ async function precargarDatos(){
   }
 }
 
-document.addEventListener('DOMContentLoaded',()=>{
-  if(sessionStorage.getItem(LOGIN_KEY)==='1'){
-    document.getElementById('login-screen').style.display='none';
-  }
+async function iniciarAplicacion(){
   setFechaHoy('ing-fecha');
-  iniciarHome();
-  precargarDatos().then(()=>{
-    cargarProveedores();
-    cargarCategorias();
-    iniciarHome();
-    cargarNotificaciones();
-  });
+  await precargarDatos();aplicarPermisosUI();iniciarHome();cargarProveedores();cargarCategorias();cargarNotificaciones();
+}
+document.addEventListener('DOMContentLoaded',()=>{
+  const sesion=sesionActual();
+  if(sesion?.token){document.getElementById('login-screen').style.display='none';iniciarAplicacion().catch(()=>cerrarSesion(false));}
+  else document.getElementById('login-usuario')?.focus();
 });
 
 // ── FACTURACIÓN ──
@@ -2613,26 +2610,33 @@ function abrirConsultaPrecios(){
   setTimeout(()=>document.getElementById('consulta-buscar').focus(),100);
 }
 
-function cerrarSesion(){
-  sessionStorage.removeItem(LOGIN_KEY);
+async function cerrarSesion(notificarBackend=true){
+  const token=tokenSesion();if(notificarBackend&&token)fetch(`${API_URL}?action=logout&token=${encodeURIComponent(token)}`).catch(()=>{});
+  sessionStorage.removeItem(LOGIN_KEY);cache.data={};cache.ts={};cache.cargaCompleta=false;
   document.getElementById('login-screen').style.display='flex';
+  document.getElementById('login-usuario').value='';
   document.getElementById('login-pass').value='';
   document.getElementById('login-error').style.display='none';
+  document.getElementById('login-usuario').focus();
 }
 
 // ── LOGIN ──
 const LOGIN_KEY='circohaus_auth';
-const PASSWORD='Circo2026*';
-function verificarLogin(){
-  const pass=document.getElementById('login-pass').value;
-  if(pass===PASSWORD){
-    sessionStorage.setItem(LOGIN_KEY,'1');
-    document.getElementById('login-screen').style.display='none';
-  }else{
-    document.getElementById('login-error').style.display='block';
-    document.getElementById('login-pass').value='';
-    document.getElementById('login-pass').focus();
-  }
+async function verificarLogin(){
+  const usuario=document.getElementById('login-usuario').value.trim(),password=document.getElementById('login-pass').value;
+  const error=document.getElementById('login-error'),btn=document.getElementById('login-btn');
+  if(!usuario||!password){error.textContent='Completá usuario y contraseña';error.style.display='block';return;}
+  btn.disabled=true;btn.textContent='Ingresando...';error.style.display='none';
+  try{const r=await fetch(`${API_URL}?action=login`,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({usuario,password})});const data=await r.json();if(!data?.ok||!data?.token)throw new Error(data?.error||'Usuario o contraseña incorrectos');sessionStorage.setItem(LOGIN_KEY,JSON.stringify(data));document.getElementById('login-screen').style.display='none';await iniciarAplicacion();}
+  catch(e){error.textContent=e.message||'No se pudo iniciar sesión';error.style.display='block';document.getElementById('login-pass').value='';document.getElementById('login-pass').focus();}
+  finally{btn.disabled=false;btn.textContent='Ingresar';}
+}
+function aplicarPermisosUI(){
+  const vendedor=esVendedor();
+  document.querySelectorAll('.launcher-item').forEach(el=>{const destino=(el.getAttribute('onclick')||'').match(/irA\('([^']+)'\)/)?.[1];if(destino)el.style.display=vendedor&&!modulosVendedor.has(destino)?'none':'';});
+  const altaProductos=document.querySelector('#panel-productos > .card:first-of-type');if(altaProductos)altaProductos.style.display=vendedor?'none':'';
+  const kpiProveedores=document.getElementById('kpi-proveedores-wrap');if(kpiProveedores)kpiProveedores.style.display=vendedor?'none':'';
+  const subtituloProductos=document.querySelector('#panel-productos .section-sub');if(subtituloProductos)subtituloProductos.textContent=vendedor?'Consultá precios y disponibilidad del catálogo':'Agregá o editá productos del catálogo';
 }
 async function cancelarIngreso(idIngreso){
   if(!confirm(`¿Cancelar el ingreso ${idIngreso}?\nEl stock incorporado será retirado y el registro quedará visible como cancelado.`))return;
@@ -3220,6 +3224,6 @@ async function confirmarCobroCxc(){
   }
 }
 </script>
-<script src="js/ventas-v2.js?v=20260821-3"></script>
+<script src="js/ventas-v2.js?v=20260822-1"></script>
 </body>
 </html>

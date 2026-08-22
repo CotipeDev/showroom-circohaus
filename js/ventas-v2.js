@@ -129,7 +129,7 @@
       return `<div style="display:grid;grid-template-columns:1.2fr .8fr 1.2fr auto;gap:10px;align-items:end;margin-bottom:12px;padding:10px;background:var(--off-white);border-radius:8px">
         <div class="field" style="margin:0"><label>Medio de pago</label><select onchange="cambiarMedioPago(${i},this.value)"><option value="">Seleccioná...</option>${medios.map(m=>`<option value="${m[0]}" ${String(m[0])===String(fila.id_medio)?'selected':''}>${m[2]}</option>`).join('')}</select></div>
         <div class="field" style="margin:0;${vtaPagosFila.length===1?'display:none':''}"><label>Parte de la venta</label><input type="number" min="0" value="${fila.base_asignada||''}" oninput="cambiarBasePago(${i},this.value)"></div>
-        <div class="field" style="margin:0"><label>${efectivo?'Efectivo recibido':'Costos del medio'}</label>${efectivo?`<input type="number" min="0" value="${fila.entregado||''}" placeholder="Ingresá lo que entrega" oninput="cambiarEntregado(${i},this.value)">`:`<div style="font-size:11px;padding:9px 0">Comisión ${n(mp?.[4])}% · Costo financiero ${n(mp?.[5])}%</div>`}</div>
+        <div class="field" style="margin:0"><label>${efectivo?'Efectivo recibido':esVendedor()?'Información':'Costos del medio'}</label>${efectivo?`<input type="number" min="0" value="${fila.entregado||''}" placeholder="Ingresá lo que entrega" oninput="cambiarEntregado(${i},this.value)">`:esVendedor()?'<div style="font-size:11px;padding:9px 0">Cobro electrónico</div>':`<div style="font-size:11px;padding:9px 0">Comisión ${n(mp?.[4])}% · Costo financiero ${n(mp?.[5])}%</div>`}</div>
         ${vtaPagosFila.length>1?`<button class="btn-danger" onclick="quitarFilaPago(${i})" style="height:40px">✕</button>`:'<div></div>'}
         <div id="vta-pago-info-${i}" style="grid-column:1/-1;font-size:11px;color:var(--text-mid)"></div></div>`;
     }).join('');
@@ -144,15 +144,15 @@
     document.getElementById('vta-lista-bruto').textContent = formatPeso(c.precioLista);
     document.getElementById('vta-resumen').innerHTML = [
       ['Precio Lista',c.precioLista],['Descuento General',c.descuentoGeneral],['Subtotal después del descuento',c.baseComercial],
-      ['Total Final',c.totalFinal,true],['Costo Cobranza',c.costoCobranza],['Neto Esperado',c.netoEsperado,true],
-      ['Costo Mercadería',c.costoMercaderia],['Margen antes de cobranza',c.margenComercial],['Margen final estimado',c.margenEstimado,true],
+      ['Total Final',c.totalFinal,true],
+      ...(!esVendedor()?[['Costo Cobranza',c.costoCobranza],['Neto Esperado',c.netoEsperado,true],['Costo Mercadería',c.costoMercaderia],['Margen antes de cobranza',c.margenComercial],['Margen final estimado',c.margenEstimado,true]]:[]),
       ...(c.esCuenta?[['Saldo pendiente',c.saldoPendiente]]:[])
     ].map(x=>tarjetaResumen(...x)).join('');
     c.pagos.forEach((p,i) => {
       const el=document.getElementById(`vta-pago-info-${i}`); if(!el)return;
       const fila=vtaPagosFila[i], recibido=n(fila?.entregado), diferencia=recibido-p.montoCliente;
       const efectivoInfo=esEfectivo(p.medio)?(recibido<=0?'':diferencia>=0?` · Vuelto ${formatPeso(diferencia)}`:` · Falta recibir ${formatPeso(Math.abs(diferencia))}`):'';
-      el.textContent=`Cliente paga ${formatPeso(p.montoCliente)} · Comisión ${formatPeso(p.comision)} · Costo financiero ${formatPeso(p.costoFinanciero)} · Neto ${formatPeso(p.neto)}${efectivoInfo}`;
+      el.textContent=esVendedor()?`Cliente paga ${formatPeso(p.montoCliente)}${efectivoInfo}`:`Cliente paga ${formatPeso(p.montoCliente)} · Comisión ${formatPeso(p.comision)} · Costo financiero ${formatPeso(p.costoFinanciero)} · Neto ${formatPeso(p.neto)}${efectivoInfo}`;
     });
     return c;
   };
@@ -201,6 +201,7 @@
   };
 
   window.cancelarVenta = async function (idVenta) {
+    if(esVendedor())return showToast('Tu perfil no puede cancelar ventas','error');
     if(!confirm(`¿Cancelar la venta ${idVenta}? Esto reintegrará el stock.`))return;
     showToast('Cancelando venta...');
     try {

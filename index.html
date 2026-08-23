@@ -3053,7 +3053,7 @@ async function generarAnalisisIngreso(){
     const total=esV2?(Number(venta?.[16])||0):(Number(venta?.[5])||subtotalVenta);
     const pagosVenta=pagos.filter(p=>String(p[0])===idVenta);
     const pagado=esV2?(Number(venta?.[17])||0):pagosVenta.reduce((s,p)=>s+(Number(p[2])||0),0);
-    const neto=esV2?(Number(venta?.[20])||0):pagosVenta.reduce((s,p)=>s+(Number(p[6])||0),0);
+    const neto=esV2?(Number(venta?.[20])||0):(Number(venta?.[6])||total);
     lineas.forEach(d=>{
       let restante=Number(d[2])||0;
       const subtotal=Number(d[6])||0;
@@ -3090,16 +3090,16 @@ async function generarAnalisisIngreso(){
   salida.innerHTML=`
     <div style="font-weight:600;color:var(--navy);margin-bottom:12px">${titulo}</div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:10px;margin-bottom:16px">
-      ${[['Inversión',formatPeso(inversion)],['Unidades compradas',compradas],['Unidades vendidas',vendidas],['Stock restante',compradas-vendidas],['Stock restante al costo',formatPeso(stockCosto)],['Facturación generada',formatPeso(facturado)],['Cobrado atribuido',formatPeso(cobrado)],['Ganancia estimada',formatPeso(ganancia)],['Inversión recuperada',Math.round(recupero*10)/10+'%']].map(([k,v])=>`<div style="background:var(--off-white);border-radius:8px;padding:12px"><div style="font-size:10px;text-transform:uppercase;color:var(--text-light);margin-bottom:4px">${k}</div><div style="font-size:18px;font-weight:700;color:var(--navy)">${v}</div></div>`).join('')}
+      ${[['Inversión',formatPeso(inversion)],['Unidades compradas',compradas],['Unidades vendidas',vendidas],['Stock restante',compradas-vendidas],['Stock restante al costo',formatPeso(stockCosto)],['Facturación generada',formatPeso(facturado)],['Cobrado registrado',formatPeso(cobrado)],['Ganancia estimada',formatPeso(ganancia)],['Inversión recuperada',Math.round(recupero*10)/10+'%']].map(([k,v])=>`<div style="background:var(--off-white);border-radius:8px;padding:12px"><div style="font-size:10px;text-transform:uppercase;color:var(--text-light);margin-bottom:4px">${k}</div><div style="font-size:18px;font-weight:700;color:var(--navy)">${v}</div></div>`).join('')}
     </div>
     <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px;min-width:900px">
-      <thead><tr><th>Producto</th><th style="text-align:right">Comprado</th><th style="text-align:right">Vendido</th><th style="text-align:right">Stock</th><th style="text-align:right">Inversión</th><th style="text-align:right">Facturación</th><th style="text-align:right">Cobrado</th><th style="text-align:right">Ganancia est.</th><th style="text-align:right">Recupero</th></tr></thead>
+      <thead><tr><th>Producto</th><th style="text-align:right">Comprado</th><th style="text-align:right">Vendido</th><th style="text-align:right">Stock</th><th style="text-align:right">Inversión</th><th style="text-align:right">Facturación</th><th style="text-align:right">Cobrado reg.</th><th style="text-align:right">Ganancia est.</th><th style="text-align:right">Recupero</th></tr></thead>
       <tbody>${filas.sort((a,b)=>b.costoTotal-a.costoTotal).map(x=>{
         const costoAsignado=x.cantidad?x.costoTotal*(x.vendido/x.cantidad):0,gananciaItem=x.neto-costoAsignado,rec=x.costoTotal>0?x.facturado/x.costoTotal*100:0;
         return`<tr style="border-bottom:1px solid var(--border)"><td style="padding:9px 6px"><strong>${nombreProducto(x.codigo)}</strong><div style="font-size:10px;color:var(--text-light)">${x.codigo}</div></td><td style="text-align:right">${x.cantidad}</td><td style="text-align:right">${x.vendido}</td><td style="text-align:right">${x.cantidad-x.vendido}</td><td style="text-align:right">${formatPeso(x.costoTotal)}</td><td style="text-align:right">${formatPeso(x.facturado)}</td><td style="text-align:right">${formatPeso(x.cobrado)}</td><td style="text-align:right;color:${gananciaItem<0?'#C44F4F':'var(--teal)'};font-weight:600">${formatPeso(gananciaItem)}</td><td style="text-align:right;font-weight:600">${Math.round(rec*10)/10}%</td></tr>`;
       }).join('')}</tbody>
     </table></div>
-    <div style="font-size:10px;color:var(--text-light);margin-top:10px">Las ventas se atribuyen por orden de ingreso (primero se vende el stock más antiguo). Cuando hubo stock previo del mismo producto, el recupero por pedido es una estimación.</div>`;
+    <div style="font-size:10px;color:var(--text-light);margin-top:10px">Las ventas se atribuyen por orden de ingreso (primero se vende el stock más antiguo). “Cobrado registrado” usa solamente pagos existentes en el sistema; la ganancia se calcula con el neto esperado menos el costo vendido. Cuando hubo stock previo del mismo producto, el recupero por pedido es una estimación.</div>`;
 }
 
 function repSetPeriodo(p){
@@ -3173,9 +3173,17 @@ async function generarReportes(){
   // ── Comparación contra un período anterior de igual duración ──
   const aFecha=s=>new Date(s+'T12:00:00');
   const diasPeriodo=Math.round((aFecha(hasta)-aFecha(desde))/86400000)+1;
-  const finAnterior=aFecha(desde);finAnterior.setDate(finAnterior.getDate()-1);
-  const inicioAnterior=new Date(finAnterior);inicioAnterior.setDate(inicioAnterior.getDate()-diasPeriodo+1);
   const fechaISO=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  let inicioAnterior,finAnterior;
+  const inicioActual=aFecha(desde),finActual=aFecha(hasta);
+  if(inicioActual.getDate()===1&&inicioActual.getMonth()===finActual.getMonth()&&inicioActual.getFullYear()===finActual.getFullYear()){
+    inicioAnterior=new Date(inicioActual.getFullYear(),inicioActual.getMonth()-1,1,12);
+    const ultimoDiaMesAnterior=new Date(inicioActual.getFullYear(),inicioActual.getMonth(),0).getDate();
+    finAnterior=new Date(inicioAnterior.getFullYear(),inicioAnterior.getMonth(),Math.min(finActual.getDate(),ultimoDiaMesAnterior),12);
+  }else{
+    finAnterior=new Date(inicioActual);finAnterior.setDate(finAnterior.getDate()-1);
+    inicioAnterior=new Date(finAnterior);inicioAnterior.setDate(inicioAnterior.getDate()-diasPeriodo+1);
+  }
   const desdeAnterior=fechaISO(inicioAnterior),hastaAnterior=fechaISO(finAnterior);
   const ventasAnteriores=rawVentas.filter(v=>{const f=fechaStr(v[1]);return f>=desdeAnterior&&f<=hastaAnterior&&String(v[7]||'').toLowerCase()!=='cancelada';});
   const totalVentaSimple=v=>String(v[25]||'').trim()==='V2'?(Number(v[16])||0):(Number(v[5])||0);
@@ -3191,7 +3199,7 @@ async function generarReportes(){
     const cambio=variacion(actual,anterior),sube=cambio!==null&&cambio>0,baja=cambio!==null&&cambio<0;
     const color=sube?'var(--teal)':baja?'#C44F4F':'var(--text-light)';
     const valorCambio=cambio===null?'Sin base anterior':`${sube?'▲ ':baja?'▼ ':''}${Math.abs(Math.round(cambio*10)/10)}%`;
-    return`<div style="background:var(--off-white);border-radius:8px;padding:10px 12px"><div style="font-size:10px;text-transform:uppercase;color:var(--text-light)">${titulo}</div><div style="font-size:17px;font-weight:700;color:var(--navy);margin:3px 0">${esDinero?formatPeso(actual):actual}</div><div style="font-size:11px;font-weight:600;color:${color}">${valorCambio}</div></div>`;
+    return`<div style="background:var(--off-white);border-radius:8px;padding:10px 12px"><div style="font-size:10px;text-transform:uppercase;color:var(--text-light)">${titulo}</div><div style="font-size:17px;font-weight:700;color:var(--navy);margin:3px 0">${esDinero?formatPeso(Math.round(actual)):actual}</div><div style="font-size:11px;font-weight:600;color:${color}">${valorCambio}</div></div>`;
   };
   document.getElementById('rep-comparacion-periodo').textContent=`Actual: ${desde} al ${hasta} · Anterior: ${desdeAnterior} al ${hastaAnterior}`;
   document.getElementById('rep-comparacion').innerHTML=
@@ -3210,10 +3218,11 @@ async function generarReportes(){
   const ventasPorDia={};ventas.forEach(v=>{const f=fechaStr(v[1]);ventasPorDia[f]=(ventasPorDia[f]||0)+metricasVentas[String(v[0])].total;});
   const dias=[];for(let d=aFecha(desde);d<=aFecha(hasta);d.setDate(d.getDate()+1)){const f=fechaISO(d);dias.push({fecha:f,total:ventasPorDia[f]||0});}
   const maxDia=Math.max(1,...dias.map(d=>d.total));
+  const montoCorto=n=>n>=1000000?'$'+(Math.round(n/100000)/10)+'M':n>=1000?'$'+Math.round(n/1000)+'k':formatPeso(n);
   document.getElementById('rep-grafico-diario').innerHTML=`<div style="overflow-x:auto;padding-top:8px"><div style="display:flex;align-items:flex-end;gap:5px;height:180px;min-width:${Math.max(420,dias.length*28)}px;border-bottom:1px solid var(--border)">${dias.map((d,i)=>{
     const alto=d.total>0?Math.max(5,Math.round(d.total/maxDia*145)):2;
     const mostrar=i===0||i===dias.length-1||i%5===0;
-    return`<div title="${d.fecha}: ${formatPeso(d.total)}" style="flex:1;min-width:18px;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center"><div style="width:75%;height:${alto}px;background:${d.total?'var(--teal)':'var(--border)'};border-radius:4px 4px 0 0"></div><div style="height:24px;font-size:9px;color:var(--text-light);padding-top:5px;white-space:nowrap">${mostrar?d.fecha.slice(8,10):''}</div></div>`;
+    return`<div title="${d.fecha}: ${formatPeso(d.total)}" style="flex:1;min-width:18px;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center"><div style="height:16px;font-size:8px;color:var(--text-mid);white-space:nowrap">${d.total?montoCorto(d.total):''}</div><div style="width:75%;height:${alto}px;background:${d.total?'var(--teal)':'var(--border)'};border-radius:4px 4px 0 0"></div><div style="height:24px;font-size:9px;color:var(--text-light);padding-top:5px;white-space:nowrap">${mostrar?d.fecha.slice(8,10):''}</div></div>`;
   }).join('')}</div><div style="text-align:center;font-size:10px;color:var(--text-light);margin-top:6px">Ventas totales por día</div></div>`;
 
   // ── Gráfico de ventas por categoría ──

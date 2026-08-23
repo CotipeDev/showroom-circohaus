@@ -541,7 +541,10 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
         <div id="ing-det-body" style="margin-top:12px"></div>
         <div style="margin-top:16px;display:flex;justify-content:space-between;align-items:center">
           <button class="btn btn-danger" id="btn-cancelar-ingreso" onclick="cancelarIngreso(document.getElementById('ing-det-titulo').dataset.id)">Cancelar ingreso</button>
-          <button class="btn btn-secondary" onclick="cerrarModal('modal-detalle-ingreso')">Cerrar</button>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-primary" id="btn-analizar-ingreso" onclick="abrirAnalisisIngreso(document.getElementById('ing-det-titulo').dataset.id)">Analizar inversión</button>
+            <button class="btn btn-secondary" onclick="cerrarModal('modal-detalle-ingreso')">Cerrar</button>
+          </div>
         </div>
       </div>
     </div>
@@ -772,9 +775,9 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
               <th style="text-align:left;padding:6px 8px;color:var(--text-light);font-size:11px;text-transform:uppercase;border-bottom:1px solid var(--border)">Venta</th>
               <th style="text-align:left;padding:6px 8px;color:var(--text-light);font-size:11px;text-transform:uppercase;border-bottom:1px solid var(--border)">Fecha</th>
               <th style="text-align:right;padding:6px 8px;color:var(--text-light);font-size:11px;text-transform:uppercase;border-bottom:1px solid var(--border)">Cobrado</th>
-              <th style="text-align:right;padding:6px 8px;color:var(--text-light);font-size:11px;text-transform:uppercase;border-bottom:1px solid var(--border)">Neto</th>
+              <th style="text-align:right;padding:6px 8px;color:var(--text-light);font-size:11px;text-transform:uppercase;border-bottom:1px solid var(--border)">Neto esperado</th>
               <th style="text-align:right;padding:6px 8px;color:var(--text-light);font-size:11px;text-transform:uppercase;border-bottom:1px solid var(--border)">Costo</th>
-              <th style="text-align:right;padding:6px 8px;color:var(--text-light);font-size:11px;text-transform:uppercase;border-bottom:1px solid var(--border)">Margen neto</th>
+              <th style="text-align:right;padding:6px 8px;color:var(--text-light);font-size:11px;text-transform:uppercase;border-bottom:1px solid var(--border)">Margen estimado</th>
               <th style="text-align:left;padding:6px 8px;color:var(--text-light);font-size:11px;text-transform:uppercase;border-bottom:1px solid var(--border)">Medios</th>
             </tr></thead>
             <tbody id="rep-margen-venta-body"><tr><td colspan="7" style="text-align:center;color:var(--text-light);padding:20px">Seleccioná un período</td></tr></tbody>
@@ -787,6 +790,18 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:18px">
         <div><div class="section-title">Clientes</div><div class="section-sub">Consultá y actualizá los datos y el historial de cada cliente</div></div>
         <button class="btn btn-primary" onclick="abrirModalCliente()">+ Nuevo cliente</button>
+      </div>
+
+      <!-- Análisis de ingresos / inversiones -->
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-title">Análisis de ingresos</div>
+        <div class="section-sub" style="margin-bottom:12px">Seguí la inversión de un pedido o de todos los ingresos de un proveedor.</div>
+        <div class="form-grid cols-3" style="align-items:flex-end">
+          <div class="field"><label>Proveedor</label><select id="rep-ing-proveedor" onchange="actualizarIngresosAnalisis()"><option value="">Seleccioná...</option></select></div>
+          <div class="field"><label>Ingreso</label><select id="rep-ing-ingreso"><option value="">Elegí un proveedor</option></select></div>
+          <button class="btn btn-primary" onclick="generarAnalisisIngreso()">Analizar inversión</button>
+        </div>
+        <div id="rep-ing-resultado" style="margin-top:16px"><div class="items-empty">Seleccioná un proveedor y un ingreso para analizar la inversión.</div></div>
       </div>
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px">
         <div class="card" style="margin:0;padding:16px"><div style="font-size:10px;text-transform:uppercase;color:var(--text-light)">Clientes registrados</div><div id="cli-kpi-total" style="font-size:25px;font-weight:700;color:var(--navy)">—</div></div>
@@ -2034,13 +2049,15 @@ function fechaStr(val){
   return String(val).substring(0,10);
 }
 
+function movimientoAfectaSaldo(m){return !String(m?.[8]||'').toLowerCase().startsWith('cancelacion_venta')}
+
 function renderCuentasCards(){
   const grid=document.getElementById('cuentas-grid');
   if(!cuentasData.length){grid.innerHTML='<p style="color:var(--text-mid);font-size:13px">No hay cuentas registradas.</p>';return}
   const hoy=new Date().toISOString().split('T')[0];
   grid.innerHTML=cuentasData.filter(c=>c[4]===true||c[4]==='TRUE').map(c=>{
     const saldoInicial=Number(c[3])||0;
-    const movsCuenta=movimientosData.filter(m=>String(m[2])===String(c[0]));
+    const movsCuenta=movimientosData.filter(m=>String(m[2])===String(c[0])&&movimientoAfectaSaldo(m));
     // Saldo disponible: ingresos cuya fecha_acreditacion <= hoy
     const totalIngDisp=movsCuenta.filter(m=>{
       if(m[3]!=='ingreso')return false;
@@ -2875,6 +2892,7 @@ function verDetalleIngreso(idIngreso){
       Total: ${formatPeso(items.reduce((s,d)=>s+Number(d[2])*Number(d[3]),0))}
     </div>`;
   document.getElementById('btn-cancelar-ingreso').style.display=cancelada?'none':'';
+  document.getElementById('btn-analizar-ingreso').style.display=cancelada?'none':'';
   document.getElementById('modal-detalle-ingreso').classList.add('open');
 }
 
@@ -2913,7 +2931,140 @@ function filtrarConsulta(){
 // MÓDULO REPORTES
 // ─────────────────────────────────────────
 function iniciarReportes(){
+  prepararAnalisisIngresos();
   repSetPeriodo('mes');
+}
+
+async function prepararAnalisisIngresos(){
+  try{
+    const[dataIng,dataDet,dataProv]=await Promise.all([
+      cacheGet('getIngresos'),cacheGet('getDetalleIngresos'),cacheGet('getProveedores')
+    ]);
+    ingresosData=Array.isArray(dataIng)?dataIng.slice(1):[];
+    detalleIngresosData=Array.isArray(dataDet)?dataDet.slice(1):[];
+    if(!proveedoresData.length)proveedoresData=Array.isArray(dataProv)?dataProv.slice(1):[];
+    const idsConIngresos=new Set(ingresosData.filter(i=>String(i[4]||'').toLowerCase()!=='cancelada').map(i=>String(i[2])));
+    const sel=document.getElementById('rep-ing-proveedor');
+    const anterior=sel.value;
+    sel.innerHTML='<option value="">Seleccioná...</option>'+proveedoresData
+      .filter(p=>idsConIngresos.has(String(p[0])))
+      .sort((a,b)=>String(a[1]).localeCompare(String(b[1])))
+      .map(p=>`<option value="${p[0]}">${p[1]}</option>`).join('');
+    if(anterior&&idsConIngresos.has(anterior)){sel.value=anterior;actualizarIngresosAnalisis();}
+  }catch(e){
+    document.getElementById('rep-ing-resultado').innerHTML='<div class="items-empty">No se pudieron cargar los ingresos.</div>';
+  }
+}
+
+function actualizarIngresosAnalisis(idSeleccionado=''){
+  const idProveedor=String(document.getElementById('rep-ing-proveedor').value||'');
+  const sel=document.getElementById('rep-ing-ingreso');
+  if(!idProveedor){sel.innerHTML='<option value="">Elegí un proveedor</option>';return;}
+  const lista=ingresosData.filter(i=>String(i[2])===idProveedor&&String(i[4]||'').toLowerCase()!=='cancelada').reverse();
+  sel.innerHTML='<option value="__TODOS__">Todos los ingresos del proveedor</option>'+lista.map(i=>{
+    const total=detalleIngresosData.filter(d=>String(d[0])===String(i[0])).reduce((s,d)=>s+(Number(d[2])||0)*(Number(d[3])||0),0);
+    return`<option value="${i[0]}">${fechaStr(i[1])} · ${i[0]} · ${formatPeso(total)}</option>`;
+  }).join('');
+  if(idSeleccionado&&lista.some(i=>String(i[0])===String(idSeleccionado)))sel.value=idSeleccionado;
+}
+
+async function abrirAnalisisIngreso(idIngreso){
+  const ing=ingresosData.find(i=>String(i[0])===String(idIngreso));
+  if(!ing)return;
+  cerrarModal('modal-detalle-ingreso');
+  irA('reportes');
+  await prepararAnalisisIngresos();
+  document.getElementById('rep-ing-proveedor').value=String(ing[2]);
+  actualizarIngresosAnalisis(idIngreso);
+  await generarAnalisisIngreso();
+  document.getElementById('rep-ing-resultado').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+async function generarAnalisisIngreso(){
+  const idProveedor=String(document.getElementById('rep-ing-proveedor').value||'');
+  const idElegido=String(document.getElementById('rep-ing-ingreso').value||'');
+  const salida=document.getElementById('rep-ing-resultado');
+  if(!idProveedor||!idElegido){showToast('Elegí un proveedor y un ingreso','error');return;}
+  salida.innerHTML='<div class="spinner-wrap"><div class="spinner"></div> Calculando inversión...</div>';
+
+  const[rawVentas,rawDetalle,rawPagos,rawProductos]=await Promise.all([
+    cacheGet('getVentas'),cacheGet('getDetalleVentas'),cacheGet('getPagosVenta'),cacheGet('getProductos')
+  ]);
+  const ventas=(rawVentas||[]).slice(1).filter(v=>String(v[7]||'').toLowerCase()!=='cancelada');
+  const detalles=(rawDetalle||[]).slice(1);
+  const pagos=(rawPagos||[]).slice(1).filter(p=>String(p[21]||'').toUpperCase()!=='CANCELADO');
+  const productos=(rawProductos||[]).slice(1);
+  const ventasPorId=new Map(ventas.map(v=>[String(v[0]),v]));
+  const detallesPorVenta={};
+  detalles.forEach(d=>{const id=String(d[0]);if(ventasPorId.has(id))(detallesPorVenta[id]||(detallesPorVenta[id]=[])).push(d);});
+
+  // Reconstrucción FIFO: las ventas consumen primero las unidades de los ingresos más antiguos.
+  const ingresosActivos=ingresosData.filter(i=>String(i[4]||'').toLowerCase()!=='cancelada');
+  const lotes=[];
+  ingresosActivos.forEach((ing,orden)=>{
+    detalleIngresosData.filter(d=>String(d[0])===String(ing[0])).forEach(d=>lotes.push({
+      idIngreso:String(ing[0]),idProveedor:String(ing[2]),fecha:fechaStr(ing[1]),orden,codigo:String(d[1]),
+      cantidad:Number(d[2])||0,costo:Number(d[3])||0,vendido:0,facturado:0,cobrado:0,neto:0
+    }));
+  });
+  const lotesPorProducto={};
+  lotes.forEach(l=>(lotesPorProducto[l.codigo]||(lotesPorProducto[l.codigo]=[])).push(l));
+  Object.values(lotesPorProducto).forEach(ls=>ls.sort((a,b)=>a.fecha.localeCompare(b.fecha)||a.orden-b.orden));
+
+  Object.entries(detallesPorVenta).sort((a,b)=>fechaStr(ventasPorId.get(a[0])?.[1]).localeCompare(fechaStr(ventasPorId.get(b[0])?.[1]))).forEach(([idVenta,lineas])=>{
+    const venta=ventasPorId.get(idVenta),fechaVenta=fechaStr(venta?.[1]);
+    const subtotalVenta=lineas.reduce((s,d)=>s+(Number(d[6])||0),0);
+    const esV2=String(venta?.[25]||'').trim()==='V2';
+    const total=esV2?(Number(venta?.[16])||0):(Number(venta?.[5])||subtotalVenta);
+    const pagosVenta=pagos.filter(p=>String(p[0])===idVenta);
+    const pagado=esV2?(Number(venta?.[17])||0):pagosVenta.reduce((s,p)=>s+(Number(p[2])||0),0);
+    const neto=esV2?(Number(venta?.[20])||0):pagosVenta.reduce((s,p)=>s+(Number(p[6])||0),0);
+    lineas.forEach(d=>{
+      let restante=Number(d[2])||0;
+      const subtotal=Number(d[6])||0;
+      const parteTotal=subtotalVenta>0?total*(subtotal/subtotalVenta):subtotal;
+      const partePagada=total>0?pagado*(parteTotal/total):0;
+      const parteNeta=total>0?neto*(parteTotal/total):0;
+      const porUnidad=restante>0?{facturado:parteTotal/restante,cobrado:partePagada/restante,neto:parteNeta/restante}:{facturado:0,cobrado:0,neto:0};
+      const candidatos=(lotesPorProducto[String(d[1])]||[]).filter(l=>l.fecha<=fechaVenta&&l.vendido<l.cantidad);
+      for(const lote of candidatos){
+        if(restante<=0)break;
+        const asignadas=Math.min(restante,lote.cantidad-lote.vendido);
+        lote.vendido+=asignadas;lote.facturado+=asignadas*porUnidad.facturado;lote.cobrado+=asignadas*porUnidad.cobrado;lote.neto+=asignadas*porUnidad.neto;
+        restante-=asignadas;
+      }
+    });
+  });
+
+  const seleccionados=lotes.filter(l=>l.idProveedor===idProveedor&&(idElegido==='__TODOS__'||l.idIngreso===idElegido));
+  if(!seleccionados.length){salida.innerHTML='<div class="items-empty">El ingreso seleccionado no tiene productos activos.</div>';return;}
+  const agrupados={};
+  seleccionados.forEach(l=>{
+    const k=l.codigo;
+    if(!agrupados[k])agrupados[k]={codigo:k,cantidad:0,costoTotal:0,vendido:0,facturado:0,cobrado:0,neto:0};
+    const a=agrupados[k];a.cantidad+=l.cantidad;a.costoTotal+=l.cantidad*l.costo;a.vendido+=l.vendido;a.facturado+=l.facturado;a.cobrado+=l.cobrado;a.neto+=l.neto;
+  });
+  const filas=Object.values(agrupados);
+  const inversion=filas.reduce((s,x)=>s+x.costoTotal,0),compradas=filas.reduce((s,x)=>s+x.cantidad,0),vendidas=filas.reduce((s,x)=>s+x.vendido,0);
+  const facturado=filas.reduce((s,x)=>s+x.facturado,0),cobrado=filas.reduce((s,x)=>s+x.cobrado,0),neto=filas.reduce((s,x)=>s+x.neto,0);
+  const costoVendido=filas.reduce((s,x)=>s+x.costoTotal*(x.cantidad?x.vendido/x.cantidad:0),0);
+  const stockCosto=Math.max(0,inversion-costoVendido),ganancia=neto-costoVendido,recupero=inversion>0?facturado/inversion*100:0;
+  const nombreProducto=cod=>productos.find(p=>String(p[0])===cod)?.[1]||cod;
+  const proveedor=proveedoresData.find(p=>String(p[0])===idProveedor)?.[1]||idProveedor;
+  const titulo=idElegido==='__TODOS__'?`Todos los ingresos de ${proveedor}`:`${proveedor} · ${idElegido}`;
+  salida.innerHTML=`
+    <div style="font-weight:600;color:var(--navy);margin-bottom:12px">${titulo}</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:10px;margin-bottom:16px">
+      ${[['Inversión',formatPeso(inversion)],['Unidades compradas',compradas],['Unidades vendidas',vendidas],['Stock restante',compradas-vendidas],['Stock restante al costo',formatPeso(stockCosto)],['Facturación generada',formatPeso(facturado)],['Cobrado atribuido',formatPeso(cobrado)],['Ganancia estimada',formatPeso(ganancia)],['Inversión recuperada',Math.round(recupero*10)/10+'%']].map(([k,v])=>`<div style="background:var(--off-white);border-radius:8px;padding:12px"><div style="font-size:10px;text-transform:uppercase;color:var(--text-light);margin-bottom:4px">${k}</div><div style="font-size:18px;font-weight:700;color:var(--navy)">${v}</div></div>`).join('')}
+    </div>
+    <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px;min-width:900px">
+      <thead><tr><th>Producto</th><th style="text-align:right">Comprado</th><th style="text-align:right">Vendido</th><th style="text-align:right">Stock</th><th style="text-align:right">Inversión</th><th style="text-align:right">Facturación</th><th style="text-align:right">Cobrado</th><th style="text-align:right">Ganancia est.</th><th style="text-align:right">Recupero</th></tr></thead>
+      <tbody>${filas.sort((a,b)=>b.costoTotal-a.costoTotal).map(x=>{
+        const costoAsignado=x.cantidad?x.costoTotal*(x.vendido/x.cantidad):0,gananciaItem=x.neto-costoAsignado,rec=x.costoTotal>0?x.facturado/x.costoTotal*100:0;
+        return`<tr style="border-bottom:1px solid var(--border)"><td style="padding:9px 6px"><strong>${nombreProducto(x.codigo)}</strong><div style="font-size:10px;color:var(--text-light)">${x.codigo}</div></td><td style="text-align:right">${x.cantidad}</td><td style="text-align:right">${x.vendido}</td><td style="text-align:right">${x.cantidad-x.vendido}</td><td style="text-align:right">${formatPeso(x.costoTotal)}</td><td style="text-align:right">${formatPeso(x.facturado)}</td><td style="text-align:right">${formatPeso(x.cobrado)}</td><td style="text-align:right;color:${gananciaItem<0?'#C44F4F':'var(--teal)'};font-weight:600">${formatPeso(gananciaItem)}</td><td style="text-align:right;font-weight:600">${Math.round(rec*10)/10}%</td></tr>`;
+      }).join('')}</tbody>
+    </table></div>
+    <div style="font-size:10px;color:var(--text-light);margin-top:10px">Las ventas se atribuyen por orden de ingreso (primero se vende el stock más antiguo). Cuando hubo stock previo del mismo producto, el recupero por pedido es una estimación.</div>`;
 }
 
 function repSetPeriodo(p){
@@ -2977,7 +3128,7 @@ async function generarReportes(){
   document.getElementById('rep-kpi-cobrado').textContent=formatPeso(totalCobrado);
   document.getElementById('rep-kpi-saldo').textContent=formatPeso(totalSaldo);
   document.getElementById('rep-kpi-neto').textContent=formatPeso(totalNeto);
-  document.getElementById('rep-kpi-ticket').textContent=formatPeso(ticket);
+  document.getElementById('rep-kpi-ticket').textContent=formatPeso(Math.round(ticket));
 
   // ── Medios de pago ──
   const porMedio={};
@@ -3000,7 +3151,7 @@ async function generarReportes(){
   // ── Estado de cuentas ──
   const hoyStr=new Date().toISOString().split('T')[0];
   document.getElementById('rep-cuentas-body').innerHTML=cuentas.filter(c=>c[4]===true||c[4]==='TRUE').map(c=>{
-    const movsCuenta=movimientos.filter(m=>String(m[2])===String(c[0]));
+    const movsCuenta=movimientos.filter(m=>String(m[2])===String(c[0])&&movimientoAfectaSaldo(m));
     const saldoInicial=Number(c[3])||0;
     let disponible=saldoInicial,enCamino=0;
     movsCuenta.forEach(m=>{
@@ -3075,18 +3226,19 @@ async function generarReportes(){
     :Object.entries(margenData).sort((a,b)=>b[1].netoTotal-a[1].netoTotal).slice(0,15).map(([cod,v])=>{
       const costoRepo=v.costoActual;
       const costoHistProm=v.uds>0?v.costoHistTotal/v.uds:0;
-      const margenBruto=v.cobradoTotal>0?Math.round(((v.cobradoTotal-v.costoHistTotal)/v.cobradoTotal)*1000)/10:0;
-      const margenNeto=v.netoTotal>0?Math.round(((v.netoTotal-v.costoHistTotal)/v.netoTotal)*1000)/10:0;
+      const costoConocido=v.costoHistTotal>0;
+      const margenBruto=costoConocido&&v.cobradoTotal>0?Math.round(((v.cobradoTotal-v.costoHistTotal)/v.cobradoTotal)*1000)/10:null;
+      const margenNeto=costoConocido&&v.netoTotal>0?Math.round(((v.netoTotal-v.costoHistTotal)/v.netoTotal)*1000)/10:null;
       const subioCosto=costoRepo>0&&costoHistProm>0&&costoRepo>costoHistProm*1.05;
       const bajoCosto=costoRepo>0&&costoHistProm>0&&costoRepo<costoHistProm*0.95;
       const alerta=subioCosto?`<span style="color:#C44F4F;font-weight:600">🔴 Subió</span>`:bajoCosto?`<span style="color:var(--teal);font-weight:600">🟢 Bajó</span>`:`<span style="color:var(--text-light)">—</span>`;
-      const colorNeto=margenNeto<0?'#C44F4F':margenNeto<margenBruto?'#E8A838':'var(--teal)';
+      const colorNeto=margenNeto===null?'var(--text-light)':margenNeto<0?'#C44F4F':margenNeto<margenBruto?'#E8A838':'var(--teal)';
       return`<tr style="border-bottom:1px solid var(--border)">
         <td style="padding:8px 0;font-size:12px">${v.desc}</td>
         <td style="text-align:right;padding:8px 0">${v.uds} uds</td>
         <td style="text-align:right;padding:8px 0;font-weight:600;color:${subioCosto?'#C44F4F':bajoCosto?'var(--teal)':'var(--text-main)'}">${costoRepo>0?formatPeso(costoRepo):'—'}</td>
-        <td style="text-align:right;padding:8px 0;color:var(--text-mid)">${margenBruto}%</td>
-        <td style="text-align:right;padding:8px 0;font-weight:700;color:${colorNeto}">${margenNeto}%</td>
+        <td style="text-align:right;padding:8px 0;color:var(--text-mid)">${margenBruto===null?'—':margenBruto+'%'}</td>
+        <td style="text-align:right;padding:8px 0;font-weight:700;color:${colorNeto}">${margenNeto===null?'—':margenNeto+'%'}</td>
         <td style="text-align:center;padding:8px 0">${alerta}</td>
       </tr>`;
     }).join('');
@@ -3101,7 +3253,7 @@ async function generarReportes(){
       const costoTotal=costoTotalPorVenta[idVenta]||0;
       const cobrado=metrica.pagado;
       const neto=metrica.neto;
-      const margenVenta=neto>0?Math.round(((neto-costoTotal)/neto)*1000)/10:null;
+      const margenVenta=neto>0&&costoTotal>0?Math.round(((neto-costoTotal)/neto)*1000)/10:null;
       const colorMargen=margenVenta===null?'var(--text-light)':margenVenta<0?'#C44F4F':margenVenta<30?'#E8A838':'var(--teal)';
       const mediosUsados=ventaInfo.pagos.map(p=>medioNombreCorto(p[1])).filter((x,i,a)=>a.indexOf(x)===i).join(', ')||'—';
       const fechaVenta=new Date(fechaStr(v[1])).toLocaleDateString('es-AR',{day:'2-digit',month:'2-digit',year:'numeric'});

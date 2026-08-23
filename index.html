@@ -1455,14 +1455,37 @@ function setFechaHoy(id){document.getElementById(id).value=new Date().toISOStrin
 
 const moduloNombres={ingresos:'📦 Ingresos',stock:'📊 Stock e inventario',productos:'🏷️ Productos',clientes:'👥 Clientes',ventas:'🛒 Ventas','historial-ventas':'🧾 Ventas',cuentas:'💰 Cuentas',proveedores:'🤝 Proveedores',categorias:'🗂️ Categorías','medios-pago':'💳 Medios de pago',reportes:'📈 Reportes',cxc:'📋 Cuentas por cobrar',facturas:'🧾 Facturas',instructivos:'📚 Instructivos'};
 const modulosVendedor=new Set(['ventas','historial-ventas','stock','productos','clientes','cxc']);
-function irA(nombre){if(esVendedor()&&!modulosVendedor.has(nombre)){showToast('Tu perfil no tiene acceso a este módulo','error');return;}document.getElementById('home').style.display='none';document.getElementById('app-main').style.display='flex';showPanel(nombre);}
+const modulosConRuta=new Set(Object.keys(moduloNombres));
+let abrirAlertasPendiente=false;
+function rutaActual(){try{const ruta=decodeURIComponent(location.hash.replace(/^#\/?/,'')).trim();return ruta||'inicio';}catch(e){return'inicio';}}
+function reemplazarRuta(nombre){history.replaceState(null,'',nombre==='inicio'?'#/inicio':`#/${nombre}`)}
+function irA(nombre){
+  if(esVendedor()&&!modulosVendedor.has(nombre)){showToast('Tu perfil no tiene acceso a este módulo','error');return;}
+  const nuevaRuta=`#/${nombre}`;
+  if(location.hash===nuevaRuta)aplicarRuta();else location.hash=nuevaRuta;
+}
 function abrirAlertasStock(){
   const vendedor=esVendedor();
   if(!vendedor){const filtro=document.getElementById('rep-inv-estado');if(filtro)filtro.value='reponer';}
+  abrirAlertasPendiente=!vendedor;
   irA('stock');
-  if(!vendedor)cambiarVistaStock('analisis');
 }
-function volverHome(){document.getElementById('home').style.display='';document.getElementById('app-main').style.display='none';iniciarHome()}
+function volverHome(){if(location.hash==='#/inicio')aplicarRuta();else location.hash='#/inicio'}
+function aplicarRuta(){
+  if(!sesionActual()?.token)return;
+  let nombre=rutaActual();
+  if(nombre==='home')nombre='inicio';
+  if(!location.hash||location.hash==='#/home')reemplazarRuta(nombre);
+  if(nombre!=='inicio'&&!modulosConRuta.has(nombre)){nombre='inicio';reemplazarRuta(nombre);}
+  if(nombre!=='inicio'&&esVendedor()&&!modulosVendedor.has(nombre)){showToast('Tu perfil no tiene acceso a este módulo','error');nombre='inicio';reemplazarRuta(nombre);}
+  const esInicio=nombre==='inicio';
+  document.getElementById('home').style.display=esInicio?'':'none';
+  document.getElementById('app-main').style.display=esInicio?'none':'flex';
+  if(esInicio){iniciarHome();return;}
+  showPanel(nombre);
+  if(nombre==='stock'&&abrirAlertasPendiente){abrirAlertasPendiente=false;cambiarVistaStock('analisis');}
+}
+window.addEventListener('hashchange',aplicarRuta);
 function showPanel(name){
   if(esVendedor()&&!modulosVendedor.has(name)){showToast('Tu perfil no tiene acceso a este módulo','error');return;}
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
@@ -2860,7 +2883,7 @@ async function precargarDatos(){
 
 async function iniciarAplicacion(){
   setFechaHoy('ing-fecha');
-  await precargarDatos();aplicarPermisosUI();iniciarHome();cargarProveedores();cargarCategorias();cargarNotificaciones();
+  await precargarDatos();aplicarPermisosUI();iniciarHome();cargarProveedores();cargarCategorias();cargarNotificaciones();aplicarRuta();
 }
 document.addEventListener('DOMContentLoaded',()=>{
   const sesion=sesionActual();

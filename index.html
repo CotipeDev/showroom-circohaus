@@ -29,6 +29,8 @@ html,body{height:100%;font-family:'DM Sans',sans-serif;background:var(--pearl);c
 .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;max-width:1100px;margin:-24px auto 0;padding:0 16px;position:relative;z-index:10}
 .kpi-card{background:var(--white);border-radius:12px;padding:20px 24px;box-shadow:0 4px 20px rgba(72,84,114,.1);border:1.5px solid var(--border);transition:transform .2s}
 .kpi-card:hover{transform:translateY(-2px)}
+.kpi-card.kpi-link{cursor:pointer}
+.kpi-card.kpi-link:hover{border-color:var(--teal);box-shadow:0 7px 24px rgba(72,84,114,.14)}
 .kpi-card.alerta{border-color:var(--rose)}
 .kpi-card.alerta .kpi-value{color:var(--rose-dark)}
 .kpi-label{font-size:11px;font-weight:500;color:var(--text-mid);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px}
@@ -377,17 +379,17 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
   <div style="background:var(--navy);padding:24px 0 48px"></div>
 
   <div class="kpis">
-    <div class="kpi-card" id="kpi-alertas-wrap">
+    <div class="kpi-card kpi-link" id="kpi-alertas-wrap" onclick="abrirAlertasStock()" title="Ver productos con alerta de stock">
       <div class="kpi-label">Alertas de stock</div>
       <div class="kpi-value" id="kpi-alertas">—</div>
       <div class="kpi-sub">productos con stock bajo o agotado</div>
     </div>
-    <div class="kpi-card">
+    <div class="kpi-card kpi-link" onclick="irA('productos')" title="Ver catálogo de productos">
       <div class="kpi-label">Total productos</div>
       <div class="kpi-value" id="kpi-productos">—</div>
       <div class="kpi-sub">productos en el catálogo</div>
     </div>
-    <div class="kpi-card" id="kpi-proveedores-wrap">
+    <div class="kpi-card kpi-link" id="kpi-proveedores-wrap" onclick="irA('proveedores')" title="Ver proveedores">
       <div class="kpi-label">Proveedores</div>
       <div class="kpi-value" id="kpi-proveedores">—</div>
       <div class="kpi-sub">proveedores registrados</div>
@@ -427,31 +429,32 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
 
     <!-- Módulos: launcher compacto -->
     <div class="launcher-seccion">
-      <div class="launcher-label">Operaciones</div>
+      <div class="launcher-label">Ventas y clientes</div>
       <div class="launcher-grid">
-        <div class="launcher-item" onclick="irA('ingresos')"><span class="launcher-icon">📦</span><span class="launcher-nombre">Ingresos</span><span class="launcher-desc">Entrada de mercadería y stock</span></div>
-        <div class="launcher-item" onclick="irA('stock')"><span class="launcher-icon">📊</span><span class="launcher-nombre">Stock e inventario</span><span class="launcher-desc">Existencias, valorización y rotación</span></div>
         <div class="launcher-item" onclick="irA('historial-ventas')"><span class="launcher-icon">🧾</span><span class="launcher-nombre">Ventas</span><span class="launcher-desc">Historial y detalle de ventas</span></div>
-        <div class="launcher-item" onclick="irA('reportes')"><span class="launcher-icon">📈</span><span class="launcher-nombre">Reportes</span><span class="launcher-desc">Ventas, márgenes y cuentas</span></div>
+        <div class="launcher-item" onclick="irA('clientes')"><span class="launcher-icon">👥</span><span class="launcher-nombre">Clientes</span><span class="launcher-desc">Datos, ventas y saldos</span></div>
+        <div class="launcher-item" onclick="irA('cxc')"><span class="launcher-icon">📋</span><span class="launcher-nombre">Cuentas por cobrar</span><span class="launcher-desc">Fiados y pagos por cliente</span></div>
       </div>
     </div>
 
     <div class="launcher-seccion">
-      <div class="launcher-label">Catálogo</div>
+      <div class="launcher-label">Compras e inventario</div>
       <div class="launcher-grid">
+        <div class="launcher-item" onclick="irA('ingresos')"><span class="launcher-icon">📦</span><span class="launcher-nombre">Ingresos</span><span class="launcher-desc">Entrada de mercadería y stock</span></div>
+        <div class="launcher-item" onclick="irA('stock')"><span class="launcher-icon">📊</span><span class="launcher-nombre">Stock e inventario</span><span class="launcher-desc">Existencias, valorización y rotación</span></div>
         <div class="launcher-item" onclick="irA('productos')"><span class="launcher-icon">🏷️</span><span class="launcher-nombre">Productos</span><span class="launcher-desc">Cargá y editá el catálogo</span></div>
-        <div class="launcher-item" onclick="irA('clientes')"><span class="launcher-icon">👥</span><span class="launcher-nombre">Clientes</span><span class="launcher-desc">Datos, ventas y saldos</span></div>
         <div class="launcher-item" onclick="irA('proveedores')"><span class="launcher-icon">🤝</span><span class="launcher-nombre">Proveedores</span><span class="launcher-desc">Datos y contactos</span></div>
         <div class="launcher-item" onclick="irA('categorias')"><span class="launcher-icon">🗂️</span><span class="launcher-nombre">Categorías</span><span class="launcher-desc">Organizá tu catálogo</span></div>
       </div>
     </div>
 
     <div class="launcher-seccion">
-      <div class="launcher-label">Finanzas</div>
+      <div class="launcher-label">Administración y análisis</div>
       <div class="launcher-grid">
         <div class="launcher-item" onclick="irA('cuentas')"><span class="launcher-icon">💰</span><span class="launcher-nombre">Cuentas</span><span class="launcher-desc">Saldo y movimientos</span></div>
         <div class="launcher-item" onclick="irA('medios-pago')"><span class="launcher-icon">💳</span><span class="launcher-nombre">Medios de pago</span><span class="launcher-desc">Comisiones y descuentos</span></div>
         <div class="launcher-item" onclick="irA('facturas')"><span class="launcher-icon">🧾</span><span class="launcher-nombre">Facturas</span><span class="launcher-desc">Comprobantes emitidos en AFIP</span></div>
+        <div class="launcher-item" onclick="irA('reportes')"><span class="launcher-icon">📈</span><span class="launcher-nombre">Reportes</span><span class="launcher-desc">Ventas, márgenes y cuentas</span></div>
       </div>
     </div>
 
@@ -1453,6 +1456,12 @@ function setFechaHoy(id){document.getElementById(id).value=new Date().toISOStrin
 const moduloNombres={ingresos:'📦 Ingresos',stock:'📊 Stock e inventario',productos:'🏷️ Productos',clientes:'👥 Clientes',ventas:'🛒 Ventas','historial-ventas':'🧾 Ventas',cuentas:'💰 Cuentas',proveedores:'🤝 Proveedores',categorias:'🗂️ Categorías','medios-pago':'💳 Medios de pago',reportes:'📈 Reportes',cxc:'📋 Cuentas por cobrar',facturas:'🧾 Facturas',instructivos:'📚 Instructivos'};
 const modulosVendedor=new Set(['ventas','historial-ventas','stock','productos','clientes','cxc']);
 function irA(nombre){if(esVendedor()&&!modulosVendedor.has(nombre)){showToast('Tu perfil no tiene acceso a este módulo','error');return;}document.getElementById('home').style.display='none';document.getElementById('app-main').style.display='flex';showPanel(nombre);}
+function abrirAlertasStock(){
+  const vendedor=esVendedor();
+  if(!vendedor){const filtro=document.getElementById('rep-inv-estado');if(filtro)filtro.value='reponer';}
+  irA('stock');
+  if(!vendedor)cambiarVistaStock('analisis');
+}
 function volverHome(){document.getElementById('home').style.display='';document.getElementById('app-main').style.display='none';iniciarHome()}
 function showPanel(name){
   if(esVendedor()&&!modulosVendedor.has(name)){showToast('Tu perfil no tiene acceso a este módulo','error');return;}
@@ -2970,6 +2979,7 @@ function aplicarPermisosUI(){
   ['usuario-home-nombre','usuario-app-nombre'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=usuario.nombre||usuario.usuario||'Usuario';});
   ['usuario-home-rol','usuario-app-rol'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=usuario.rol==='administrador'?'Administrador':'Vendedor';});
   document.querySelectorAll('.launcher-item').forEach(el=>{const destino=(el.getAttribute('onclick')||'').match(/irA\('([^']+)'\)/)?.[1];if(destino)el.style.display=vendedor&&!modulosVendedor.has(destino)?'none':'';});
+  document.querySelectorAll('.launcher-seccion').forEach(seccion=>{const visibles=[...seccion.querySelectorAll('.launcher-item')].some(el=>el.style.display!=='none');seccion.style.display=visibles?'':'none';});
   const altaProductos=document.querySelector('#panel-productos > .card:first-of-type');if(altaProductos)altaProductos.style.display=vendedor?'none':'';
   const kpiProveedores=document.getElementById('kpi-proveedores-wrap');if(kpiProveedores)kpiProveedores.style.display=vendedor?'none':'';
   const subtituloProductos=document.querySelector('#panel-productos .section-sub');if(subtituloProductos)subtituloProductos.textContent=vendedor?'Consultá precios y disponibilidad del catálogo':'Agregá o editá productos del catálogo';

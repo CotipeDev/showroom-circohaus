@@ -536,7 +536,7 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
 
     <!-- MODAL DETALLE INGRESO -->
     <div id="modal-detalle-ingreso" class="modal-overlay" onclick="if(event.target===this)cerrarModal('modal-detalle-ingreso')">
-      <div class="modal" style="max-width:560px">
+      <div class="modal" style="max-width:560px;max-height:calc(100vh - 32px);overflow-y:auto">
         <div class="modal-title" id="ing-det-titulo">Detalle del ingreso</div>
         <div id="ing-det-body" style="margin-top:12px"></div>
         <div style="margin-top:16px;display:flex;justify-content:space-between;align-items:center">
@@ -2944,7 +2944,7 @@ async function prepararAnalisisIngresos(){
     ingresosData=Array.isArray(dataIng)?dataIng.slice(1):[];
     detalleIngresosData=Array.isArray(dataDet)?dataDet.slice(1):[];
     if(!proveedoresData.length)proveedoresData=Array.isArray(dataProv)?dataProv.slice(1):[];
-    const idsConIngresos=new Set(ingresosData.filter(i=>String(i[4]||'').toLowerCase()!=='cancelada').map(i=>String(i[2])));
+    const idsConIngresos=new Set(ingresosData.filter(i=>String(i[4]||'').toLowerCase()!=='cancelada').map(i=>resolverIdProveedorIngreso(i[2])).filter(Boolean));
     const sel=document.getElementById('rep-ing-proveedor');
     const anterior=sel.value;
     sel.innerHTML='<option value="">Seleccioná...</option>'+proveedoresData
@@ -2957,11 +2957,18 @@ async function prepararAnalisisIngresos(){
   }
 }
 
+function resolverIdProveedorIngreso(valor){
+  const buscado=String(valor||'').trim().toLowerCase();
+  if(!buscado)return'';
+  const proveedor=proveedoresData.find(p=>String(p[0]||'').trim().toLowerCase()===buscado||String(p[1]||'').trim().toLowerCase()===buscado);
+  return proveedor?String(proveedor[0]):String(valor||'').trim();
+}
+
 function actualizarIngresosAnalisis(idSeleccionado=''){
   const idProveedor=String(document.getElementById('rep-ing-proveedor').value||'');
   const sel=document.getElementById('rep-ing-ingreso');
   if(!idProveedor){sel.innerHTML='<option value="">Elegí un proveedor</option>';return;}
-  const lista=ingresosData.filter(i=>String(i[2])===idProveedor&&String(i[4]||'').toLowerCase()!=='cancelada').reverse();
+  const lista=ingresosData.filter(i=>resolverIdProveedorIngreso(i[2])===idProveedor&&String(i[4]||'').toLowerCase()!=='cancelada').reverse();
   sel.innerHTML='<option value="__TODOS__">Todos los ingresos del proveedor</option>'+lista.map(i=>{
     const total=detalleIngresosData.filter(d=>String(d[0])===String(i[0])).reduce((s,d)=>s+(Number(d[2])||0)*(Number(d[3])||0),0);
     return`<option value="${i[0]}">${fechaStr(i[1])} · ${i[0]} · ${formatPeso(total)}</option>`;
@@ -2975,7 +2982,7 @@ async function abrirAnalisisIngreso(idIngreso){
   cerrarModal('modal-detalle-ingreso');
   irA('reportes');
   await prepararAnalisisIngresos();
-  document.getElementById('rep-ing-proveedor').value=String(ing[2]);
+  document.getElementById('rep-ing-proveedor').value=resolverIdProveedorIngreso(ing[2]);
   actualizarIngresosAnalisis(idIngreso);
   await generarAnalisisIngreso();
   document.getElementById('rep-ing-resultado').scrollIntoView({behavior:'smooth',block:'start'});
@@ -3004,7 +3011,7 @@ async function generarAnalisisIngreso(){
   const lotes=[];
   ingresosActivos.forEach((ing,orden)=>{
     detalleIngresosData.filter(d=>String(d[0])===String(ing[0])).forEach(d=>lotes.push({
-      idIngreso:String(ing[0]),idProveedor:String(ing[2]),fecha:fechaStr(ing[1]),orden,codigo:String(d[1]),
+      idIngreso:String(ing[0]),idProveedor:resolverIdProveedorIngreso(ing[2]),fecha:fechaStr(ing[1]),orden,codigo:String(d[1]),
       cantidad:Number(d[2])||0,costo:Number(d[3])||0,vendido:0,facturado:0,cobrado:0,neto:0
     }));
   });

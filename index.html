@@ -684,7 +684,19 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
       <div class="card">
         <div class="card-title">Categorías registradas</div>
         <div id="cat-loading" class="spinner-wrap"><div class="spinner"></div> Cargando...</div>
-        <table id="cat-table" style="display:none"><thead><tr><th>Nombre</th></tr></thead><tbody id="cat-body"></tbody></table>
+        <table id="cat-table" style="display:none"><thead><tr><th>Nombre</th><th>Productos asociados</th><th></th></tr></thead><tbody id="cat-body"></tbody></table>
+      </div>
+      <div id="modal-editar-categoria" class="modal-overlay" onclick="if(event.target===this)cerrarModal('modal-editar-categoria')">
+        <div class="modal">
+          <div class="modal-title">Renombrar categoría</div>
+          <div class="modal-sub" id="cat-edit-info">Los productos asociados también se actualizarán.</div>
+          <input type="hidden" id="cat-edit-anterior">
+          <div class="field"><label>Nuevo nombre</label><input type="text" id="cat-edit-nombre"></div>
+          <div class="modal-actions">
+            <button class="btn btn-primary" onclick="conBotonCargando(this,'Actualizando...',confirmarEditarCategoria)">Guardar cambio</button>
+            <button class="btn btn-secondary" onclick="cerrarModal('modal-editar-categoria')">Cancelar</button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -3877,7 +3889,7 @@ async function confirmarCobroCxc(){
   }
 }
 </script>
-<script src="js/categorias.js?v=20260823-1"></script>
+<script src="js/categorias.js?v=20260823-2"></script>
 <script src="js/ventas-v2.js?v=20260822-1"></script>
 </body>
 </html>

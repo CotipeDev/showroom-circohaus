@@ -19,7 +19,7 @@ async function cargarCategorias(){
 
 async function iniciarCategorias(){
   if(categoriasData.length){
-    document.getElementById('cat-body').innerHTML=categoriasData.map(c=>`<tr><td>${c}</td></tr>`).join('');
+    renderTablaCategorias();
     document.getElementById('cat-loading').style.display='none';
     document.getElementById('cat-table').style.display='table';
     return;
@@ -29,12 +29,56 @@ async function iniciarCategorias(){
   try{
     const data=await cacheGet('getCategorias');
     const rows=data.slice(1).filter(r=>r[0]);
-    document.getElementById('cat-body').innerHTML=rows.length===0
-      ?'<tr><td style="text-align:center;color:var(--text-mid);padding:20px">No hay categorías</td></tr>'
-      :rows.map(c=>`<tr><td>${c[0]}</td></tr>`).join('');
+    categoriasData=rows.map(c=>c[0]);
+    renderTablaCategorias();
     document.getElementById('cat-loading').style.display='none';
     document.getElementById('cat-table').style.display='table';
   }catch(e){}
+}
+
+function cantidadProductosCategoria(nombre){
+  const buscada=String(nombre||'').trim().toLowerCase();
+  return productosData.filter(p=>String(p[7]||'').trim().toLowerCase()===buscada).length;
+}
+
+function renderTablaCategorias(){
+  document.getElementById('cat-body').innerHTML=categoriasData.length===0
+    ?'<tr><td colspan="3" style="text-align:center;color:var(--text-mid);padding:20px">No hay categorías</td></tr>'
+    :categoriasData.map(c=>`<tr><td>${textoSeguro(c)}</td><td>${cantidadProductosCategoria(c)}</td><td style="text-align:right"><button class="btn-warning" data-categoria="${textoSeguro(c)}" onclick="abrirEditarCategoria(this)">✏️ Editar</button></td></tr>`).join('');
+}
+
+function abrirEditarCategoria(btn){
+  const nombre=btn.dataset.categoria||'';
+  const cantidad=cantidadProductosCategoria(nombre);
+  document.getElementById('cat-edit-anterior').value=nombre;
+  document.getElementById('cat-edit-nombre').value=nombre;
+  document.getElementById('cat-edit-info').textContent=cantidad
+    ?`Se actualizarán también ${cantidad} producto${cantidad===1?'':'s'} asociado${cantidad===1?'':'s'}.`
+    :'Esta categoría todavía no tiene productos asociados.';
+  document.getElementById('modal-editar-categoria').classList.add('open');
+  setTimeout(()=>document.getElementById('cat-edit-nombre').focus(),100);
+}
+
+async function confirmarEditarCategoria(){
+  const nombre_anterior=document.getElementById('cat-edit-anterior').value.trim();
+  const nombre_nuevo=document.getElementById('cat-edit-nombre').value.trim();
+  if(!nombre_nuevo){showToast('Ingresá el nuevo nombre','error');return;}
+  if(nombre_anterior===nombre_nuevo){cerrarModal('modal-editar-categoria');return;}
+  if(categoriasData.some(c=>c.toLowerCase()===nombre_nuevo.toLowerCase()&&c.toLowerCase()!==nombre_anterior.toLowerCase())){showToast('Esa categoría ya existe','error');return;}
+  try{
+    const resultado=await apiPost('editarCategoria',{nombre_anterior,nombre_nuevo});
+    cache.invalidar('getCategorias','getProductos');
+    const[categorias,productos]=await Promise.all([cacheGet('getCategorias'),cacheGet('getProductos')]);
+    categoriasData=categorias.slice(1).map(c=>c[0]).filter(Boolean);
+    productosData=productos.slice(1);
+    prodTablaData=[...productosData];
+    stockData=[...productosData];
+    await cargarCategorias();
+    renderTablaCategorias();
+    cerrarModal('modal-editar-categoria');
+    const actualizados=Number(resultado.productos_actualizados)||0;
+    showToast(`Categoría actualizada en ${actualizados} producto${actualizados===1?'':'s'}`);
+  }catch(e){showToast(e?.message||'No se pudo actualizar la categoría','error');}
 }
 
 async function agregarCategoria(){

@@ -578,7 +578,11 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
         <div><div class="section-title">Stock e inventario</div><div class="section-sub">Existencias actuales, valorización y rotación</div></div>
         <button class="btn btn-secondary" onclick="abrirConsultaPrecios()">🔍 Consulta rápida</button>
       </div>
-      <div class="card">
+      <div id="stock-tabs" style="display:flex;gap:8px;margin-bottom:14px">
+        <button id="stock-tab-listado" class="btn btn-primary" onclick="cambiarVistaStock('listado')">Stock actual</button>
+        <button id="stock-tab-analisis" class="btn btn-secondary" onclick="cambiarVistaStock('analisis')">Análisis de inventario</button>
+      </div>
+      <div class="card" id="stock-vista-listado">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
           <div class="search-wrap" style="margin:0"><input type="text" id="stock-buscar" placeholder="🔍 Buscar..." oninput="filtrarStockD()"></div>
           <select id="stock-filtro-cat" onchange="filtrarStock()" style="background:var(--off-white);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none;color:var(--text-main)"><option value="">Todas las categorías</option></select>
@@ -586,7 +590,7 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
         <div id="stock-loading" class="spinner-wrap"><div class="spinner"></div> Cargando...</div>
         <table id="stock-table" style="display:none"><thead><tr><th>Código</th><th>Descripción</th><th>Categoría</th><th>P. Costo</th><th>Recargo</th><th>Margen bruto</th><th>P. Venta</th><th>Stock</th><th>Mínimo</th></tr></thead><tbody id="stock-body"></tbody></table>
       </div>
-      <div class="card" id="stock-analisis-admin">
+      <div class="card" id="stock-analisis-admin" style="display:none">
         <div class="card-title">Análisis de inventario y rotación</div>
         <div class="section-sub" style="margin-bottom:12px">Valor actual del stock y productos que necesitan atención.</div>
         <div id="rep-inv-kpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px;margin-bottom:14px"></div>
@@ -1679,7 +1683,9 @@ async function verHistorialProducto(codigo){
 
 async function iniciarStock(){
   const analisis=document.getElementById('stock-analisis-admin');
-  if(analisis)analisis.style.display=esVendedor()?'none':'';
+  const tabAnalisis=document.getElementById('stock-tab-analisis');
+  if(tabAnalisis)tabAnalisis.style.display=esVendedor()?'none':'';
+  cambiarVistaStock('listado');
   if(!esVendedor())prepararReporteInventario();
   if(productosData.length){
     stockData=productosData;
@@ -1698,6 +1704,15 @@ async function iniciarStock(){
     document.getElementById('stock-loading').style.display='none';
     document.getElementById('stock-table').style.display='table';
   }catch(e){showToast('Error','error')}
+}
+function cambiarVistaStock(vista){
+  const mostrarAnalisis=vista==='analisis'&&!esVendedor();
+  const listado=document.getElementById('stock-vista-listado'),analisis=document.getElementById('stock-analisis-admin');
+  const tabListado=document.getElementById('stock-tab-listado'),tabAnalisis=document.getElementById('stock-tab-analisis');
+  if(listado)listado.style.display=mostrarAnalisis?'none':'';
+  if(analisis)analisis.style.display=mostrarAnalisis?'':'none';
+  if(tabListado)tabListado.className=`btn ${mostrarAnalisis?'btn-secondary':'btn-primary'}`;
+  if(tabAnalisis)tabAnalisis.className=`btn ${mostrarAnalisis?'btn-primary':'btn-secondary'}`;
 }
 function renderStock(rows){
   document.getElementById('stock-body').innerHTML=rows.length===0?'<tr><td colspan="9" style="text-align:center;color:var(--text-mid);padding:20px">No hay productos</td></tr>':rows.map(p=>{

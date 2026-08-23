@@ -330,6 +330,13 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
 </style>
 </head>
 <body>
+<!-- CARGA INICIAL DE LA APLICACIÓN -->
+<div id="app-loading-screen" style="display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px;min-height:100vh;background:var(--navy);position:fixed;inset:0;z-index:99998;color:white">
+  <div class="spinner" style="width:34px;height:34px;border-color:rgba(255,255,255,.25);border-top-color:var(--rose)"></div>
+  <div style="font-family:'Playfair Display',serif;font-size:19px">Cargando Circo Haus…</div>
+  <div style="font-size:12px;color:var(--blue-mist)">Preparando tu espacio de trabajo</div>
+</div>
+
 <!-- PANTALLA DE LOGIN -->
 <div id="login-screen" style="display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--navy);position:fixed;inset:0;z-index:99999">
   <div style="background:var(--white);border-radius:20px;padding:40px 36px;width:340px;max-width:90vw;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.25)">
@@ -2885,9 +2892,10 @@ async function iniciarAplicacion(){
   setFechaHoy('ing-fecha');
   await precargarDatos();aplicarPermisosUI();iniciarHome();cargarProveedores();cargarCategorias();cargarNotificaciones();aplicarRuta();
 }
+function mostrarCargaAplicacion(mostrar){const pantalla=document.getElementById('app-loading-screen');if(pantalla)pantalla.style.display=mostrar?'flex':'none';}
 document.addEventListener('DOMContentLoaded',()=>{
   const sesion=sesionActual();
-  if(sesion?.token){document.getElementById('login-screen').style.display='none';iniciarAplicacion().catch(()=>cerrarSesion(false));}
+  if(sesion?.token){mostrarCargaAplicacion(true);document.getElementById('login-screen').style.display='none';iniciarAplicacion().catch(()=>cerrarSesion(false)).finally(()=>mostrarCargaAplicacion(false));}
   else document.getElementById('login-usuario')?.focus();
 });
 
@@ -2993,9 +3001,9 @@ async function verificarLogin(){
   const error=document.getElementById('login-error'),btn=document.getElementById('login-btn');
   if(!usuario||!password){error.textContent='Completá usuario y contraseña';error.style.display='block';return;}
   btn.disabled=true;btn.textContent='Ingresando...';error.style.display='none';
-  try{const r=await fetch(`${API_URL}?action=login`,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({usuario,password})});const data=await r.json();if(!data?.ok||!data?.token)throw new Error(data?.error||'Usuario o contraseña incorrectos');sessionStorage.setItem(LOGIN_KEY,JSON.stringify(data));document.getElementById('login-screen').style.display='none';await iniciarAplicacion();}
+  try{const r=await fetch(`${API_URL}?action=login`,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({usuario,password})});const data=await r.json();if(!data?.ok||!data?.token)throw new Error(data?.error||'Usuario o contraseña incorrectos');sessionStorage.setItem(LOGIN_KEY,JSON.stringify(data));mostrarCargaAplicacion(true);document.getElementById('login-screen').style.display='none';await iniciarAplicacion();}
   catch(e){error.textContent=e.message||'No se pudo iniciar sesión';error.style.display='block';document.getElementById('login-pass').value='';document.getElementById('login-pass').focus();}
-  finally{btn.disabled=false;btn.textContent='Ingresar';}
+  finally{mostrarCargaAplicacion(false);btn.disabled=false;btn.textContent='Ingresar';}
 }
 function aplicarPermisosUI(){
   const vendedor=esVendedor(),usuario=sesionActual()?.usuario||{};

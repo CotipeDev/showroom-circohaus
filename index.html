@@ -427,7 +427,7 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
       <div class="launcher-label">Operaciones</div>
       <div class="launcher-grid">
         <div class="launcher-item" onclick="irA('ingresos')"><span class="launcher-icon">📦</span><span class="launcher-nombre">Ingresos</span><span class="launcher-desc">Entrada de mercadería y stock</span></div>
-        <div class="launcher-item" onclick="irA('stock')"><span class="launcher-icon">📊</span><span class="launcher-nombre">Stock</span><span class="launcher-desc">Inventario y alertas de reposición</span></div>
+        <div class="launcher-item" onclick="irA('stock')"><span class="launcher-icon">📊</span><span class="launcher-nombre">Stock e inventario</span><span class="launcher-desc">Existencias, valorización y rotación</span></div>
         <div class="launcher-item" onclick="irA('historial-ventas')"><span class="launcher-icon">🧾</span><span class="launcher-nombre">Ventas</span><span class="launcher-desc">Historial y detalle de ventas</span></div>
         <div class="launcher-item" onclick="irA('reportes')"><span class="launcher-icon">📈</span><span class="launcher-nombre">Reportes</span><span class="launcher-desc">Ventas, márgenes y cuentas</span></div>
       </div>
@@ -574,8 +574,10 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
 
     <!-- STOCK -->
     <div id="panel-stock" class="panel">
-      <div class="section-title">Stock actual</div>
-      <div class="section-sub">Estado de inventario de todos los productos</div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+        <div><div class="section-title">Stock e inventario</div><div class="section-sub">Existencias actuales, valorización y rotación</div></div>
+        <button class="btn btn-secondary" onclick="abrirConsultaPrecios()">🔍 Consulta rápida</button>
+      </div>
       <div class="card">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
           <div class="search-wrap" style="margin:0"><input type="text" id="stock-buscar" placeholder="🔍 Buscar..." oninput="filtrarStockD()"></div>
@@ -583,6 +585,17 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
         </div>
         <div id="stock-loading" class="spinner-wrap"><div class="spinner"></div> Cargando...</div>
         <table id="stock-table" style="display:none"><thead><tr><th>Código</th><th>Descripción</th><th>Categoría</th><th>P. Costo</th><th>Recargo</th><th>Margen bruto</th><th>P. Venta</th><th>Stock</th><th>Mínimo</th></tr></thead><tbody id="stock-body"></tbody></table>
+      </div>
+      <div class="card" id="stock-analisis-admin">
+        <div class="card-title">Análisis de inventario y rotación</div>
+        <div class="section-sub" style="margin-bottom:12px">Valor actual del stock y productos que necesitan atención.</div>
+        <div id="rep-inv-kpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px;margin-bottom:14px"></div>
+        <div class="form-grid cols-3" style="margin-bottom:14px">
+          <div class="field"><label>Proveedor</label><select id="rep-inv-proveedor" onchange="renderReporteInventario()"><option value="">Todos</option></select></div>
+          <div class="field"><label>Categoría</label><select id="rep-inv-categoria" onchange="renderReporteInventario()"><option value="">Todas</option></select></div>
+          <div class="field"><label>Estado</label><select id="rep-inv-estado" onchange="renderReporteInventario()"><option value="">Todos</option><option value="reponer">Para reponer</option><option value="sin_ventas_90">Sin ventas hace 90 días</option><option value="sin_ventas">Nunca vendido</option><option value="rotacion">Con rotación</option><option value="sin_stock">Sin stock</option><option value="sin_costo">Sin costo informado</option></select></div>
+        </div>
+        <div style="overflow-x:auto"><table style="min-width:1050px"><thead><tr><th>Producto</th><th>Proveedor</th><th>Categoría</th><th style="text-align:right">Stock</th><th style="text-align:right">Valor al costo</th><th style="text-align:right">Vendido 30d</th><th style="text-align:right">Vendido 90d</th><th>Última venta</th><th>Estado</th></tr></thead><tbody id="rep-inv-body"><tr><td colspan="9" style="text-align:center;color:var(--text-light);padding:22px">Cargando inventario...</td></tr></tbody></table></div>
       </div>
     </div>
 
@@ -824,17 +837,6 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
         <div id="rep-ing-resultado" style="margin-top:16px"><div class="items-empty">Seleccioná un proveedor y un ingreso para analizar la inversión.</div></div>
       </div>
 
-      <div class="card" style="margin-top:16px">
-        <div class="card-title">Inventario y rotación</div>
-        <div class="section-sub" style="margin-bottom:12px">Valor actual del stock y productos que necesitan atención.</div>
-        <div id="rep-inv-kpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px;margin-bottom:14px"></div>
-        <div class="form-grid cols-3" style="margin-bottom:14px">
-          <div class="field"><label>Proveedor</label><select id="rep-inv-proveedor" onchange="renderReporteInventario()"><option value="">Todos</option></select></div>
-          <div class="field"><label>Categoría</label><select id="rep-inv-categoria" onchange="renderReporteInventario()"><option value="">Todas</option></select></div>
-          <div class="field"><label>Estado</label><select id="rep-inv-estado" onchange="renderReporteInventario()"><option value="">Todos</option><option value="reponer">Para reponer</option><option value="sin_ventas_90">Sin ventas hace 90 días</option><option value="sin_ventas">Nunca vendido</option><option value="rotacion">Con rotación</option><option value="sin_stock">Sin stock</option><option value="sin_costo">Sin costo informado</option></select></div>
-        </div>
-        <div style="overflow-x:auto"><table style="min-width:1050px"><thead><tr><th>Producto</th><th>Proveedor</th><th>Categoría</th><th style="text-align:right">Stock</th><th style="text-align:right">Valor al costo</th><th style="text-align:right">Vendido 30d</th><th style="text-align:right">Vendido 90d</th><th>Última venta</th><th>Estado</th></tr></thead><tbody id="rep-inv-body"><tr><td colspan="9" style="text-align:center;color:var(--text-light);padding:22px">Cargando inventario...</td></tr></tbody></table></div>
-      </div>
     </div>
 
     <div id="panel-clientes" class="panel">
@@ -1437,7 +1439,7 @@ function formatPeso(n){return'$'+Number(n).toLocaleString('es-AR')}
 function textoSeguro(valor){return String(valor??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
 function setFechaHoy(id){document.getElementById(id).value=new Date().toISOString().split('T')[0]}
 
-const moduloNombres={ingresos:'📦 Ingresos',stock:'📊 Stock',productos:'🏷️ Productos',clientes:'👥 Clientes',ventas:'🛒 Ventas','historial-ventas':'🧾 Ventas',cuentas:'💰 Cuentas',proveedores:'🤝 Proveedores',categorias:'🗂️ Categorías','medios-pago':'💳 Medios de pago',reportes:'📈 Reportes',cxc:'📋 Cuentas por cobrar',facturas:'🧾 Facturas',instructivos:'📚 Instructivos'};
+const moduloNombres={ingresos:'📦 Ingresos',stock:'📊 Stock e inventario',productos:'🏷️ Productos',clientes:'👥 Clientes',ventas:'🛒 Ventas','historial-ventas':'🧾 Ventas',cuentas:'💰 Cuentas',proveedores:'🤝 Proveedores',categorias:'🗂️ Categorías','medios-pago':'💳 Medios de pago',reportes:'📈 Reportes',cxc:'📋 Cuentas por cobrar',facturas:'🧾 Facturas',instructivos:'📚 Instructivos'};
 const modulosVendedor=new Set(['ventas','historial-ventas','stock','productos','clientes','cxc']);
 function irA(nombre){if(esVendedor()&&!modulosVendedor.has(nombre)){showToast('Tu perfil no tiene acceso a este módulo','error');return;}document.getElementById('home').style.display='none';document.getElementById('app-main').style.display='flex';showPanel(nombre);}
 function volverHome(){document.getElementById('home').style.display='';document.getElementById('app-main').style.display='none';iniciarHome()}
@@ -1676,6 +1678,9 @@ async function verHistorialProducto(codigo){
 }
 
 async function iniciarStock(){
+  const analisis=document.getElementById('stock-analisis-admin');
+  if(analisis)analisis.style.display=esVendedor()?'none':'';
+  if(!esVendedor())prepararReporteInventario();
   if(productosData.length){
     stockData=productosData;
     renderStock(stockData);
@@ -3074,7 +3079,6 @@ let reporteInventarioData=[];
 
 function iniciarReportes(){
   prepararAnalisisIngresos();
-  prepararReporteInventario();
   repSetPeriodo('mes');
 }
 

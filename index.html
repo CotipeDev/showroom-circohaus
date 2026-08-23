@@ -784,16 +784,9 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
           </table>
         </div>
       </div>
-    </div>
-
-    <div id="panel-clientes" class="panel">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:18px">
-        <div><div class="section-title">Clientes</div><div class="section-sub">Consultá y actualizá los datos y el historial de cada cliente</div></div>
-        <button class="btn btn-primary" onclick="abrirModalCliente()">+ Nuevo cliente</button>
-      </div>
 
       <!-- Análisis de ingresos / inversiones -->
-      <div class="card" style="margin-bottom:16px">
+      <div class="card" style="margin-top:16px">
         <div class="card-title">Análisis de ingresos</div>
         <div class="section-sub" style="margin-bottom:12px">Seguí la inversión de un pedido o de todos los ingresos de un proveedor.</div>
         <div class="form-grid cols-3" style="align-items:flex-end">
@@ -803,6 +796,14 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
         </div>
         <div id="rep-ing-resultado" style="margin-top:16px"><div class="items-empty">Seleccioná un proveedor y un ingreso para analizar la inversión.</div></div>
       </div>
+    </div>
+
+    <div id="panel-clientes" class="panel">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:18px">
+        <div><div class="section-title">Clientes</div><div class="section-sub">Consultá y actualizá los datos y el historial de cada cliente</div></div>
+        <button class="btn btn-primary" onclick="abrirModalCliente()">+ Nuevo cliente</button>
+      </div>
+
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px">
         <div class="card" style="margin:0;padding:16px"><div style="font-size:10px;text-transform:uppercase;color:var(--text-light)">Clientes registrados</div><div id="cli-kpi-total" style="font-size:25px;font-weight:700;color:var(--navy)">—</div></div>
         <div class="card" style="margin:0;padding:16px"><div style="font-size:10px;text-transform:uppercase;color:var(--text-light)">Con saldo pendiente</div><div id="cli-kpi-deuda" style="font-size:25px;font-weight:700;color:var(--error)">—</div></div>

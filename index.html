@@ -437,6 +437,7 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
       <div class="launcher-label">Catálogo</div>
       <div class="launcher-grid">
         <div class="launcher-item" onclick="irA('productos')"><span class="launcher-icon">🏷️</span><span class="launcher-nombre">Productos</span><span class="launcher-desc">Cargá y editá el catálogo</span></div>
+        <div class="launcher-item" onclick="irA('clientes')"><span class="launcher-icon">👥</span><span class="launcher-nombre">Clientes</span><span class="launcher-desc">Datos, ventas y saldos</span></div>
         <div class="launcher-item" onclick="irA('proveedores')"><span class="launcher-icon">🤝</span><span class="launcher-nombre">Proveedores</span><span class="launcher-desc">Datos y contactos</span></div>
         <div class="launcher-item" onclick="irA('categorias')"><span class="launcher-icon">🗂️</span><span class="launcher-nombre">Categorías</span><span class="launcher-desc">Organizá tu catálogo</span></div>
       </div>
@@ -771,6 +772,23 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
             <tbody id="rep-margen-venta-body"><tr><td colspan="7" style="text-align:center;color:var(--text-light);padding:20px">Seleccioná un período</td></tr></tbody>
           </table>
         </div>
+      </div>
+    </div>
+
+    <div id="panel-clientes" class="panel">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:18px">
+        <div><div class="section-title">Clientes</div><div class="section-sub">Consultá y actualizá los datos y el historial de cada cliente</div></div>
+        <button class="btn btn-primary" onclick="abrirModalCliente()">+ Nuevo cliente</button>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px">
+        <div class="card" style="margin:0;padding:16px"><div style="font-size:10px;text-transform:uppercase;color:var(--text-light)">Clientes registrados</div><div id="cli-kpi-total" style="font-size:25px;font-weight:700;color:var(--navy)">—</div></div>
+        <div class="card" style="margin:0;padding:16px"><div style="font-size:10px;text-transform:uppercase;color:var(--text-light)">Con saldo pendiente</div><div id="cli-kpi-deuda" style="font-size:25px;font-weight:700;color:var(--error)">—</div></div>
+        <div class="card" style="margin:0;padding:16px"><div style="font-size:10px;text-transform:uppercase;color:var(--text-light)">Saldo pendiente total</div><div id="cli-kpi-saldo" style="font-size:25px;font-weight:700;color:var(--error)">—</div></div>
+      </div>
+      <div class="card">
+        <div class="search-wrap"><input type="text" id="cli-buscar" placeholder="🔍 Buscar por nombre, contacto o notas..." oninput="filtrarClientesModulo()"></div>
+        <div id="cli-loading" class="spinner-wrap"><div class="spinner"></div> Cargando...</div>
+        <div style="overflow-x:auto"><table id="cli-table" style="display:none"><thead><tr><th>Nombre</th><th>Contacto</th><th>Notas</th><th>Última venta</th><th>Saldo</th><th></th></tr></thead><tbody id="cli-body"></tbody></table></div>
       </div>
     </div>
 
@@ -1164,6 +1182,30 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
   </div>
 </div>
 
+<div id="modal-editar-cliente" class="modal-overlay" onclick="if(event.target===this)cerrarModal('modal-editar-cliente')">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-title">Editar cliente</div>
+    <input type="hidden" id="edit-cli-id">
+    <div class="form-grid">
+      <div class="field"><label>Nombre</label><input type="text" id="edit-cli-nombre"></div>
+      <div class="field"><label>Contacto</label><input type="text" id="edit-cli-contacto" placeholder="Teléfono o email"></div>
+    </div>
+    <div class="field" style="margin-top:14px"><label>Notas</label><input type="text" id="edit-cli-notas"></div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" onclick="conBotonCargando(this,'Guardando...',guardarEdicionCliente)">Guardar cambios</button>
+      <button class="btn btn-secondary" onclick="cerrarModal('modal-editar-cliente')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<div id="modal-historial-cliente" class="modal-overlay" onclick="if(event.target===this)cerrarModal('modal-historial-cliente')">
+  <div class="modal" style="max-width:760px;max-height:88vh;overflow-y:auto">
+    <div class="modal-title" id="hist-cli-titulo">Historial del cliente</div>
+    <div id="hist-cli-contenido"></div>
+    <div class="modal-actions"><button class="btn btn-secondary" onclick="cerrarModal('modal-historial-cliente')">Cerrar</button></div>
+  </div>
+</div>
+
 <!-- MODAL DETALLE VENTA -->
 <!-- MODAL NÚMERO DE FACTURA -->
 <div id="modal-nro-factura" class="modal-overlay" onclick="if(event.target===this)cerrarModal('modal-nro-factura')">
@@ -1303,10 +1345,11 @@ async function apiPost(a,b){
 }
 function showToast(m,t='success'){const el=document.getElementById('toast');el.textContent=m;el.className=`toast ${t} show`;setTimeout(()=>el.className='toast',3500)}
 function formatPeso(n){return'$'+Number(n).toLocaleString('es-AR')}
+function textoSeguro(valor){return String(valor??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
 function setFechaHoy(id){document.getElementById(id).value=new Date().toISOString().split('T')[0]}
 
-const moduloNombres={ingresos:'📦 Ingresos',stock:'📊 Stock',productos:'🏷️ Productos',ventas:'🛒 Ventas','historial-ventas':'🧾 Ventas',cuentas:'💰 Cuentas',proveedores:'🤝 Proveedores',categorias:'🗂️ Categorías','medios-pago':'💳 Medios de pago',reportes:'📈 Reportes',cxc:'📋 Cuentas por cobrar',facturas:'🧾 Facturas',instructivos:'📚 Instructivos'};
-const modulosVendedor=new Set(['ventas','historial-ventas','stock','productos','cxc']);
+const moduloNombres={ingresos:'📦 Ingresos',stock:'📊 Stock',productos:'🏷️ Productos',clientes:'👥 Clientes',ventas:'🛒 Ventas','historial-ventas':'🧾 Ventas',cuentas:'💰 Cuentas',proveedores:'🤝 Proveedores',categorias:'🗂️ Categorías','medios-pago':'💳 Medios de pago',reportes:'📈 Reportes',cxc:'📋 Cuentas por cobrar',facturas:'🧾 Facturas',instructivos:'📚 Instructivos'};
+const modulosVendedor=new Set(['ventas','historial-ventas','stock','productos','clientes','cxc']);
 function irA(nombre){if(esVendedor()&&!modulosVendedor.has(nombre)){showToast('Tu perfil no tiene acceso a este módulo','error');return;}document.getElementById('home').style.display='none';document.getElementById('app-main').style.display='flex';showPanel(nombre);}
 function volverHome(){document.getElementById('home').style.display='';document.getElementById('app-main').style.display='none';iniciarHome()}
 function showPanel(name){
@@ -1315,7 +1358,7 @@ function showPanel(name){
   document.getElementById('panel-'+name).classList.add('active');
   document.getElementById('modulo-topbar-nombre').textContent=moduloNombres[name]||'';
   if(name==='stock')iniciarStock();if(name==='proveedores')iniciarProveedores();
-  if(name==='productos')iniciarProductos();if(name==='categorias')iniciarCategorias();
+  if(name==='productos')iniciarProductos();if(name==='clientes')iniciarClientes();if(name==='categorias')iniciarCategorias();
   if(name==='medios-pago')iniciarMediosPago();if(name==='cuentas')iniciarCuentas();
   if(name==='ventas')iniciarVentas();if(name==='historial-ventas')iniciarHistorialVentas();if(name==='reportes')iniciarReportes();if(name==='cxc')iniciarCxc();if(name==='facturas')iniciarFacturas();
   if(name==='ingresos')cargarHistorialIngresos();
@@ -2287,8 +2330,80 @@ async function guardarCliente(){
     const res=await apiPost('agregarCliente',{nombre,contacto:document.getElementById('cli-contacto').value.trim(),notas:document.getElementById('cli-notas').value.trim()});
     showToast('Cliente guardado');cerrarModal('modal-nuevo-cliente');
     ['cli-nombre','cli-contacto','cli-notas'].forEach(id=>document.getElementById(id).value='');
-    const data=await cacheGet('getClientes');clientesData=data.slice(1);llenarSelectClientes();
+    cache.invalidar('getClientes');
+    const data=await apiGet('getClientes');cache.set('getClientes',data);clientesData=data.slice(1);llenarSelectClientes();
+    if(document.getElementById('panel-clientes')?.classList.contains('active'))await iniciarClientes();
   }catch(e){showToast('Error','error')}
+}
+
+let clientesModuloFilas=[];
+
+async function iniciarClientes(){
+  const loading=document.getElementById('cli-loading'),tabla=document.getElementById('cli-table');
+  loading.style.display='flex';tabla.style.display='none';
+  try{
+    const[dataClientes,dataVentas,dataCpc]=await Promise.all([cacheGet('getClientes'),cacheGet('getVentas'),cacheGet('getCuentasPorCobrar')]);
+    clientesData=(dataClientes||[]).slice(1);
+    const ventas=(dataVentas||[]).slice(1),cpcs=(dataCpc||[]).slice(1);
+    clientesModuloFilas=clientesData.map(cliente=>{
+      const id=String(cliente[0]);
+      const ventasCliente=ventas.filter(v=>String(v[3])===id&&String(v[7]||'').toLowerCase()!=='cancelada');
+      const ultima=ventasCliente.reduce((max,v)=>fechaStr(v[1])>max?fechaStr(v[1]):max,'');
+      const saldo=cpcs.filter(c=>String(c[2])===id&&String(c[6]||'').toLowerCase()!=='cancelada').reduce((s,c)=>s+Math.max(0,Number(c[5])||0),0);
+      return{cliente,ventas:ventasCliente,cpcs:cpcs.filter(c=>String(c[2])===id),ultima,saldo};
+    });
+    document.getElementById('cli-kpi-total').textContent=clientesModuloFilas.length;
+    document.getElementById('cli-kpi-deuda').textContent=clientesModuloFilas.filter(x=>x.saldo>0).length;
+    document.getElementById('cli-kpi-saldo').textContent=formatPeso(clientesModuloFilas.reduce((s,x)=>s+x.saldo,0));
+    renderClientesModulo(clientesModuloFilas);
+  }catch(e){showToast(e.message||'Error al cargar clientes','error');}
+  finally{loading.style.display='none';tabla.style.display='table';}
+}
+
+function renderClientesModulo(filas){
+  document.getElementById('cli-body').innerHTML=filas.length?filas.map(x=>{
+    const c=x.cliente;
+    return`<tr><td><strong>${textoSeguro(c[1]||'Sin nombre')}</strong></td><td>${textoSeguro(c[2]||'—')}</td><td style="color:var(--text-mid)">${textoSeguro(c[3]||'—')}</td><td>${x.ultima||'—'}</td><td style="font-weight:600;color:${x.saldo>0?'var(--error)':'var(--success)'}">${formatPeso(x.saldo)}</td><td style="white-space:nowrap"><button class="btn-warning" onclick="verHistorialCliente('${c[0]}')">Historial</button><button class="btn-secondary" style="margin-left:6px;padding:6px 9px" onclick="abrirEditarCliente('${c[0]}')">Editar</button></td></tr>`;
+  }).join(''):'<tr><td colspan="6" style="text-align:center;color:var(--text-light);padding:24px">No hay clientes registrados</td></tr>';
+}
+
+function filtrarClientesModulo(){
+  const q=document.getElementById('cli-buscar').value.trim().toLowerCase();
+  renderClientesModulo(clientesModuloFilas.filter(x=>[x.cliente[1],x.cliente[2],x.cliente[3]].some(v=>String(v||'').toLowerCase().includes(q))));
+}
+
+function abrirEditarCliente(id){
+  const cliente=clientesData.find(c=>String(c[0])===String(id));if(!cliente)return;
+  document.getElementById('edit-cli-id').value=cliente[0];
+  document.getElementById('edit-cli-nombre').value=cliente[1]||'';
+  document.getElementById('edit-cli-contacto').value=cliente[2]||'';
+  document.getElementById('edit-cli-notas').value=cliente[3]||'';
+  document.getElementById('modal-editar-cliente').classList.add('open');
+}
+
+async function guardarEdicionCliente(){
+  const id=document.getElementById('edit-cli-id').value,nombre=document.getElementById('edit-cli-nombre').value.trim();
+  if(!nombre){showToast('Ingresá el nombre','error');return;}
+  await apiPost('editarCliente',{id,nombre,contacto:document.getElementById('edit-cli-contacto').value.trim(),notas:document.getElementById('edit-cli-notas').value.trim()});
+  cache.invalidar('getClientes');
+  const data=await apiGet('getClientes');cache.set('getClientes',data);clientesData=data.slice(1);llenarSelectClientes();
+  cerrarModal('modal-editar-cliente');await iniciarClientes();showToast('Cliente actualizado');
+}
+
+function verHistorialCliente(id){
+  const fila=clientesModuloFilas.find(x=>String(x.cliente[0])===String(id));if(!fila)return;
+  const c=fila.cliente,ventas=[...fila.ventas].sort((a,b)=>fechaStr(b[1]).localeCompare(fechaStr(a[1])));
+  document.getElementById('hist-cli-titulo').textContent=`Historial — ${c[1]||'Cliente'}`;
+  document.getElementById('hist-cli-contenido').innerHTML=`
+    <div style="background:var(--pearl);border-radius:10px;padding:14px;margin:12px 0 18px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+      <div><div style="font-size:10px;text-transform:uppercase;color:var(--text-light)">Contacto</div><strong>${textoSeguro(c[2]||'—')}</strong></div>
+      <div><div style="font-size:10px;text-transform:uppercase;color:var(--text-light)">Ventas vigentes</div><strong>${ventas.length}</strong></div>
+      <div><div style="font-size:10px;text-transform:uppercase;color:var(--text-light)">Saldo pendiente</div><strong style="color:${fila.saldo>0?'var(--error)':'var(--success)'}">${formatPeso(fila.saldo)}</strong></div>
+    </div>
+    ${c[3]?`<div style="font-size:12px;color:var(--text-mid);margin-bottom:16px"><strong>Notas:</strong> ${textoSeguro(c[3])}</div>`:''}
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--text-mid);margin-bottom:7px">Ventas</div>
+    <table><thead><tr><th>Fecha</th><th>Venta</th><th>Estado</th><th>Total</th><th></th></tr></thead><tbody>${ventas.length?ventas.map(v=>{const esV2=String(v[25]||'')==='V2',total=esV2?Number(v[16])||0:Number(v[5])||0;return`<tr><td>${fechaStr(v[1])}</td><td><code>${v[0]}</code></td><td>${v[7]||'—'}</td><td>${formatPeso(total)}</td><td><button class="btn-warning" onclick="cerrarModal('modal-historial-cliente');verDetalleVenta('${v[0]}')">Ver</button></td></tr>`;}).join(''):'<tr><td colspan="5" style="text-align:center;color:var(--text-light)">Todavía no tiene ventas registradas</td></tr>'}</tbody></table>`;
+  document.getElementById('modal-historial-cliente').classList.add('open');
 }
 
 async function confirmarVenta(){

@@ -706,6 +706,33 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
           <div style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-light);margin-bottom:6px">Ticket promedio</div>
           <div id="rep-kpi-ticket" style="font-size:26px;font-weight:700;color:var(--navy)">—</div>
         </div>
+        <div class="card" style="text-align:center;padding:20px 12px">
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-light);margin-bottom:6px">Ganancia estimada</div>
+          <div id="rep-kpi-ganancia" style="font-size:26px;font-weight:700;color:var(--teal)">—</div>
+        </div>
+        <div class="card" style="text-align:center;padding:20px 12px">
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-light);margin-bottom:6px">Margen estimado</div>
+          <div id="rep-kpi-margen" style="font-size:26px;font-weight:700;color:var(--navy)">—</div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:16px;padding:15px 18px">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px">
+          <div><div class="card-title" style="margin:0">Comparación con el período anterior</div><div id="rep-comparacion-periodo" style="font-size:11px;color:var(--text-light);margin-top:3px"></div></div>
+        </div>
+        <div id="rep-comparacion" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px"></div>
+        <div id="rep-operativos" style="display:flex;gap:18px;flex-wrap:wrap;border-top:1px solid var(--border);margin-top:12px;padding-top:11px;font-size:12px;color:var(--text-mid)"></div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:16px;margin-bottom:16px">
+        <div class="card">
+          <div class="card-title">Evolución de ventas</div>
+          <div id="rep-grafico-diario" style="min-height:220px"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Ventas por categoría</div>
+          <div id="rep-grafico-categorias" style="min-height:220px"></div>
+        </div>
       </div>
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
@@ -3129,6 +3156,9 @@ async function generarReportes(){
   const totalCobrado=ventas.reduce((s,v)=>s+metricasVentas[String(v[0])].pagado,0);
   const totalSaldo=ventas.reduce((s,v)=>s+metricasVentas[String(v[0])].saldo,0);
   const totalNeto=ventas.reduce((s,v)=>s+metricasVentas[String(v[0])].neto,0);
+  const totalCosto=ventas.reduce((s,v)=>s+metricasVentas[String(v[0])].costo,0);
+  const gananciaEstimada=totalNeto-totalCosto;
+  const margenEstimado=totalNeto>0&&totalCosto>0?gananciaEstimada/totalNeto*100:null;
   const cantVentas=ventas.length;
   const ticket=cantVentas>0?totalVendido/cantVentas:0;
   document.getElementById('rep-kpi-ventas').textContent=cantVentas;
@@ -3137,6 +3167,66 @@ async function generarReportes(){
   document.getElementById('rep-kpi-saldo').textContent=formatPeso(totalSaldo);
   document.getElementById('rep-kpi-neto').textContent=formatPeso(totalNeto);
   document.getElementById('rep-kpi-ticket').textContent=formatPeso(Math.round(ticket));
+  document.getElementById('rep-kpi-ganancia').textContent=totalCosto>0?formatPeso(gananciaEstimada):'—';
+  document.getElementById('rep-kpi-margen').textContent=margenEstimado===null?'—':(Math.round(margenEstimado*10)/10)+'%';
+
+  // ── Comparación contra un período anterior de igual duración ──
+  const aFecha=s=>new Date(s+'T12:00:00');
+  const diasPeriodo=Math.round((aFecha(hasta)-aFecha(desde))/86400000)+1;
+  const finAnterior=aFecha(desde);finAnterior.setDate(finAnterior.getDate()-1);
+  const inicioAnterior=new Date(finAnterior);inicioAnterior.setDate(inicioAnterior.getDate()-diasPeriodo+1);
+  const fechaISO=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  const desdeAnterior=fechaISO(inicioAnterior),hastaAnterior=fechaISO(finAnterior);
+  const ventasAnteriores=rawVentas.filter(v=>{const f=fechaStr(v[1]);return f>=desdeAnterior&&f<=hastaAnterior&&String(v[7]||'').toLowerCase()!=='cancelada';});
+  const totalVentaSimple=v=>String(v[25]||'').trim()==='V2'?(Number(v[16])||0):(Number(v[5])||0);
+  const costoVentaSimple=v=>String(v[25]||'').trim()==='V2'?(Number(v[21])||0):rawDetalle.filter(d=>String(d[0])===String(v[0])).reduce((s,d)=>s+(Number(d[5])||0)*(Number(d[2])||0),0);
+  const netoVentaSimple=v=>String(v[25]||'').trim()==='V2'?(Number(v[20])||0):(Number(v[6])||totalVentaSimple(v));
+  const anteriorVendido=ventasAnteriores.reduce((s,v)=>s+totalVentaSimple(v),0);
+  const anteriorNeto=ventasAnteriores.reduce((s,v)=>s+netoVentaSimple(v),0);
+  const anteriorCosto=ventasAnteriores.reduce((s,v)=>s+costoVentaSimple(v),0);
+  const anteriorGanancia=anteriorNeto-anteriorCosto;
+  const anteriorTicket=ventasAnteriores.length?anteriorVendido/ventasAnteriores.length:0;
+  const variacion=(actual,anterior)=>anterior===0?(actual===0?0:null):(actual-anterior)/Math.abs(anterior)*100;
+  const tarjetaComparacion=(titulo,actual,anterior,esDinero=true)=>{
+    const cambio=variacion(actual,anterior),sube=cambio!==null&&cambio>0,baja=cambio!==null&&cambio<0;
+    const color=sube?'var(--teal)':baja?'#C44F4F':'var(--text-light)';
+    const valorCambio=cambio===null?'Sin base anterior':`${sube?'▲ ':baja?'▼ ':''}${Math.abs(Math.round(cambio*10)/10)}%`;
+    return`<div style="background:var(--off-white);border-radius:8px;padding:10px 12px"><div style="font-size:10px;text-transform:uppercase;color:var(--text-light)">${titulo}</div><div style="font-size:17px;font-weight:700;color:var(--navy);margin:3px 0">${esDinero?formatPeso(actual):actual}</div><div style="font-size:11px;font-weight:600;color:${color}">${valorCambio}</div></div>`;
+  };
+  document.getElementById('rep-comparacion-periodo').textContent=`Actual: ${desde} al ${hasta} · Anterior: ${desdeAnterior} al ${hastaAnterior}`;
+  document.getElementById('rep-comparacion').innerHTML=
+    tarjetaComparacion('Total vendido',totalVendido,anteriorVendido)+
+    tarjetaComparacion('Cantidad de ventas',cantVentas,ventasAnteriores.length,false)+
+    tarjetaComparacion('Ticket promedio',ticket,anteriorTicket)+
+    tarjetaComparacion('Ganancia estimada',gananciaEstimada,anteriorGanancia);
+
+  const unidadesVendidas=detalles.reduce((s,d)=>s+(Number(d[2])||0),0);
+  const descuentoOtorgado=ventas.reduce((s,v)=>s+(esV2(v)?Number(v[13])||0:0),0);
+  const costoCobranza=ventas.reduce((s,v)=>s+(esV2(v)?Number(v[19])||0:Math.max(0,(Number(v[5])||0)-(Number(v[6])||0))),0);
+  const productosPorVenta=cantVentas?unidadesVendidas/cantVentas:0;
+  document.getElementById('rep-operativos').innerHTML=`<span><strong>${unidadesVendidas}</strong> unidades vendidas</span><span><strong>${Math.round(productosPorVenta*10)/10}</strong> productos por venta</span><span><strong>${formatPeso(descuentoOtorgado)}</strong> en descuentos</span><span><strong>${formatPeso(costoCobranza)}</strong> costos de cobranza</span>`;
+
+  // ── Gráfico de evolución diaria ──
+  const ventasPorDia={};ventas.forEach(v=>{const f=fechaStr(v[1]);ventasPorDia[f]=(ventasPorDia[f]||0)+metricasVentas[String(v[0])].total;});
+  const dias=[];for(let d=aFecha(desde);d<=aFecha(hasta);d.setDate(d.getDate()+1)){const f=fechaISO(d);dias.push({fecha:f,total:ventasPorDia[f]||0});}
+  const maxDia=Math.max(1,...dias.map(d=>d.total));
+  document.getElementById('rep-grafico-diario').innerHTML=`<div style="overflow-x:auto;padding-top:8px"><div style="display:flex;align-items:flex-end;gap:5px;height:180px;min-width:${Math.max(420,dias.length*28)}px;border-bottom:1px solid var(--border)">${dias.map((d,i)=>{
+    const alto=d.total>0?Math.max(5,Math.round(d.total/maxDia*145)):2;
+    const mostrar=i===0||i===dias.length-1||i%5===0;
+    return`<div title="${d.fecha}: ${formatPeso(d.total)}" style="flex:1;min-width:18px;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center"><div style="width:75%;height:${alto}px;background:${d.total?'var(--teal)':'var(--border)'};border-radius:4px 4px 0 0"></div><div style="height:24px;font-size:9px;color:var(--text-light);padding-top:5px;white-space:nowrap">${mostrar?d.fecha.slice(8,10):''}</div></div>`;
+  }).join('')}</div><div style="text-align:center;font-size:10px;color:var(--text-light);margin-top:6px">Ventas totales por día</div></div>`;
+
+  // ── Gráfico de ventas por categoría ──
+  const porCategoria={};
+  detalles.forEach(d=>{
+    const idVenta=String(d[0]),subtotalVenta=detalles.filter(x=>String(x[0])===idVenta).reduce((s,x)=>s+(Number(x[6])||0),0);
+    const totalVenta=metricasVentas[idVenta]?.total||subtotalVenta;
+    const monto=subtotalVenta>0?(Number(d[6])||0)*(totalVenta/subtotalVenta):(Number(d[6])||0);
+    const producto=productos.find(p=>String(p[0])===String(d[1]));
+    const categoria=String(producto?.[7]||'Sin categoría');porCategoria[categoria]=(porCategoria[categoria]||0)+monto;
+  });
+  const categoriasOrdenadas=Object.entries(porCategoria).sort((a,b)=>b[1]-a[1]).slice(0,8),maxCategoria=Math.max(1,...categoriasOrdenadas.map(x=>x[1]));
+  document.getElementById('rep-grafico-categorias').innerHTML=categoriasOrdenadas.length?categoriasOrdenadas.map(([nombre,total])=>`<div style="margin:11px 0"><div style="display:flex;justify-content:space-between;gap:8px;font-size:11px;margin-bottom:4px"><span>${nombre}</span><strong>${formatPeso(total)}</strong></div><div style="height:9px;background:var(--off-white);border-radius:8px;overflow:hidden"><div style="height:100%;width:${Math.max(2,total/maxCategoria*100)}%;background:var(--rose);border-radius:8px"></div></div></div>`).join(''):'<div class="items-empty">Sin ventas por categoría en este período.</div>';
 
   // ── Medios de pago ──
   const porMedio={};

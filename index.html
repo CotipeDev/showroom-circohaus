@@ -594,10 +594,11 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
         <div class="card-title">Análisis de inventario y rotación</div>
         <div class="section-sub" style="margin-bottom:12px">Valor actual del stock y productos que necesitan atención.</div>
         <div id="rep-inv-kpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px;margin-bottom:14px"></div>
+        <div id="rep-inv-aviso" style="display:none;margin-bottom:14px;padding:10px 12px;border-radius:8px;background:#FFF5E6;color:#9A6818;font-size:12px"></div>
         <div class="form-grid cols-3" style="margin-bottom:14px">
           <div class="field"><label>Proveedor</label><select id="rep-inv-proveedor" onchange="renderReporteInventario()"><option value="">Todos</option></select></div>
           <div class="field"><label>Categoría</label><select id="rep-inv-categoria" onchange="renderReporteInventario()"><option value="">Todas</option></select></div>
-          <div class="field"><label>Estado</label><select id="rep-inv-estado" onchange="renderReporteInventario()"><option value="">Todos</option><option value="reponer">Para reponer</option><option value="sin_ventas_90">Sin ventas hace 90 días</option><option value="sin_ventas">Nunca vendido</option><option value="rotacion">Con rotación</option><option value="sin_stock">Sin stock</option><option value="sin_costo">Sin costo informado</option></select></div>
+          <div class="field"><label>Estado</label><select id="rep-inv-estado" onchange="renderReporteInventario()"><option value="">Todos</option><option value="reposicion_sugerida">Reposición sugerida</option><option value="reponer">Bajo mínimo</option><option value="sin_ventas_90">Sin ventas hace 90 días</option><option value="sin_ventas">Nunca vendido / producto nuevo</option><option value="rotacion">Con rotación</option><option value="sin_stock">Sin stock</option><option value="sin_costo">Sin costo informado</option></select></div>
         </div>
         <div style="overflow-x:auto"><table style="min-width:1050px"><thead><tr><th>Producto</th><th>Proveedor</th><th>Categoría</th><th style="text-align:right">Stock</th><th style="text-align:right">Valor al costo</th><th style="text-align:right">Vendido 30d</th><th style="text-align:right">Vendido 90d</th><th>Última venta</th><th>Estado</th></tr></thead><tbody id="rep-inv-body"><tr><td colspan="9" style="text-align:center;color:var(--text-light);padding:22px">Cargando inventario...</td></tr></tbody></table></div>
       </div>
@@ -3099,12 +3100,15 @@ function iniciarReportes(){
 
 async function prepararReporteInventario(){
   try{
-    const[dataProd,dataVentas,dataDetalle,dataProv]=await Promise.all([
-      cacheGet('getProductos'),cacheGet('getVentas'),cacheGet('getDetalleVentas'),cacheGet('getProveedores')
+    const[dataProd,dataVentas,dataDetalle,dataProv,dataIngresos,dataDetalleIngresos]=await Promise.all([
+      cacheGet('getProductos'),cacheGet('getVentas'),cacheGet('getDetalleVentas'),cacheGet('getProveedores'),cacheGet('getIngresos'),cacheGet('getDetalleIngresos')
     ]);
     const productos=(dataProd||[]).slice(1),ventas=(dataVentas||[]).slice(1).filter(v=>String(v[7]||'').toLowerCase()!=='cancelada');
     const detalles=(dataDetalle||[]).slice(1),proveedores=(dataProv||[]).slice(1);
+    const ingresos=(dataIngresos||[]).slice(1).filter(i=>String(i[4]||'').toLowerCase()!=='cancelada'),detalleIngresos=(dataDetalleIngresos||[]).slice(1);
     const ventasPorId=new Map(ventas.map(v=>[String(v[0]),fechaStr(v[1])]));
+    const fechaIngresoPorId=new Map(ingresos.map(i=>[String(i[0]),fechaStr(i[1])]));
+    const primeraEntrada={};detalleIngresos.forEach(d=>{const fecha=fechaIngresoPorId.get(String(d[0])),codigo=String(d[1]);if(fecha&&(!primeraEntrada[codigo]||fecha<primeraEntrada[codigo]))primeraEntrada[codigo]=fecha;});
     const hoy=new Date(),limite30=new Date(hoy),limite90=new Date(hoy);limite30.setDate(limite30.getDate()-30);limite90.setDate(limite90.getDate()-90);
     const fechaLimite30=limite30.toISOString().split('T')[0],fechaLimite90=limite90.toISOString().split('T')[0];
     const ventasProducto={};
@@ -3119,13 +3123,15 @@ async function prepararReporteInventario(){
     const proveedorNombre=valor=>{const q=String(valor||'').trim().toLowerCase();const p=proveedores.find(x=>String(x[0]||'').trim().toLowerCase()===q||String(x[1]||'').trim().toLowerCase()===q);return p?p[1]:String(valor||'Sin proveedor');};
     reporteInventarioData=productos.map(p=>{
       const codigo=String(p[0]),stock=Number(p[5])||0,minimo=Number(p[6])||0,costo=Number(p[4])||0,precio=Number(p[3])||0,v=ventasProducto[codigo]||{v30:0,v90:0,ultima:''};
+      const primera=primeraEntrada[codigo]||'',bajoMinimo=minimo>0&&stock>0&&stock<=minimo,reposicionSugerida=(stock<=0||bajoMinimo)&&v.v90>0;
       let estado='rotacion';
       if(stock<=0)estado='sin_stock';
       else if(costo<=0)estado='sin_costo';
-      else if(minimo>0&&stock<=minimo)estado='reponer';
+      else if(bajoMinimo)estado='reponer';
+      else if(!v.ultima&&primera&&primera<fechaLimite90)estado='sin_ventas_90';
       else if(!v.ultima)estado='sin_ventas';
       else if(v.ultima<fechaLimite90)estado='sin_ventas_90';
-      return{codigo,descripcion:String(p[1]||codigo),proveedor:proveedorNombre(p[2]),categoria:String(p[7]||'Sin categoría'),stock,minimo,costo,precio,valorCosto:stock*costo,valorVenta:stock*precio,v30:v.v30,v90:v.v90,ultima:v.ultima,estado};
+      return{codigo,descripcion:String(p[1]||codigo),proveedor:proveedorNombre(p[2]),categoria:String(p[7]||'Sin categoría'),stock,minimo,costo,precio,valorCosto:stock*costo,valorVenta:stock*precio,v30:v.v30,v90:v.v90,ultima:v.ultima,primeraEntrada:primera,bajoMinimo,reposicionSugerida,estado};
     });
     const selProv=document.getElementById('rep-inv-proveedor'),selCat=document.getElementById('rep-inv-categoria');
     const provAnterior=selProv.value,catAnterior=selCat.value;
@@ -3142,15 +3148,17 @@ function renderReporteInventario(){
   const base=reporteInventarioData;
   const unidades=base.reduce((s,x)=>s+x.stock,0),valorCosto=base.reduce((s,x)=>s+x.valorCosto,0),valorVenta=base.reduce((s,x)=>s+x.valorVenta,0);
   const gananciaPotencial=base.reduce((s,x)=>s+(x.costo>0?x.valorVenta-x.valorCosto:0),0);
-  const inmovilizado=base.filter(x=>x.estado==='sin_ventas'||x.estado==='sin_ventas_90').reduce((s,x)=>s+x.valorCosto,0);
-  const paraReponer=base.filter(x=>x.estado==='reponer'||x.estado==='sin_stock').length,sinCosto=base.filter(x=>x.costo<=0&&x.stock>0).length;
-  document.getElementById('rep-inv-kpis').innerHTML=[['Unidades en stock',unidades],['Stock valorizado al costo',formatPeso(valorCosto)],['Venta potencial',formatPeso(valorVenta)],['Ganancia potencial',formatPeso(gananciaPotencial)],['Stock inmovilizado',formatPeso(inmovilizado)],['Productos para reponer',paraReponer],['Sin costo informado',sinCosto]].map(([k,v])=>`<div style="background:var(--off-white);border-radius:8px;padding:11px"><div style="font-size:10px;text-transform:uppercase;color:var(--text-light)">${k}</div><div style="font-size:19px;font-weight:700;color:var(--navy);margin-top:3px">${v}</div></div>`).join('');
-  let filas=base;if(proveedor)filas=filas.filter(x=>x.proveedor===proveedor);if(categoria)filas=filas.filter(x=>x.categoria===categoria);if(estado)filas=filas.filter(x=>x.estado===estado);
-  const etiquetas={reponer:['Reponer','badge-low'],sin_ventas_90:['Sin ventas +90d','badge-zero'],sin_ventas:['Nunca vendido','badge-zero'],rotacion:['Con rotación','badge-ok'],sin_stock:['Sin stock','badge-zero'],sin_costo:['Sin costo','badge-low']};
+  const inmovilizado=base.filter(x=>x.estado==='sin_ventas_90').reduce((s,x)=>s+x.valorCosto,0);
+  const sinStock=base.filter(x=>x.stock<=0).length,bajoMinimo=base.filter(x=>x.bajoMinimo).length,paraReponer=base.filter(x=>x.reposicionSugerida).length,sinCosto=base.filter(x=>x.costo<=0&&x.stock>0).length;
+  document.getElementById('rep-inv-kpis').innerHTML=[['Unidades en stock',unidades],['Stock valorizado al costo',formatPeso(valorCosto)],['Venta potencial',formatPeso(valorVenta)],['Ganancia potencial calculable',formatPeso(gananciaPotencial)],['Stock inmovilizado',formatPeso(inmovilizado)],['Sin stock',sinStock],['Bajo mínimo',bajoMinimo],['Reposición sugerida',paraReponer],['Sin costo informado',sinCosto]].map(([k,v])=>`<div style="background:var(--off-white);border-radius:8px;padding:11px"><div style="font-size:10px;text-transform:uppercase;color:var(--text-light)">${k}</div><div style="font-size:19px;font-weight:700;color:var(--navy);margin-top:3px">${v}</div></div>`).join('');
+  const aviso=document.getElementById('rep-inv-aviso');aviso.style.display=sinCosto?'':'none';aviso.textContent=sinCosto?`La valoración y la ganancia son parciales: hay ${sinCosto} productos con stock sin costo informado.`:'';
+  let filas=base;if(proveedor)filas=filas.filter(x=>x.proveedor===proveedor);if(categoria)filas=filas.filter(x=>x.categoria===categoria);if(estado)filas=estado==='reposicion_sugerida'?filas.filter(x=>x.reposicionSugerida):filas.filter(x=>x.estado===estado);
+  const etiquetas={reponer:['Bajo mínimo','badge-low'],sin_ventas_90:['Sin ventas +90d','badge-zero'],sin_ventas:['Nuevo / nunca vendido','badge-zero'],rotacion:['Con rotación','badge-ok'],sin_stock:['Sin stock','badge-zero'],sin_costo:['Sin costo','badge-low']};
   const prioridad={reponer:0,sin_stock:1,sin_costo:2,sin_ventas:3,sin_ventas_90:4,rotacion:5};
   document.getElementById('rep-inv-body').innerHTML=filas.length?[...filas].sort((a,b)=>prioridad[a.estado]-prioridad[b.estado]||b.valorCosto-a.valorCosto).map(x=>{
     const et=etiquetas[x.estado]||[x.estado,''];
-    return`<tr><td><strong>${textoSeguro(x.descripcion)}</strong><div style="font-size:10px;color:var(--text-light)">${textoSeguro(x.codigo)}</div></td><td>${textoSeguro(x.proveedor)}</td><td>${textoSeguro(x.categoria)}</td><td style="text-align:right;font-weight:600">${x.stock}${x.minimo?` <span style="font-size:9px;color:var(--text-light)">(mín. ${x.minimo})</span>`:''}</td><td style="text-align:right">${x.costo>0?formatPeso(x.valorCosto):'—'}</td><td style="text-align:right">${x.v30}</td><td style="text-align:right">${x.v90}</td><td>${x.ultima||'—'}</td><td><span class="badge ${et[1]}">${et[0]}</span></td></tr>`;
+    const estadoVisual=x.reposicionSugerida?'<span class="badge badge-low" style="margin-left:4px">Reponer</span>':'';
+    return`<tr><td><strong>${textoSeguro(x.descripcion)}</strong><div style="font-size:10px;color:var(--text-light)">${textoSeguro(x.codigo)}</div></td><td>${textoSeguro(x.proveedor)}</td><td>${textoSeguro(x.categoria)}</td><td style="text-align:right;font-weight:600">${x.stock}${x.minimo?` <span style="font-size:9px;color:var(--text-light)">(mín. ${x.minimo})</span>`:''}</td><td style="text-align:right">${x.costo>0?formatPeso(x.valorCosto):'—'}</td><td style="text-align:right">${x.v30}</td><td style="text-align:right">${x.v90}</td><td>${x.ultima||'—'}</td><td><span class="badge ${et[1]}">${et[0]}</span>${estadoVisual}</td></tr>`;
   }).join(''):'<tr><td colspan="9" style="text-align:center;color:var(--text-light);padding:22px">No hay productos para este filtro.</td></tr>';
 }
 

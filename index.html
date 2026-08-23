@@ -588,7 +588,7 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
           <select id="stock-filtro-cat" onchange="filtrarStock()" style="background:var(--off-white);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none;color:var(--text-main)"><option value="">Todas las categorías</option></select>
         </div>
         <div id="stock-loading" class="spinner-wrap"><div class="spinner"></div> Cargando...</div>
-        <table id="stock-table" style="display:none"><thead><tr><th>Código</th><th>Descripción</th><th>Categoría</th><th>P. Costo</th><th>Recargo</th><th>Margen bruto</th><th>P. Venta</th><th>Stock</th><th>Mínimo</th></tr></thead><tbody id="stock-body"></tbody></table>
+        <table id="stock-table" style="display:none"><thead><tr><th>Código</th><th>Descripción</th><th>Categoría</th><th>Estado comercial</th><th>P. Costo</th><th>Recargo</th><th>Margen bruto</th><th>P. Venta</th><th>Stock</th><th>Mínimo</th></tr></thead><tbody id="stock-body"></tbody></table>
       </div>
       <div class="card" id="stock-analisis-admin" style="display:none">
         <div class="card-title">Análisis de inventario y rotación</div>
@@ -599,8 +599,9 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
           <div class="field"><label>Proveedor</label><select id="rep-inv-proveedor" onchange="renderReporteInventario()"><option value="">Todos</option></select></div>
           <div class="field"><label>Categoría</label><select id="rep-inv-categoria" onchange="renderReporteInventario()"><option value="">Todas</option></select></div>
           <div class="field"><label>Estado</label><select id="rep-inv-estado" onchange="renderReporteInventario()"><option value="">Todos</option><option value="reposicion_sugerida">Reposición sugerida</option><option value="reponer">Bajo mínimo</option><option value="sin_ventas_90">Sin ventas hace 90 días</option><option value="sin_ventas">Nunca vendido / producto nuevo</option><option value="rotacion">Con rotación</option><option value="sin_stock">Sin stock</option><option value="sin_costo">Sin costo informado</option></select></div>
+          <div class="field"><label>Estado comercial</label><select id="rep-inv-comercial" onchange="renderReporteInventario()"><option value="">Todos</option><option value="activo">Activo</option><option value="no_reponer">No reponer</option><option value="discontinuado">Discontinuado</option><option value="estacional">Estacional</option><option value="liquidacion">En liquidación</option></select></div>
         </div>
-        <div style="overflow-x:auto"><table style="min-width:1050px"><thead><tr><th>Producto</th><th>Proveedor</th><th>Categoría</th><th style="text-align:right">Stock</th><th style="text-align:right">Valor al costo</th><th style="text-align:right">Vendido 30d</th><th style="text-align:right">Vendido 90d</th><th>Última venta</th><th>Estado</th></tr></thead><tbody id="rep-inv-body"><tr><td colspan="9" style="text-align:center;color:var(--text-light);padding:22px">Cargando inventario...</td></tr></tbody></table></div>
+        <div style="overflow-x:auto"><table style="min-width:1150px"><thead><tr><th>Producto</th><th>Proveedor</th><th>Categoría</th><th>Estado comercial</th><th style="text-align:right">Stock</th><th style="text-align:right">Valor al costo</th><th style="text-align:right">Vendido 30d</th><th style="text-align:right">Vendido 90d</th><th>Última venta</th><th>Estado automático</th></tr></thead><tbody id="rep-inv-body"><tr><td colspan="10" style="text-align:center;color:var(--text-light);padding:22px">Cargando inventario...</td></tr></tbody></table></div>
       </div>
     </div>
 
@@ -619,6 +620,7 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
           <div class="field"><label>Recargo sobre costo (%)</label><input type="number" id="prod-margen" min="0" placeholder="Ej: 150" oninput="calcularPrecioVenta()"></div>
           <div class="field"><label>Precio venta ($)</label><input type="number" id="prod-pventa" min="0" placeholder="Podés editarlo" oninput="calcularMargenProducto()"></div>
           <div class="field"><label>Margen bruto real (%)</label><input type="number" id="prod-margen-bruto" readonly class="readonly" placeholder="Se calcula solo"></div>
+          <div class="field"><label>Estado comercial</label><select id="prod-estado-comercial"><option value="activo">Activo</option><option value="no_reponer">No reponer</option><option value="discontinuado">Discontinuado</option><option value="estacional">Estacional</option><option value="liquidacion">En liquidación</option></select></div>
           <div class="field"><label>Stock inicial</label><input type="number" id="prod-stock" min="0" placeholder="0"></div>
           <div class="field"><label>Stock mínimo</label><input type="number" id="prod-stock-min" min="0" placeholder="Ej: 3"></div>
         </div>
@@ -631,7 +633,7 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
           <select id="prod-filtro-cat" onchange="filtrarTablaProductos()" style="background:var(--off-white);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none;color:var(--text-main)"><option value="">Todas las categorías</option></select>
         </div>
         <div id="prod-loading" class="spinner-wrap"><div class="spinner"></div> Cargando...</div>
-        <table id="prod-table" style="display:none"><thead><tr><th>Código</th><th>Descripción</th><th>Categoría</th><th>P. Costo</th><th>Recargo</th><th>Margen bruto</th><th>P. Venta</th><th>Stock</th><th></th></tr></thead><tbody id="prod-body"></tbody></table>
+        <table id="prod-table" style="display:none"><thead><tr><th>Código</th><th>Descripción</th><th>Categoría</th><th>Estado</th><th>P. Costo</th><th>Recargo</th><th>Margen bruto</th><th>P. Venta</th><th>Stock</th><th></th></tr></thead><tbody id="prod-body"></tbody></table>
       </div>
     </div>
 
@@ -1186,6 +1188,7 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
       <div class="field"><label>Recargo sobre costo (%)</label><input type="number" id="edit-margen" min="0" oninput="calcularPrecioVentaEdit()"></div>
       <div class="field"><label>Precio venta ($)</label><input type="number" id="edit-pventa" min="0" oninput="calcularMargenProductoEdit()"></div>
       <div class="field"><label>Margen bruto real (%)</label><input type="number" id="edit-margen-bruto" readonly class="readonly"></div>
+      <div class="field"><label>Estado comercial</label><select id="edit-estado-comercial"><option value="activo">Activo</option><option value="no_reponer">No reponer</option><option value="discontinuado">Discontinuado</option><option value="estacional">Estacional</option><option value="liquidacion">En liquidación</option></select></div>
       <div class="field"><label>Stock mínimo</label><input type="number" id="edit-stock-min" min="0" placeholder="0"></div>
     </div>
     <div class="modal-actions">
@@ -1562,6 +1565,9 @@ async function refrescarProductosUI(){
 function calcMargen(costo,venta){return(costo>0&&venta>0)?Math.round(((venta/costo)-1)*1000)/10:0}
 function calcMargenBruto(costo,venta){return(costo>0&&venta>0)?Math.round(((venta-costo)/venta)*1000)/10:0}
 function getMargen(p){return p[8]&&Number(p[8])>0?Number(p[8]):calcMargen(Number(p[4]),Number(p[3]))}
+function estadoComercialProducto(p){const e=String(p?.[9]||'activo').trim().toLowerCase();return['activo','no_reponer','discontinuado','estacional','liquidacion'].includes(e)?e:'activo'}
+function badgeEstadoComercialValor(e){const labels={activo:'Activo',no_reponer:'No reponer',discontinuado:'Discontinuado',estacional:'Estacional',liquidacion:'Liquidación'},clases={activo:'badge-ok',estacional:'badge-low',liquidacion:'badge-low',no_reponer:'badge-zero',discontinuado:'badge-zero'};return`<span class="badge ${clases[e]||'badge-ok'}">${labels[e]||'Activo'}</span>`}
+function badgeEstadoComercial(p){return badgeEstadoComercialValor(estadoComercialProducto(p))}
 
 async function iniciarProductos(){
   if(prodTablaData.length||productosData.length){
@@ -1577,11 +1583,11 @@ async function iniciarProductos(){
 function renderTablaProductos(rows){
   const vendedor=esVendedor();
   const encabezado=document.querySelector('#prod-table thead tr');
-  if(encabezado)encabezado.innerHTML=vendedor?'<th>Código</th><th>Descripción</th><th>Categoría</th><th>P. Venta</th><th>Stock</th>':'<th>Código</th><th>Descripción</th><th>Categoría</th><th>P. Costo</th><th>Recargo</th><th>Margen bruto</th><th>P. Venta</th><th>Stock</th><th></th>';
-  document.getElementById('prod-body').innerHTML=rows.length===0?'<tr><td colspan="9" style="text-align:center;color:var(--text-mid);padding:20px">No hay productos</td></tr>':rows.map(p=>{
-    if(vendedor)return`<tr><td><code style="color:var(--teal);font-size:12px">${p[0]}</code></td><td>${p[1]}</td><td>${p[7]||'—'}</td><td>${formatPeso(p[3])}</td><td>${p[5]||0}</td></tr>`;
+  if(encabezado)encabezado.innerHTML=vendedor?'<th>Código</th><th>Descripción</th><th>Categoría</th><th>Estado</th><th>P. Venta</th><th>Stock</th>':'<th>Código</th><th>Descripción</th><th>Categoría</th><th>Estado</th><th>P. Costo</th><th>Recargo</th><th>Margen bruto</th><th>P. Venta</th><th>Stock</th><th></th>';
+  document.getElementById('prod-body').innerHTML=rows.length===0?`<tr><td colspan="${vendedor?6:10}" style="text-align:center;color:var(--text-mid);padding:20px">No hay productos</td></tr>`:rows.map(p=>{
+    if(vendedor)return`<tr><td><code style="color:var(--teal);font-size:12px">${p[0]}</code></td><td>${p[1]}</td><td>${p[7]||'—'}</td><td>${badgeEstadoComercial(p)}</td><td>${formatPeso(p[3])}</td><td>${p[5]||0}</td></tr>`;
     const margen=getMargen(p),margenBruto=calcMargenBruto(Number(p[4]),Number(p[3]));
-    return`<tr><td><code style="color:var(--teal);font-size:12px">${p[0]}</code></td><td>${p[1]}</td><td>${p[7]||'—'}</td><td>${formatPeso(p[4])}</td><td><span class="badge badge-margen">${margen}%</span></td><td>${margenBruto}%</td><td>${formatPeso(p[3])}</td><td>${p[5]||0}</td><td style="display:flex;gap:6px"><button class="btn-warning" onclick="abrirEditar('${p[0]}')">✏️</button><button class="btn-danger" onclick="eliminarProducto('${p[0]}')">🗑️</button></td></tr>`;
+    return`<tr><td><code style="color:var(--teal);font-size:12px">${p[0]}</code></td><td>${p[1]}</td><td>${p[7]||'—'}</td><td>${badgeEstadoComercial(p)}</td><td>${formatPeso(p[4])}</td><td><span class="badge badge-margen">${margen}%</span></td><td>${margenBruto}%</td><td>${formatPeso(p[3])}</td><td>${p[5]||0}</td><td style="display:flex;gap:6px"><button class="btn-warning" onclick="abrirEditar('${p[0]}')">✏️</button><button class="btn-danger" onclick="eliminarProducto('${p[0]}')">🗑️</button></td></tr>`;
   }).join('');
 }
 function filtrarTablaProductos(){const q=document.getElementById('prod-buscar').value.toLowerCase(),cat=document.getElementById('prod-filtro-cat').value;renderTablaProductos(prodTablaData.filter(p=>(p[0].toString().toLowerCase().includes(q)||p[1].toString().toLowerCase().includes(q))&&(!cat||p[7]===cat)))}
@@ -1590,12 +1596,12 @@ function calcularPrecioVenta(){const c=Number(document.getElementById('prod-pcos
 function calcularMargenProducto(){const c=Number(document.getElementById('prod-pcosto').value),v=Number(document.getElementById('prod-pventa').value);document.getElementById('prod-margen').value=(c>0&&v>0)?Math.round(((v/c)-1)*1000)/10:'';actualizarMargenBrutoCampo('prod-pcosto','prod-pventa','prod-margen-bruto')}
 
 async function agregarProducto(){
-  const codigo=document.getElementById('prod-codigo').value.trim(),descripcion=document.getElementById('prod-desc').value.trim(),proveedor=document.getElementById('prod-proveedor').value,categoria=document.getElementById('prod-categoria').value,precio_costo=Number(document.getElementById('prod-pcosto').value),margen_pct=Number(document.getElementById('prod-margen').value)||0,precio_venta=Number(document.getElementById('prod-pventa').value),stock=Number(document.getElementById('prod-stock').value)||0,stock_minimo=Number(document.getElementById('prod-stock-min').value)||0;
+  const codigo=document.getElementById('prod-codigo').value.trim(),descripcion=document.getElementById('prod-desc').value.trim(),proveedor=document.getElementById('prod-proveedor').value,categoria=document.getElementById('prod-categoria').value,estado_comercial=document.getElementById('prod-estado-comercial').value,precio_costo=Number(document.getElementById('prod-pcosto').value),margen_pct=Number(document.getElementById('prod-margen').value)||0,precio_venta=Number(document.getElementById('prod-pventa').value),stock=Number(document.getElementById('prod-stock').value)||0,stock_minimo=Number(document.getElementById('prod-stock-min').value)||0;
   if(!codigo||!descripcion){showToast('Completá código y descripción','error');return}
   if(!precio_costo){showToast('Ingresá el precio de costo','error');return}
   if(!precio_venta){showToast('Ingresá el recargo o el precio de venta','error');return}
   try{const data=await cacheGet('getProductos');if(data.slice(1).some(p=>p[0].toString().trim().toLowerCase()===codigo.toLowerCase())){showToast(`El código ${codigo} ya existe`,'error');return}}catch(e){showToast('No se pudo verificar el código','error');return}
-  try{await apiPost('agregarProducto',{codigo,descripcion,proveedor,precio_venta,precio_costo,margen_pct,stock,stock_minimo,categoria});cache.invalidar('getHistorialCostos');await refrescarProductosUI();showToast('Producto guardado');['prod-codigo','prod-desc','prod-pcosto','prod-margen','prod-pventa','prod-margen-bruto','prod-stock','prod-stock-min'].forEach(id=>document.getElementById(id).value='');document.getElementById('prod-proveedor').value='';document.getElementById('prod-categoria').value=''}catch(e){showToast(e?.message||'Error al guardar el producto','error')}
+  try{await apiPost('agregarProducto',{codigo,descripcion,proveedor,precio_venta,precio_costo,margen_pct,stock,stock_minimo,categoria,estado_comercial});cache.invalidar('getHistorialCostos');await refrescarProductosUI();showToast('Producto guardado');['prod-codigo','prod-desc','prod-pcosto','prod-margen','prod-pventa','prod-margen-bruto','prod-stock','prod-stock-min'].forEach(id=>document.getElementById(id).value='');document.getElementById('prod-proveedor').value='';document.getElementById('prod-categoria').value='';document.getElementById('prod-estado-comercial').value='activo'}catch(e){showToast(e?.message||'Error al guardar el producto','error')}
 }
 async function eliminarProducto(codigo){
   if(!confirm(`¿Seguro que querés eliminar ${codigo}?`))return;
@@ -1611,6 +1617,7 @@ function abrirEditar(codigo){
     :Number(p[3])||'';
   document.getElementById('edit-pventa').value=pvCalculado;
   document.getElementById('edit-stock-min').value=p[6]||'';document.getElementById('edit-categoria').value=p[7]||'';
+  document.getElementById('edit-estado-comercial').value=estadoComercialProducto(p);
   document.getElementById('edit-margen').value=margenGuardado||'';
   document.getElementById('edit-margen-bruto').value=calcMargenBruto(Number(p[4]),Number(p[3]));
   document.getElementById('modal-editar').classList.add('open');
@@ -1618,10 +1625,10 @@ function abrirEditar(codigo){
 function calcularPrecioVentaEdit(){const c=Number(document.getElementById('edit-pcosto').value),mv=document.getElementById('edit-margen').value,m=Number(mv);document.getElementById('edit-pventa').value=(c>0&&mv!==''&&m>=0)?Math.round(c*(1+m/100)):'';actualizarMargenBrutoCampo('edit-pcosto','edit-pventa','edit-margen-bruto')}
 function calcularMargenProductoEdit(){const c=Number(document.getElementById('edit-pcosto').value),v=Number(document.getElementById('edit-pventa').value);document.getElementById('edit-margen').value=(c>0&&v>0)?Math.round(((v/c)-1)*1000)/10:'';actualizarMargenBrutoCampo('edit-pcosto','edit-pventa','edit-margen-bruto')}
 async function guardarEdicion(){
-  const codigo=document.getElementById('edit-codigo').value.trim(),descripcion=document.getElementById('edit-desc').value.trim(),proveedor=document.getElementById('edit-proveedor').value,categoria=document.getElementById('edit-categoria').value,precio_costo=Number(document.getElementById('edit-pcosto').value),margen_pct=Number(document.getElementById('edit-margen').value)||0,precio_venta=Number(document.getElementById('edit-pventa').value),stock_minimo=Number(document.getElementById('edit-stock-min').value)||0;
+  const codigo=document.getElementById('edit-codigo').value.trim(),descripcion=document.getElementById('edit-desc').value.trim(),proveedor=document.getElementById('edit-proveedor').value,categoria=document.getElementById('edit-categoria').value,estado_comercial=document.getElementById('edit-estado-comercial').value,precio_costo=Number(document.getElementById('edit-pcosto').value),margen_pct=Number(document.getElementById('edit-margen').value)||0,precio_venta=Number(document.getElementById('edit-pventa').value),stock_minimo=Number(document.getElementById('edit-stock-min').value)||0;
   if(!descripcion){showToast('Completá la descripción','error');return}
   if(!precio_costo||!precio_venta){showToast('Completá costo y precio de venta','error');return}
-  try{await apiPost('editarProducto',{codigo,descripcion,proveedor,precio_venta,precio_costo,margen_pct,stock_minimo,categoria});cache.invalidar('getHistorialCostos');await refrescarProductosUI();showToast('Producto actualizado');cerrarModal('modal-editar')}catch(e){showToast(e?.message||'Error al actualizar el producto','error')}
+  try{await apiPost('editarProducto',{codigo,descripcion,proveedor,precio_venta,precio_costo,margen_pct,stock_minimo,categoria,estado_comercial});cache.invalidar('getHistorialCostos');await refrescarProductosUI();showToast('Producto actualizado');cerrarModal('modal-editar')}catch(e){showToast(e?.message||'Error al actualizar el producto','error')}
 }
 async function verHistorialProducto(codigo){
   const producto=productosData.find(p=>String(p[0])===String(codigo))||prodTablaData.find(p=>String(p[0])===String(codigo));
@@ -1716,11 +1723,13 @@ function cambiarVistaStock(vista){
   if(tabAnalisis)tabAnalisis.className=`btn ${mostrarAnalisis?'btn-primary':'btn-secondary'}`;
 }
 function renderStock(rows){
-  document.getElementById('stock-body').innerHTML=rows.length===0?'<tr><td colspan="9" style="text-align:center;color:var(--text-mid);padding:20px">No hay productos</td></tr>':rows.map(p=>{
+  const vendedor=esVendedor(),encabezado=document.querySelector('#stock-table thead tr');
+  if(encabezado)encabezado.innerHTML=vendedor?'<th>Código</th><th>Descripción</th><th>Categoría</th><th>Estado comercial</th><th>P. Venta</th><th>Stock</th><th>Mínimo</th>':'<th>Código</th><th>Descripción</th><th>Categoría</th><th>Estado comercial</th><th>P. Costo</th><th>Recargo</th><th>Margen bruto</th><th>P. Venta</th><th>Stock</th><th>Mínimo</th>';
+  document.getElementById('stock-body').innerHTML=rows.length===0?`<tr><td colspan="${vendedor?7:10}" style="text-align:center;color:var(--text-mid);padding:20px">No hay productos</td></tr>`:rows.map(p=>{
     const s=Number(p[5])||0,m=Number(p[6])||0,margen=getMargen(p),margenBruto=calcMargenBruto(Number(p[4]),Number(p[3]));
     const badge=s===0?`<span class="badge badge-zero">Sin stock</span>`:(m>0&&s<=m)?`<span class="badge badge-low">${s} ⚠️</span>`:`<span class="badge badge-ok">${s}</span>`;
-    if(esVendedor())return`<tr><td><code style="color:var(--teal);font-size:12px">${p[0]}</code></td><td>${p[1]}</td><td>${p[7]||'—'}</td><td>${formatPeso(p[3])}</td><td>${badge}</td><td style="color:var(--text-mid);font-size:12px">${m>0?'Mín: '+m:'—'}</td></tr>`;
-    return`<tr><td><code style="color:var(--teal);font-size:12px">${p[0]}</code></td><td>${p[1]}</td><td>${p[7]||'—'}</td><td>${formatPeso(p[4])}</td><td><span class="badge badge-margen">${margen}%</span></td><td>${margenBruto}%</td><td>${formatPeso(p[3])}</td><td>${badge}</td><td style="color:var(--text-mid);font-size:12px">${m>0?'Mín: '+m:'—'}</td></tr>`;
+    if(vendedor)return`<tr><td><code style="color:var(--teal);font-size:12px">${p[0]}</code></td><td>${p[1]}</td><td>${p[7]||'—'}</td><td>${badgeEstadoComercial(p)}</td><td>${formatPeso(p[3])}</td><td>${badge}</td><td style="color:var(--text-mid);font-size:12px">${m>0?'Mín: '+m:'—'}</td></tr>`;
+    return`<tr><td><code style="color:var(--teal);font-size:12px">${p[0]}</code></td><td>${p[1]}</td><td>${p[7]||'—'}</td><td>${badgeEstadoComercial(p)}</td><td>${formatPeso(p[4])}</td><td><span class="badge badge-margen">${margen}%</span></td><td>${margenBruto}%</td><td>${formatPeso(p[3])}</td><td>${badge}</td><td style="color:var(--text-mid);font-size:12px">${m>0?'Mín: '+m:'—'}</td></tr>`;
   }).join('');
 }
 function filtrarStock(){const q=document.getElementById('stock-buscar').value.toLowerCase(),cat=document.getElementById('stock-filtro-cat').value;renderStock(stockData.filter(p=>(p[0].toString().toLowerCase().includes(q)||p[1].toString().toLowerCase().includes(q))&&(!cat||p[7]===cat)))}
@@ -1837,8 +1846,8 @@ async function guardarNuevoProductoIngreso(){
   });
   if(parecido&&!confirm(`Ya existe “${parecido[1]}” (${parecido[0]}). ¿Crear igualmente el producto ${codigo}?`))return;
   try{
-    await apiPost('agregarProducto',{codigo,descripcion,proveedor,precio_venta,precio_costo,margen_pct,stock:0,stock_minimo,categoria});
-    productosData.push([codigo,descripcion,proveedor,precio_venta,precio_costo,0,stock_minimo,categoria,margen_pct]);
+    await apiPost('agregarProducto',{codigo,descripcion,proveedor,precio_venta,precio_costo,margen_pct,stock:0,stock_minimo,categoria,estado_comercial:'activo'});
+    productosData.push([codigo,descripcion,proveedor,precio_venta,precio_costo,0,stock_minimo,categoria,margen_pct,'activo']);
     const existente=itemsIngreso.find(item=>String(item.codigo)===String(codigo));
     if(existente){existente.cantidad+=cantidad;existente.precio_costo=precio_costo;}
     else itemsIngreso.push({codigo,desc:descripcion,cantidad,precio_costo});
@@ -3123,7 +3132,7 @@ async function prepararReporteInventario(){
     const proveedorNombre=valor=>{const q=String(valor||'').trim().toLowerCase();const p=proveedores.find(x=>String(x[0]||'').trim().toLowerCase()===q||String(x[1]||'').trim().toLowerCase()===q);return p?p[1]:String(valor||'Sin proveedor');};
     reporteInventarioData=productos.map(p=>{
       const codigo=String(p[0]),stock=Number(p[5])||0,minimo=Number(p[6])||0,costo=Number(p[4])||0,precio=Number(p[3])||0,v=ventasProducto[codigo]||{v30:0,v90:0,ultima:''};
-      const primera=primeraEntrada[codigo]||'',bajoMinimo=minimo>0&&stock>0&&stock<=minimo,reposicionSugerida=(stock<=0||bajoMinimo)&&v.v90>0;
+      const primera=primeraEntrada[codigo]||'',estadoComercial=estadoComercialProducto(p),bajoMinimo=minimo>0&&stock>0&&stock<=minimo,reposicionSugerida=estadoComercial==='activo'&&(stock<=0||bajoMinimo)&&v.v90>0;
       let estado='rotacion';
       if(stock<=0)estado='sin_stock';
       else if(costo<=0)estado='sin_costo';
@@ -3131,7 +3140,7 @@ async function prepararReporteInventario(){
       else if(!v.ultima&&primera&&primera<fechaLimite90)estado='sin_ventas_90';
       else if(!v.ultima)estado='sin_ventas';
       else if(v.ultima<fechaLimite90)estado='sin_ventas_90';
-      return{codigo,descripcion:String(p[1]||codigo),proveedor:proveedorNombre(p[2]),categoria:String(p[7]||'Sin categoría'),stock,minimo,costo,precio,valorCosto:stock*costo,valorVenta:stock*precio,v30:v.v30,v90:v.v90,ultima:v.ultima,primeraEntrada:primera,bajoMinimo,reposicionSugerida,estado};
+      return{codigo,descripcion:String(p[1]||codigo),proveedor:proveedorNombre(p[2]),categoria:String(p[7]||'Sin categoría'),stock,minimo,costo,precio,valorCosto:stock*costo,valorVenta:stock*precio,v30:v.v30,v90:v.v90,ultima:v.ultima,primeraEntrada:primera,bajoMinimo,reposicionSugerida,estadoComercial,estado};
     });
     const selProv=document.getElementById('rep-inv-proveedor'),selCat=document.getElementById('rep-inv-categoria');
     const provAnterior=selProv.value,catAnterior=selCat.value;
@@ -3144,7 +3153,7 @@ async function prepararReporteInventario(){
 }
 
 function renderReporteInventario(){
-  const proveedor=document.getElementById('rep-inv-proveedor')?.value||'',categoria=document.getElementById('rep-inv-categoria')?.value||'',estado=document.getElementById('rep-inv-estado')?.value||'';
+  const proveedor=document.getElementById('rep-inv-proveedor')?.value||'',categoria=document.getElementById('rep-inv-categoria')?.value||'',estado=document.getElementById('rep-inv-estado')?.value||'',comercial=document.getElementById('rep-inv-comercial')?.value||'';
   const base=reporteInventarioData;
   const unidades=base.reduce((s,x)=>s+x.stock,0),valorCosto=base.reduce((s,x)=>s+x.valorCosto,0),valorVenta=base.reduce((s,x)=>s+x.valorVenta,0);
   const gananciaPotencial=base.reduce((s,x)=>s+(x.costo>0?x.valorVenta-x.valorCosto:0),0);
@@ -3152,14 +3161,14 @@ function renderReporteInventario(){
   const sinStock=base.filter(x=>x.stock<=0).length,bajoMinimo=base.filter(x=>x.bajoMinimo).length,paraReponer=base.filter(x=>x.reposicionSugerida).length,sinCosto=base.filter(x=>x.costo<=0&&x.stock>0).length;
   document.getElementById('rep-inv-kpis').innerHTML=[['Unidades en stock',unidades],['Stock valorizado al costo',formatPeso(valorCosto)],['Venta potencial',formatPeso(valorVenta)],['Ganancia potencial calculable',formatPeso(gananciaPotencial)],['Stock inmovilizado',formatPeso(inmovilizado)],['Sin stock',sinStock],['Bajo mínimo',bajoMinimo],['Reposición sugerida',paraReponer],['Sin costo informado',sinCosto]].map(([k,v])=>`<div style="background:var(--off-white);border-radius:8px;padding:11px"><div style="font-size:10px;text-transform:uppercase;color:var(--text-light)">${k}</div><div style="font-size:19px;font-weight:700;color:var(--navy);margin-top:3px">${v}</div></div>`).join('');
   const aviso=document.getElementById('rep-inv-aviso');aviso.style.display=sinCosto?'':'none';aviso.textContent=sinCosto?`La valoración y la ganancia son parciales: hay ${sinCosto} productos con stock sin costo informado.`:'';
-  let filas=base;if(proveedor)filas=filas.filter(x=>x.proveedor===proveedor);if(categoria)filas=filas.filter(x=>x.categoria===categoria);if(estado)filas=estado==='reposicion_sugerida'?filas.filter(x=>x.reposicionSugerida):filas.filter(x=>x.estado===estado);
+  let filas=base;if(proveedor)filas=filas.filter(x=>x.proveedor===proveedor);if(categoria)filas=filas.filter(x=>x.categoria===categoria);if(estado)filas=estado==='reposicion_sugerida'?filas.filter(x=>x.reposicionSugerida):filas.filter(x=>x.estado===estado);if(comercial)filas=filas.filter(x=>x.estadoComercial===comercial);
   const etiquetas={reponer:['Bajo mínimo','badge-low'],sin_ventas_90:['Sin ventas +90d','badge-zero'],sin_ventas:['Nuevo / nunca vendido','badge-zero'],rotacion:['Con rotación','badge-ok'],sin_stock:['Sin stock','badge-zero'],sin_costo:['Sin costo','badge-low']};
   const prioridad={reponer:0,sin_stock:1,sin_costo:2,sin_ventas:3,sin_ventas_90:4,rotacion:5};
   document.getElementById('rep-inv-body').innerHTML=filas.length?[...filas].sort((a,b)=>prioridad[a.estado]-prioridad[b.estado]||b.valorCosto-a.valorCosto).map(x=>{
     const et=etiquetas[x.estado]||[x.estado,''];
     const estadoVisual=x.reposicionSugerida?'<span class="badge badge-low" style="margin-left:4px">Reponer</span>':'';
-    return`<tr><td><strong>${textoSeguro(x.descripcion)}</strong><div style="font-size:10px;color:var(--text-light)">${textoSeguro(x.codigo)}</div></td><td>${textoSeguro(x.proveedor)}</td><td>${textoSeguro(x.categoria)}</td><td style="text-align:right;font-weight:600">${x.stock}${x.minimo?` <span style="font-size:9px;color:var(--text-light)">(mín. ${x.minimo})</span>`:''}</td><td style="text-align:right">${x.costo>0?formatPeso(x.valorCosto):'—'}</td><td style="text-align:right">${x.v30}</td><td style="text-align:right">${x.v90}</td><td>${x.ultima||'—'}</td><td><span class="badge ${et[1]}">${et[0]}</span>${estadoVisual}</td></tr>`;
-  }).join(''):'<tr><td colspan="9" style="text-align:center;color:var(--text-light);padding:22px">No hay productos para este filtro.</td></tr>';
+    return`<tr><td><strong>${textoSeguro(x.descripcion)}</strong><div style="font-size:10px;color:var(--text-light)">${textoSeguro(x.codigo)}</div></td><td>${textoSeguro(x.proveedor)}</td><td>${textoSeguro(x.categoria)}</td><td>${badgeEstadoComercialValor(x.estadoComercial)}</td><td style="text-align:right;font-weight:600">${x.stock}${x.minimo?` <span style="font-size:9px;color:var(--text-light)">(mín. ${x.minimo})</span>`:''}</td><td style="text-align:right">${x.costo>0?formatPeso(x.valorCosto):'—'}</td><td style="text-align:right">${x.v30}</td><td style="text-align:right">${x.v90}</td><td>${x.ultima||'—'}</td><td><span class="badge ${et[1]}">${et[0]}</span>${estadoVisual}</td></tr>`;
+  }).join(''):'<tr><td colspan="10" style="text-align:center;color:var(--text-light);padding:22px">No hay productos para este filtro.</td></tr>';
 }
 
 async function prepararAnalisisIngresos(){

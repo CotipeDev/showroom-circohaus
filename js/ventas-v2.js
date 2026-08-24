@@ -178,8 +178,9 @@
 
   window.actualizarTotalesVenta = function () {
     let c = calcularVentaV2();
-    if(!c.esCuenta&&vtaPagosFila.length===1&&vtaPagosFila[0].id_medio&&vtaPagosFila[0].base_asignada!==c.baseComercial){
+    if(!c.esCuenta&&vtaPagosFila.length===1&&(vtaPagosFila[0].id_tarifa||vtaPagosFila[0].id_medio)&&vtaPagosFila[0].base_asignada!==c.baseComercial){
       vtaPagosFila[0].base_asignada=c.baseComercial;
+      if(usaCobrosV2())renderFilasPago();
       c=calcularVentaV2();
     }
     document.getElementById('vta-lista-bruto').textContent = formatPeso(c.precioLista);

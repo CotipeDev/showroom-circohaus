@@ -91,11 +91,17 @@ function abrirEditarTarifaCobroV2(id){
 }
 
 async function guardarTarifaCobroV2(){
-  try{const id=document.getElementById('cobro-edit-tarifa-id').value,motivo=document.getElementById('cobro-edit-tarifa-motivo').value.trim();
+  let id='',cambios=null;
+  try{id=document.getElementById('cobro-edit-tarifa-id').value;const motivo=document.getElementById('cobro-edit-tarifa-motivo').value.trim();
   if(!motivo)throw new Error('Indicá brevemente el motivo del cambio.');
-  const cambios={ID_Cuenta:document.getElementById('cobro-edit-tarifa-cuenta').value,ID_Procesador:document.getElementById('cobro-edit-tarifa-procesador').value,Canal:document.getElementById('cobro-edit-tarifa-canal').value.trim(),Tipo_Pago:document.getElementById('cobro-edit-tarifa-tipo').value.trim(),Dias_Acreditacion:Number(document.getElementById('cobro-edit-tarifa-dias').value)||0,Comision_Base_Pct:Number(document.getElementById('cobro-edit-tarifa-comision').value)||0,IVA_Pct:Number(document.getElementById('cobro-edit-tarifa-iva').value)||0,Activo:document.getElementById('cobro-edit-tarifa-activa').value==='true',Notas:document.getElementById('cobro-edit-tarifa-notas').value.trim()};
+  cambios={ID_Cuenta:document.getElementById('cobro-edit-tarifa-cuenta').value,ID_Procesador:document.getElementById('cobro-edit-tarifa-procesador').value,Canal:document.getElementById('cobro-edit-tarifa-canal').value.trim(),Tipo_Pago:document.getElementById('cobro-edit-tarifa-tipo').value.trim(),Dias_Acreditacion:Number(document.getElementById('cobro-edit-tarifa-dias').value)||0,Comision_Base_Pct:Number(document.getElementById('cobro-edit-tarifa-comision').value)||0,IVA_Pct:Number(document.getElementById('cobro-edit-tarifa-iva').value)||0,Activo:document.getElementById('cobro-edit-tarifa-activa').value==='true',Notas:document.getElementById('cobro-edit-tarifa-notas').value.trim()};
   await apiPost('editarTarifaCobro',{id_tarifa:id,motivo,cambios});const t=tarifasCobroData.find(x=>String(x[0])===String(id));if(t){t[1]=cambios.ID_Cuenta;t[2]=cambios.ID_Procesador;t[3]=cambios.Canal;t[4]=cambios.Tipo_Pago;t[5]=cambios.Dias_Acreditacion;t[6]=cambios.Comision_Base_Pct;t[7]=cambios.IVA_Pct;t[10]=cambios.Activo;t[11]=cambios.Notas;}cache.invalidar('getTarifasCobro','getHistorialTarifasCobro');
-  cerrarModal('modal-editar-tarifa-cobro');renderConfiguracionCobrosV2();showToast('Tarifa actualizada');}catch(e){showToast(e.message||'No se pudo guardar la tarifa','error');}
+  cerrarModal('modal-editar-tarifa-cobro');renderConfiguracionCobrosV2();showToast('Tarifa actualizada');}catch(e){
+    if(id&&cambios&&/tardando demasiado/i.test(String(e.message||''))){
+      try{await recargarConfiguracionCobrosV2();const t=tarifasCobroData.find(x=>String(x[0])===String(id));const guardada=t&&Number(t[6])===Number(cambios.Comision_Base_Pct)&&Number(t[7])===Number(cambios.IVA_Pct)&&Number(t[5])===Number(cambios.Dias_Acreditacion)&&cobroActivo(t[10])===cambios.Activo;if(guardada){cerrarModal('modal-editar-tarifa-cobro');showToast('Tarifa actualizada');return;}}catch(_){/* se informa el error original */}
+    }
+    showToast(e.message||'No se pudo guardar la tarifa','error');
+  }
 }
 
 async function toggleTarifaCobroV2(id){

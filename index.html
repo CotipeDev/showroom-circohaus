@@ -1548,7 +1548,15 @@ async function apiGet(a){
 }
 async function apiPost(a,b){
   const payload={...(b||{}),token:tokenSesion()};
-  const r=await fetch(`${API_URL}?action=${encodeURIComponent(a)}`,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(payload)});
+  const controller=new AbortController();
+  const timeout=setTimeout(()=>controller.abort(),40000);
+  let r;
+  try{
+    r=await fetch(`${API_URL}?action=${encodeURIComponent(a)}`,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify(payload),signal:controller.signal});
+  }catch(e){
+    if(e?.name==='AbortError')throw new Error('La operación está tardando demasiado. Volvé a intentarlo.');
+    throw e;
+  }finally{clearTimeout(timeout);}
   const texto=await r.text();let data;
   try{data=texto?JSON.parse(texto):null;}catch(e){throw new Error(`Respuesta inválida del backend (${r.status}).`)}
   if(!r.ok)throw new Error(data?.error||data?.message||`Error HTTP ${r.status}`);
@@ -2785,7 +2793,7 @@ function descargarListaPrecios(){
 <script src="js/productos.js?v=20260824-1"></script>
 <script src="js/stock.js?v=20260824-1"></script>
 <script src="js/ingresos.js?v=20260824-1"></script>
-<script src="js/medios-pago.js?v=20260824-4"></script>
+<script src="js/medios-pago.js?v=20260824-5"></script>
 <script src="js/clientes.js?v=20260824-1"></script>
 <script src="js/cuentas-por-cobrar.js?v=20260824-1"></script>
 <script src="js/categorias.js?v=20260823-2"></script>

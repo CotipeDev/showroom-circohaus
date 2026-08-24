@@ -27,16 +27,18 @@ async function iniciarMediosPago(){
 
 function renderTablaMediosPago(){
   const cuentaNombre=id=>{ const c=cuentasData.find(x=>String(x[0])===String(id));return c?c[1]:id||'—' };
+  const estaActivo=m=>m[7]===true||m[7]==='TRUE';
+  const ordenados=[...mediosPagoData].sort((a,b)=>Number(estaActivo(b))-Number(estaActivo(a)));
   document.getElementById('mp-body').innerHTML=mediosPagoData.length===0
     ?'<tr><td colspan="8" style="text-align:center;color:var(--text-mid);padding:20px">No hay medios de pago</td></tr>'
-    :mediosPagoData.map(m=>`<tr>
+    :ordenados.map(m=>`<tr style="${estaActivo(m)?'':'opacity:.62'}">
       <td><strong>${m[2]}</strong></td>
       <td>${cuentaNombre(m[1])}</td>
       <td>${Number(m[4])>0?`<span class="pct-badge comision">${m[4]}%</span>`:'<span style="color:var(--text-light)">—</span>'}</td>
       <td>${Number(m[5])>0?`<span class="pct-badge">${m[5]}%</span>`:'<span style="color:var(--text-light)">—</span>'}</td>
       <td><strong>${Math.round(((Number(m[4])||0)+(Number(m[5])||0))*10)/10}%</strong></td>
       <td>${m[6]?m[6]+' días':'—'}</td>
-      <td><button class="toggle ${m[7]===true||m[7]==='TRUE'?'on':''}" onclick="toggleActivoMP('${m[0]}',this)" title="${m[7]?'Activo':'Inactivo'}"></button></td>
+      <td><button class="toggle ${estaActivo(m)?'on':''}" onclick="toggleActivoMP('${m[0]}',this)" title="${estaActivo(m)?'Activo':'Inactivo'}"></button></td>
       <td><button class="btn-warning" onclick="abrirEditarMP('${m[0]}')">✏️</button></td>
     </tr>`).join('');
 }
@@ -82,7 +84,7 @@ async function toggleActivoMP(id,btn){
   const nuevoActivo=!(m[7]===true||m[7]==='TRUE');
   try{
     await apiPost('editarMedioPago',{id,id_cuenta:m[1],nombre:m[2],descuento_cliente_pct:0,comision_pct:m[4],costo_financiero_pct:m[5],dias_acreditacion:m[6],activo:nuevoActivo});
-    m[7]=nuevoActivo;btn.classList.toggle('on',nuevoActivo);
+    m[7]=nuevoActivo;renderTablaMediosPago();
     showToast(nuevoActivo?'Medio activado':'Medio desactivado');
   }catch(e){showToast('Error','error')}
 }

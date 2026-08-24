@@ -1174,8 +1174,30 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
 
     <!-- MEDIOS DE PAGO -->
     <div id="panel-medios-pago" class="panel">
-      <div class="section-title">Medios de pago</div>
-      <div class="section-sub">Configurá costos y tiempos de acreditación por forma de cobro</div>
+      <div class="section-title">Medios y planes de cobro</div>
+      <div class="section-sub">Administrá dónde cobrás, cuánto cuesta cada canal y qué planes ofrecés</div>
+      <div style="display:flex;gap:10px;margin:18px 0">
+        <button id="cobros-tab-tarifas" class="btn btn-primary" onclick="mostrarPestanaCobros('tarifas')">Canales y tarifas</button>
+        <button id="cobros-tab-planes" class="btn btn-secondary" onclick="mostrarPestanaCobros('planes')">Planes de cuotas</button>
+        <button id="cobros-tab-anterior" class="btn btn-secondary" onclick="mostrarPestanaCobros('anterior')">Configuración anterior</button>
+      </div>
+      <div id="cobros-vista-tarifas" class="card">
+        <div class="card-title">Canales y tarifas vigentes</div>
+        <div id="cobros-resumen-tarifas" class="stats-grid" style="margin-bottom:18px"></div>
+        <div style="overflow-x:auto"><table>
+          <thead><tr><th>Cuenta</th><th>Procesador</th><th>Canal</th><th>Tipo de pago</th><th>Acreditación</th><th>Costo sin IVA</th><th>Costo estimado con IVA</th><th>Estado</th></tr></thead>
+          <tbody id="cobros-tarifas-body"></tbody>
+        </table></div>
+      </div>
+      <div id="cobros-vista-planes" class="card" style="display:none">
+        <div class="card-title">Planes y promociones</div>
+        <div class="section-sub" style="margin-bottom:14px">Los planes sin interés se muestran únicamente cuando la venta cumple el monto mínimo y conserva el margen de seguridad.</div>
+        <div style="overflow-x:auto"><table>
+          <thead><tr><th>Procesador</th><th>Canal</th><th>Cuotas</th><th>Quién absorbe</th><th>Costo del plan</th><th>Desde</th><th>Margen mínimo</th><th>Estado</th></tr></thead>
+          <tbody id="cobros-planes-body"></tbody>
+        </table></div>
+      </div>
+      <div id="cobros-vista-anterior" style="display:none">
       <div class="card">
         <div class="card-title">Nuevo medio de pago</div>
         <div class="form-grid cols-3">
@@ -1188,12 +1210,13 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
         <div class="form-actions"><button class="btn btn-primary" onclick="conBotonCargando(this,'Guardando...',agregarMedioPago)">Guardar medio de pago</button></div>
       </div>
       <div class="card">
-        <div class="card-title">Medios de pago registrados</div>
+        <div class="card-title">Medios de pago anteriores</div>
         <div id="mp-loading" class="spinner-wrap"><div class="spinner"></div> Cargando...</div>
         <table id="mp-table" style="display:none">
           <thead><tr><th>Nombre</th><th>Cuenta</th><th>Comisión</th><th>C. financiero</th><th>Costo total</th><th>Acreditación</th><th>Activo</th><th></th></tr></thead>
           <tbody id="mp-body"></tbody>
         </table>
+      </div>
       </div>
     </div>
 
@@ -2714,7 +2737,7 @@ function descargarListaPrecios(){
 <script src="js/productos.js?v=20260824-1"></script>
 <script src="js/stock.js?v=20260824-1"></script>
 <script src="js/ingresos.js?v=20260824-1"></script>
-<script src="js/medios-pago.js?v=20260824-1"></script>
+<script src="js/medios-pago.js?v=20260824-2"></script>
 <script src="js/clientes.js?v=20260824-1"></script>
 <script src="js/cuentas-por-cobrar.js?v=20260824-1"></script>
 <script src="js/categorias.js?v=20260823-2"></script>

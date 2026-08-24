@@ -5,6 +5,7 @@
 
 // ── MEDIOS DE PAGO ──
 async function iniciarMediosPago(){
+  renderConfiguracionCobrosV2();
   if(mediosPagoData.length&&cuentasData.length){
     renderTablaMediosPago();
     llenarSelectCuentas(['mp-cuenta','edit-mp-cuenta']);
@@ -23,6 +24,46 @@ async function iniciarMediosPago(){
     document.getElementById('mp-loading').style.display='none';
     document.getElementById('mp-table').style.display='table';
   }catch(e){showToast('Error al cargar medios de pago','error')}
+}
+
+function cobroActivo(valor){
+  return valor===true||String(valor).toUpperCase()==='TRUE'||Number(valor)===1;
+}
+
+function mostrarPestanaCobros(pestana){
+  ['tarifas','planes','anterior'].forEach(nombre=>{
+    const vista=document.getElementById(`cobros-vista-${nombre}`);
+    const boton=document.getElementById(`cobros-tab-${nombre}`);
+    if(vista)vista.style.display=nombre===pestana?'block':'none';
+    if(boton)boton.className=`btn ${nombre===pestana?'btn-primary':'btn-secondary'}`;
+  });
+}
+
+function renderConfiguracionCobrosV2(){
+  const nombreCuenta=id=>cuentasData.find(c=>String(c[0])===String(id))?.[1]||id||'—';
+  const nombreProcesador=id=>procesadoresCobroData.find(p=>String(p[0])===String(id))?.[1]||id||'—';
+  const tarifas=[...tarifasCobroData].sort((a,b)=>Number(cobroActivo(b[10]))-Number(cobroActivo(a[10]))||String(a[2]).localeCompare(String(b[2]))||String(a[3]).localeCompare(String(b[3])));
+  const activas=tarifas.filter(t=>cobroActivo(t[10]));
+  const canales=new Set(activas.map(t=>`${t[2]}|${t[3]}`));
+  const procesadores=new Set(activas.map(t=>String(t[2])).filter(Boolean));
+  const resumen=document.getElementById('cobros-resumen-tarifas');
+  if(resumen)resumen.innerHTML=`
+    <div class="stat-card"><div class="stat-label">Tarifas activas</div><div class="stat-value">${activas.length}</div></div>
+    <div class="stat-card"><div class="stat-label">Canales configurados</div><div class="stat-value">${canales.size}</div></div>
+    <div class="stat-card"><div class="stat-label">Procesadores activos</div><div class="stat-value">${procesadores.size}</div></div>`;
+  const bodyTarifas=document.getElementById('cobros-tarifas-body');
+  if(bodyTarifas)bodyTarifas.innerHTML=tarifas.length?tarifas.map(t=>{
+    const costo=Number(t[6])||0,iva=Number(t[7])||0,costoIva=costo*(1+iva/100),estaActiva=cobroActivo(t[10]);
+    return `<tr style="${estaActiva?'':'opacity:.58'}"><td>${nombreCuenta(t[1])}</td><td>${nombreProcesador(t[2])}</td><td><strong>${t[3]||'—'}</strong></td><td>${t[4]||'—'}</td><td>${Number(t[5])===0?'Inmediata':`${t[5]} días`}</td><td>${costo.toLocaleString('es-AR',{maximumFractionDigits:2})}%</td><td><strong>${costoIva.toLocaleString('es-AR',{maximumFractionDigits:2})}%</strong></td><td><span class="badge ${estaActiva?'badge-ok':'badge-zero'}">${estaActiva?'Activa':'Inactiva'}</span></td></tr>`;
+  }).join(''):'<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--text-light)">Todavía no hay tarifas configuradas.</td></tr>';
+
+  const planes=[...planesCuotasData].sort((a,b)=>Number(cobroActivo(b[13]))-Number(cobroActivo(a[13]))||(Number(a[4])||0)-(Number(b[4])||0));
+  const bodyPlanes=document.getElementById('cobros-planes-body');
+  if(bodyPlanes)bodyPlanes.innerHTML=planes.length?planes.map(p=>{
+    const estaActivo=cobroActivo(p[13]);
+    const absorbe=String(p[7]||'').toLowerCase()==='negocio'?'Negocio':String(p[7]||'').toLowerCase()==='cliente'?'Cliente':p[7]||'—';
+    return `<tr style="${estaActivo?'':'opacity:.58'}"><td>${nombreProcesador(p[1])}</td><td>${p[2]||'—'}</td><td><strong>${p[4]||1}</strong></td><td>${absorbe}</td><td>${(Number(p[5])||0).toLocaleString('es-AR',{maximumFractionDigits:2})}%</td><td>${Number(p[8])>0?formatPeso(p[8]):'Sin mínimo'}</td><td>${Number(p[15])>0?`${p[15]}%`:'—'}</td><td><span class="badge ${estaActivo?'badge-ok':'badge-zero'}">${estaActivo?'Activo':'Inactivo'}</span></td></tr>`;
+  }).join(''):'<tr><td colspan="8" style="text-align:center;padding:20px;color:var(--text-light)">Todavía no hay planes configurados.</td></tr>';
 }
 
 function renderTablaMediosPago(){

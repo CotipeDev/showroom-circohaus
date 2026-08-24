@@ -102,9 +102,9 @@ td{padding:11px 12px;border-bottom:1px solid var(--border)}
 tr:last-child td{border-bottom:none}
 tr:hover td{background:var(--pearl)}
 .badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:500}
-#prod-table th:nth-child(3),#prod-table td:nth-child(3){width:14%}
-#prod-table th:nth-child(4),#prod-table td:nth-child(4){width:110px;white-space:nowrap}
-#prod-table td:nth-child(4) .badge{white-space:nowrap}
+#prod-table:not(.vista-vendedor) th:nth-child(4),#prod-table:not(.vista-vendedor) td:nth-child(4),#prod-table.vista-vendedor th:nth-child(3),#prod-table.vista-vendedor td:nth-child(3){width:14%}
+#prod-table:not(.vista-vendedor) th:nth-child(5),#prod-table:not(.vista-vendedor) td:nth-child(5),#prod-table.vista-vendedor th:nth-child(4),#prod-table.vista-vendedor td:nth-child(4){width:110px;white-space:nowrap}
+#prod-table:not(.vista-vendedor) td:nth-child(5) .badge,#prod-table.vista-vendedor td:nth-child(4) .badge{white-space:nowrap}
 .badge-ok{background:#E8F3ED;color:var(--success)}
 .badge-low{background:#fdf0ed;color:var(--rose-dark)}
 .badge-zero{background:#fde8e8;color:var(--error)}
@@ -641,12 +641,13 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
       </div>
       <div class="card">
         <div class="card-title">Productos registrados</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:16px">
           <div class="search-wrap" style="margin:0"><input type="text" id="prod-buscar" placeholder="🔍 Buscar..." oninput="filtrarProductosD()"></div>
           <select id="prod-filtro-cat" onchange="filtrarTablaProductos()" style="background:var(--off-white);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none;color:var(--text-main)"><option value="">Todas las categorías</option></select>
+          <select id="prod-filtro-prov" onchange="filtrarTablaProductos()" style="background:var(--off-white);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none;color:var(--text-main)"><option value="">Todos los proveedores</option><option value="__sin_proveedor__">Sin proveedor</option></select>
         </div>
         <div id="prod-loading" class="spinner-wrap"><div class="spinner"></div> Cargando...</div>
-        <table id="prod-table" style="display:none"><thead><tr><th>Código</th><th>Descripción</th><th>Categoría</th><th>Estado</th><th>P. Costo</th><th>Recargo</th><th>Margen bruto</th><th>P. Venta</th><th>Stock</th><th></th></tr></thead><tbody id="prod-body"></tbody></table>
+        <div style="overflow-x:auto"><table id="prod-table" style="display:none;min-width:1120px"><thead><tr><th>Código</th><th>Descripción</th><th>Proveedor</th><th>Categoría</th><th>Estado</th><th>P. Costo</th><th>Recargo</th><th>Margen bruto</th><th>P. Venta</th><th>Stock</th><th></th></tr></thead><tbody id="prod-body"></tbody></table></div>
       </div>
     </div>
 
@@ -665,8 +666,24 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
       </div>
       <div class="card">
         <div class="card-title">Proveedores registrados</div>
+        <div id="prov-resumen" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:14px"></div>
         <div id="prov-loading" class="spinner-wrap"><div class="spinner"></div> Cargando...</div>
-        <table id="prov-table" style="display:none"><thead><tr><th>Código</th><th>Nombre</th><th>Contacto</th></tr></thead><tbody id="prov-body"></tbody></table>
+        <table id="prov-table" style="display:none"><thead><tr><th>Código</th><th>Nombre</th><th>Contacto</th><th>Productos</th><th></th></tr></thead><tbody id="prov-body"></tbody></table>
+      </div>
+      <div id="modal-editar-proveedor" class="modal-overlay" onclick="if(event.target===this)cerrarModal('modal-editar-proveedor')">
+        <div class="modal">
+          <div class="modal-title">Editar proveedor</div>
+          <div class="modal-sub">El código se mantiene fijo para conservar la relación con sus productos.</div>
+          <div class="form-grid">
+            <div class="field"><label>Código</label><input type="text" id="prov-edit-codigo" readonly class="readonly"></div>
+            <div class="field"><label>Nombre</label><input type="text" id="prov-edit-nombre"></div>
+            <div class="field"><label>Contacto</label><input type="text" id="prov-edit-contacto"></div>
+          </div>
+          <div class="modal-actions">
+            <button class="btn btn-primary" onclick="conBotonCargando(this,'Actualizando...',confirmarEditarProveedor)">Guardar cambio</button>
+            <button class="btn btn-secondary" onclick="cerrarModal('modal-editar-proveedor')">Cancelar</button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -1566,25 +1583,6 @@ async function cargarNotificaciones(){
 }
 function toggleNotif(o){const id=o==='home'?'np1':'np2';const p=document.getElementById(id);const ab=p.style.display==='block';document.querySelectorAll('.notif-panel').forEach(x=>x.style.display='none');if(!ab){p.style.display='block';cargarNotificaciones()}}
 
-async function cargarProveedores(){
-  try{const data=await cacheGet('getProveedores');proveedoresData=data.slice(1);['ing-proveedor','prod-proveedor','edit-proveedor'].forEach(id=>{const sel=document.getElementById(id);if(!sel)return;sel.innerHTML='<option value="">Seleccioná proveedor...</option>';proveedoresData.forEach(p=>sel.innerHTML+=`<option value="${p[0]}">${p[1]}</option>`)})}catch(e){}
-}
-async function iniciarProveedores(){
-  if(proveedoresData.length){
-    document.getElementById('prov-body').innerHTML=proveedoresData.map(p=>`<tr><td><code style="color:var(--teal);font-size:12px">${p[0]}</code></td><td>${p[1]}</td><td>${p[2]||'—'}</td></tr>`).join('');
-    document.getElementById('prov-loading').style.display='none';
-    document.getElementById('prov-table').style.display='table';
-    return;
-  }
-  document.getElementById('prov-loading').style.display='flex';document.getElementById('prov-table').style.display='none';
-  try{const data=await cacheGet('getProveedores');const rows=data.slice(1);document.getElementById('prov-body').innerHTML=rows.length===0?'<tr><td colspan="3" style="text-align:center;color:var(--text-mid);padding:20px">No hay proveedores</td></tr>':rows.map(p=>`<tr><td><code style="color:var(--teal);font-size:12px">${p[0]}</code></td><td>${p[1]}</td><td>${p[2]||'—'}</td></tr>`).join('');document.getElementById('prov-loading').style.display='none';document.getElementById('prov-table').style.display='table'}catch(e){showToast('Error al cargar proveedores','error')}
-}
-async function agregarProveedor(){
-  const c=document.getElementById('prov-codigo').value.trim(),n=document.getElementById('prov-nombre').value.trim(),ct=document.getElementById('prov-contacto').value.trim();
-  if(!c||!n){showToast('Completá código y nombre','error');return}
-  try{await apiPost('agregarProveedor',{codigo:c,nombre:n,contacto:ct});showToast('Proveedor guardado');['prov-codigo','prov-nombre','prov-contacto'].forEach(id=>document.getElementById(id).value='');cacheInvalidar('getProveedores');setTimeout(()=>{cargarProveedores();iniciarProveedores()},1500)}catch(e){showToast('Error','error')}
-}
-
 async function cargarProductos(){try{const data=await cacheGet('getProductos');productosData=data.slice(1)}catch(e){}}
 async function refrescarProductosUI(){
   const data=await apiGet('getProductos');
@@ -1616,15 +1614,27 @@ async function iniciarProductos(){
 }
 function renderTablaProductos(rows){
   const vendedor=esVendedor();
+  const tabla=document.getElementById('prod-table');
+  tabla.classList.toggle('vista-vendedor',vendedor);
+  tabla.style.minWidth=vendedor?'760px':'1200px';
   const encabezado=document.querySelector('#prod-table thead tr');
-  if(encabezado)encabezado.innerHTML=vendedor?'<th>Código</th><th>Descripción</th><th>Categoría</th><th>Estado</th><th>P. Venta</th><th>Stock</th>':'<th>Código</th><th>Descripción</th><th>Categoría</th><th>Estado</th><th>P. Costo</th><th>Recargo</th><th>Margen bruto</th><th>P. Venta</th><th>Stock</th><th></th>';
-  document.getElementById('prod-body').innerHTML=rows.length===0?`<tr><td colspan="${vendedor?6:10}" style="text-align:center;color:var(--text-mid);padding:20px">No hay productos</td></tr>`:rows.map(p=>{
+  if(encabezado)encabezado.innerHTML=vendedor?'<th>Código</th><th>Descripción</th><th>Categoría</th><th>Estado</th><th>P. Venta</th><th>Stock</th>':'<th>Código</th><th>Descripción</th><th>Proveedor</th><th>Categoría</th><th>Estado</th><th>P. Costo</th><th>Recargo</th><th>Margen bruto</th><th>P. Venta</th><th>Stock</th><th></th>';
+  document.getElementById('prod-body').innerHTML=rows.length===0?`<tr><td colspan="${vendedor?6:11}" style="text-align:center;color:var(--text-mid);padding:20px">No hay productos</td></tr>`:rows.map(p=>{
     if(vendedor)return`<tr><td><code style="color:var(--teal);font-size:12px">${p[0]}</code></td><td>${p[1]}</td><td>${p[7]||'—'}</td><td>${badgeEstadoComercial(p)}</td><td>${formatPeso(p[3])}</td><td>${p[5]||0}</td></tr>`;
     const margen=getMargen(p),margenBruto=calcMargenBruto(Number(p[4]),Number(p[3]));
-    return`<tr><td><code style="color:var(--teal);font-size:12px">${p[0]}</code></td><td>${p[1]}</td><td>${p[7]||'—'}</td><td>${badgeEstadoComercial(p)}</td><td>${formatPeso(p[4])}</td><td><span class="badge badge-margen">${margen}%</span></td><td>${margenBruto}%</td><td>${formatPeso(p[3])}</td><td>${p[5]||0}</td><td style="display:flex;gap:6px"><button class="btn-warning" onclick="abrirEditar('${p[0]}')">✏️</button><button class="btn-danger" onclick="eliminarProducto('${p[0]}')">🗑️</button></td></tr>`;
+    return`<tr><td><code style="color:var(--teal);font-size:12px">${p[0]}</code></td><td>${p[1]}</td><td>${textoSeguro(nombreProveedor(p[2])||'Sin proveedor')}</td><td>${p[7]||'—'}</td><td>${badgeEstadoComercial(p)}</td><td>${formatPeso(p[4])}</td><td><span class="badge badge-margen">${margen}%</span></td><td>${margenBruto}%</td><td>${formatPeso(p[3])}</td><td>${p[5]||0}</td><td style="display:flex;gap:6px"><button class="btn-warning" onclick="abrirEditar('${p[0]}')">✏️</button><button class="btn-danger" onclick="eliminarProducto('${p[0]}')">🗑️</button></td></tr>`;
   }).join('');
 }
-function filtrarTablaProductos(){const q=document.getElementById('prod-buscar').value.toLowerCase(),cat=document.getElementById('prod-filtro-cat').value;renderTablaProductos(prodTablaData.filter(p=>(p[0].toString().toLowerCase().includes(q)||p[1].toString().toLowerCase().includes(q))&&(!cat||p[7]===cat)))}
+function filtrarTablaProductos(){
+  const q=document.getElementById('prod-buscar').value.toLowerCase(),cat=document.getElementById('prod-filtro-cat').value,prov=document.getElementById('prod-filtro-prov')?.value||'';
+  renderTablaProductos(prodTablaData.filter(p=>{
+    const proveedor=nombreProveedor(p[2]).toLowerCase();
+    const coincideTexto=p[0].toString().toLowerCase().includes(q)||p[1].toString().toLowerCase().includes(q)||proveedor.includes(q);
+    const coincideCategoria=!cat||p[7]===cat;
+    const coincideProveedor=!prov||(prov==='__sin_proveedor__'?!String(p[2]||'').trim():String(buscarProveedor(p[2])?.[0]||p[2])===prov);
+    return coincideTexto&&coincideCategoria&&coincideProveedor;
+  }));
+}
 function actualizarMargenBrutoCampo(costoId,ventaId,salidaId){const c=Number(document.getElementById(costoId).value),v=Number(document.getElementById(ventaId).value);document.getElementById(salidaId).value=(c>0&&v>0)?calcMargenBruto(c,v):''}
 function calcularPrecioVenta(){const c=Number(document.getElementById('prod-pcosto').value),mv=document.getElementById('prod-margen').value,m=Number(mv);document.getElementById('prod-pventa').value=(c>0&&mv!==''&&m>=0)?Math.round(c*(1+m/100)):'';actualizarMargenBrutoCampo('prod-pcosto','prod-pventa','prod-margen-bruto')}
 function calcularMargenProducto(){const c=Number(document.getElementById('prod-pcosto').value),v=Number(document.getElementById('prod-pventa').value);document.getElementById('prod-margen').value=(c>0&&v>0)?Math.round(((v/c)-1)*1000)/10:'';actualizarMargenBrutoCampo('prod-pcosto','prod-pventa','prod-margen-bruto')}
@@ -1643,7 +1653,7 @@ async function eliminarProducto(codigo){
 }
 function abrirEditar(codigo){
   const p=prodTablaData.find(x=>x[0].toString()===codigo.toString());if(!p)return;
-  document.getElementById('edit-codigo').value=p[0];document.getElementById('edit-desc').value=p[1];document.getElementById('edit-proveedor').value=p[2]||'';document.getElementById('edit-pcosto').value=p[4]||'';
+  document.getElementById('edit-codigo').value=p[0];document.getElementById('edit-desc').value=p[1];document.getElementById('edit-proveedor').value=buscarProveedor(p[2])?.[0]||'';document.getElementById('edit-pcosto').value=p[4]||'';
   // Si precio venta está vacío, calcularlo desde margen
   const margenGuardado=p[8]?Number(p[8]):calcMargen(Number(p[4]),Number(p[3]));
   const pvCalculado=(!p[3]||Number(p[3])===0)&&margenGuardado>0&&Number(p[4])>0
@@ -3004,6 +3014,7 @@ function aplicarPermisosUI(){
   document.querySelectorAll('.launcher-item').forEach(el=>{const destino=(el.getAttribute('onclick')||'').match(/irA\('([^']+)'\)/)?.[1];if(destino)el.style.display=vendedor&&!modulosVendedor.has(destino)?'none':'';});
   document.querySelectorAll('.launcher-seccion').forEach(seccion=>{const visibles=[...seccion.querySelectorAll('.launcher-item')].some(el=>el.style.display!=='none');seccion.style.display=visibles?'':'none';});
   const altaProductos=document.querySelector('#panel-productos > .card:first-of-type');if(altaProductos)altaProductos.style.display=vendedor?'none':'';
+  const filtroProveedorProductos=document.getElementById('prod-filtro-prov');if(filtroProveedorProductos){filtroProveedorProductos.style.display=vendedor?'none':'';if(vendedor)filtroProveedorProductos.value='';}
   const kpiProveedores=document.getElementById('kpi-proveedores-wrap');if(kpiProveedores)kpiProveedores.style.display=vendedor?'none':'';
   const subtituloProductos=document.querySelector('#panel-productos .section-sub');if(subtituloProductos)subtituloProductos.textContent=vendedor?'Consultá precios y disponibilidad del catálogo':'Agregá o editá productos del catálogo';
 }
@@ -3889,6 +3900,7 @@ async function confirmarCobroCxc(){
   }
 }
 </script>
+<script src="js/proveedores.js?v=20260824-1"></script>
 <script src="js/categorias.js?v=20260823-2"></script>
 <script src="js/ventas-v2.js?v=20260822-1"></script>
 </body>

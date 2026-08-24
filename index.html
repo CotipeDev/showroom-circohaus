@@ -1469,7 +1469,7 @@ function manejarSesionVencida(data){
   if(/sesi[oó]n|token|autentic/i.test(mensaje)){cerrarSesion(false);throw new Error('La sesión venció. Ingresá nuevamente.');}
 }
 async function apiGet(a){
-  const r=await fetch(`${API_URL}?action=${encodeURIComponent(a)}&token=${encodeURIComponent(tokenSesion())}`);
+  const r=await fetch(`${API_URL}?action=${encodeURIComponent(a)}&token=${encodeURIComponent(tokenSesion())}&_=${Date.now()}`,{cache:'no-store'});
   const texto=await r.text();let data;
   try{data=texto?JSON.parse(texto):null}catch(e){throw new Error(`Respuesta inválida del backend (${r.status}).`)}
   if(!r.ok||data?.ok===false||data?.error){manejarSesionVencida(data);throw new Error(data?.error||data?.message||`Error HTTP ${r.status}`)}

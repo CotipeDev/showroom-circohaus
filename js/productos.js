@@ -41,7 +41,7 @@ function renderTablaProductos(rows){
   document.getElementById('prod-body').innerHTML=rows.length===0?`<tr><td colspan="${vendedor?6:11}" style="text-align:center;color:var(--text-mid);padding:20px">No hay productos</td></tr>`:rows.map(p=>{
     if(vendedor)return`<tr><td><code style="color:var(--teal);font-size:12px">${p[0]}</code></td><td>${p[1]}</td><td>${p[7]||'—'}</td><td>${badgeEstadoComercial(p)}</td><td>${formatPeso(p[3])}</td><td>${p[5]||0}</td></tr>`;
     const margen=getMargen(p),margenBruto=calcMargenBruto(Number(p[4]),Number(p[3]));
-    return`<tr><td><code style="color:var(--teal);font-size:12px">${p[0]}</code></td><td>${p[1]}</td><td>${textoSeguro(nombreProveedor(p[2])||'Sin proveedor')}</td><td>${p[7]||'—'}</td><td>${badgeEstadoComercial(p)}</td><td>${formatPeso(p[4])}</td><td><span class="badge badge-margen">${margen}%</span></td><td>${margenBruto}%</td><td>${formatPeso(p[3])}</td><td>${p[5]||0}</td><td style="display:flex;gap:6px"><button class="btn-warning" onclick="abrirEditar('${p[0]}')">✏️</button><button class="btn-danger" onclick="eliminarProducto('${p[0]}')">🗑️</button></td></tr>`;
+    return`<tr><td><code style="color:var(--teal);font-size:12px">${p[0]}</code></td><td>${p[1]}</td><td>${textoSeguro(nombreProveedor(p[2])||'Sin proveedor')}</td><td>${p[7]||'—'}</td><td>${badgeEstadoComercial(p)}</td><td>${formatPeso(p[4])}</td><td><span class="badge badge-margen">${margen}%</span></td><td>${margenBruto}%</td><td>${formatPeso(p[3])}</td><td>${p[5]||0}</td><td style="display:flex;gap:6px"><button class="btn-warning" onclick="abrirEditar('${p[0]}')">✏️</button><button class="btn-danger" onclick="eliminarProducto('${p[0]}',this)">🗑️</button></td></tr>`;
   }).join('');
 }
 function filtrarTablaProductos(){
@@ -66,9 +66,11 @@ async function agregarProducto(){
   try{const data=await cacheGet('getProductos');if(data.slice(1).some(p=>p[0].toString().trim().toLowerCase()===codigo.toLowerCase())){showToast(`El código ${codigo} ya existe`,'error');return}}catch(e){showToast('No se pudo verificar el código','error');return}
   try{await apiPost('agregarProducto',{codigo,descripcion,proveedor,precio_venta,precio_costo,margen_pct,stock,stock_minimo,categoria,estado_comercial});cache.invalidar('getHistorialCostos');await refrescarProductosUI();showToast('Producto guardado');['prod-codigo','prod-desc','prod-pcosto','prod-margen','prod-pventa','prod-margen-bruto','prod-stock','prod-stock-min'].forEach(id=>document.getElementById(id).value='');document.getElementById('prod-proveedor').value='';document.getElementById('prod-categoria').value='';document.getElementById('prod-estado-comercial').value='activo'}catch(e){showToast(e?.message||'Error al guardar el producto','error')}
 }
-async function eliminarProducto(codigo){
+async function eliminarProducto(codigo,btn){
   if(!confirm(`¿Seguro que querés eliminar ${codigo}?`))return;
-  try{await apiPost('eliminarProducto',{codigo});await refrescarProductosUI();showToast('Producto eliminado')}catch(e){showToast(e?.message||'Error al eliminar el producto','error')}
+  await conBotonCargando(btn,'⏳',async()=>{
+    try{await apiPost('eliminarProducto',{codigo});await refrescarProductosUI();showToast('Producto eliminado')}catch(e){showToast(e?.message||'Error al eliminar el producto','error')}
+  });
 }
 function abrirEditar(codigo){
   const p=prodTablaData.find(x=>x[0].toString()===codigo.toString());if(!p)return;

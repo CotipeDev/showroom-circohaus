@@ -1403,7 +1403,9 @@ const cache={
   setDesdeCompleto(datosCompletos){
     const mapeo={
       'Productos':'getProductos','Proveedores':'getProveedores','Categorias':'getCategorias',
-      'Medios_Pago':'getMediosPago','Cuentas':'getCuentas','Clientes':'getClientes',
+      'Medios_Pago':'getMediosPago','Procesadores_Cobro':'getProcesadoresCobro',
+      'Tarifas_Cobro':'getTarifasCobro','Planes_Cuotas':'getPlanesCuotas',
+      'Cuentas':'getCuentas','Clientes':'getClientes',
       'Ventas':'getVentas','Detalle_Ventas':'getDetalleVentas','Pagos_Venta':'getPagosVenta',
       'Cuentas_Por_Cobrar':'getCuentasPorCobrar','Movimientos':'getMovimientos',
       'Categorias_Movimientos':'getCategoriasMovimientos','Ingresos':'getIngresos',
@@ -1591,7 +1593,8 @@ document.addEventListener('click',function(e){
 
 
 // ── DATOS GLOBALES NUEVOS ──
-let mediosPagoData=[], cuentasData=[], clientesData=[], vtaItemsCarrito=[], vtaPagosFila=[], ventasHistData=[], movimientosData=[], categoriasMovData=[];
+let mediosPagoData=[], procesadoresCobroData=[], tarifasCobroData=[], planesCuotasData=[];
+let cuentasData=[], clientesData=[], vtaItemsCarrito=[], vtaPagosFila=[], ventasHistData=[], movimientosData=[], categoriasMovData=[];
 let vtaProductoSel=null;
 
 // ── CUENTAS ──
@@ -2210,6 +2213,9 @@ async function precargarDatos(){
     proveedoresData=(datos.Proveedores||[]).slice(1);
     categoriasData=(datos.Categorias||[]).slice(1).map(c=>c[0]).filter(Boolean);
     mediosPagoData=(datos.Medios_Pago||[]).slice(1);
+    procesadoresCobroData=(datos.Procesadores_Cobro||[]).slice(1);
+    tarifasCobroData=(datos.Tarifas_Cobro||[]).slice(1);
+    planesCuotasData=(datos.Planes_Cuotas||[]).slice(1);
     cuentasData=(datos.Cuentas||[]).slice(1);
     clientesData=(datos.Clientes||[]).slice(1);
     movimientosData=(datos.Movimientos||[]).slice(1);
@@ -2235,6 +2241,9 @@ async function precargarDatos(){
         cacheGet('getProveedores').then(d=>{proveedoresData=d.slice(1)}),
         cacheGet('getCategorias').then(d=>{categoriasData=d.slice(1).map(c=>c[0]).filter(Boolean)}),
         cacheGet('getMediosPago').then(d=>{mediosPagoData=d.slice(1)}),
+        cacheGet('getProcesadoresCobro').then(d=>{procesadoresCobroData=d.slice(1)}),
+        cacheGet('getTarifasCobro').then(d=>{tarifasCobroData=d.slice(1)}),
+        cacheGet('getPlanesCuotas').then(d=>{planesCuotasData=d.slice(1)}),
         cacheGet('getCuentas').then(d=>{cuentasData=d.slice(1)}),
         cacheGet('getClientes').then(d=>{clientesData=d.slice(1)}),
       ]);

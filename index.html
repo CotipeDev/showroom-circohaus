@@ -1185,7 +1185,7 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
         <div class="card-title">Canales y tarifas vigentes</div>
         <div id="cobros-resumen-tarifas" class="stats-grid" style="margin-bottom:18px"></div>
         <div style="overflow-x:auto"><table>
-          <thead><tr><th>Cuenta</th><th>Procesador</th><th>Canal</th><th>Tipo de pago</th><th>Acreditación</th><th>Costo sin IVA</th><th>Costo estimado con IVA</th><th>Estado</th></tr></thead>
+          <thead><tr><th>Cuenta</th><th>Procesador</th><th>Canal</th><th>Tipo de pago</th><th>Acreditación</th><th>Costo sin IVA</th><th>Costo estimado con IVA</th><th>Estado</th><th></th></tr></thead>
           <tbody id="cobros-tarifas-body"></tbody>
         </table></div>
       </div>
@@ -1193,7 +1193,7 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
         <div class="card-title">Planes y promociones</div>
         <div class="section-sub" style="margin-bottom:14px">Los planes sin interés se muestran únicamente cuando la venta cumple el monto mínimo y conserva el margen de seguridad.</div>
         <div style="overflow-x:auto"><table>
-          <thead><tr><th>Procesador</th><th>Canal</th><th>Cuotas</th><th>Quién absorbe</th><th>Costo del plan</th><th>Desde</th><th>Margen mínimo</th><th>Estado</th></tr></thead>
+          <thead><tr><th>Procesador</th><th>Canal</th><th>Cuotas</th><th>Quién absorbe</th><th>Costo del plan</th><th>Desde</th><th>Margen mínimo</th><th>Estado</th><th></th></tr></thead>
           <tbody id="cobros-planes-body"></tbody>
         </table></div>
       </div>
@@ -1220,6 +1220,54 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
       </div>
     </div>
 
+  </div>
+</div>
+
+<div id="modal-editar-tarifa-cobro" class="modal-overlay" onclick="if(event.target===this)cerrarModal('modal-editar-tarifa-cobro')">
+  <div class="modal" style="max-width:680px;max-height:90vh;overflow-y:auto">
+    <div class="modal-title">Editar tarifa de cobro</div>
+    <input type="hidden" id="cobro-edit-tarifa-id">
+    <div class="form-grid cols-3">
+      <div class="field"><label>Cuenta</label><select id="cobro-edit-tarifa-cuenta"></select></div>
+      <div class="field"><label>Procesador</label><select id="cobro-edit-tarifa-procesador"></select></div>
+      <div class="field"><label>Canal</label><input id="cobro-edit-tarifa-canal"></div>
+      <div class="field"><label>Tipo de pago</label><input id="cobro-edit-tarifa-tipo"></div>
+      <div class="field"><label>Días de acreditación</label><input type="number" min="0" id="cobro-edit-tarifa-dias"></div>
+      <div class="field"><label>Costo sin IVA (%)</label><input type="number" min="0" step="0.01" id="cobro-edit-tarifa-comision"></div>
+      <div class="field"><label>IVA sobre el costo (%)</label><input type="number" min="0" step="0.01" id="cobro-edit-tarifa-iva"></div>
+      <div class="field"><label>Estado</label><select id="cobro-edit-tarifa-activa"><option value="true">Activa</option><option value="false">Inactiva</option></select></div>
+    </div>
+    <div class="field" style="margin-top:12px"><label>Notas</label><input id="cobro-edit-tarifa-notas"></div>
+    <div class="field" style="margin-top:12px"><label>Motivo del cambio</label><input id="cobro-edit-tarifa-motivo" placeholder="Ej: Mercado Pago actualizó la comisión"></div>
+    <div class="modal-actions"><button class="btn btn-primary" onclick="conBotonCargando(this,'Guardando...',guardarTarifaCobroV2)">Guardar cambios</button><button class="btn btn-secondary" onclick="verHistorialTarifaCobro()">Ver historial</button><button class="btn btn-secondary" onclick="cerrarModal('modal-editar-tarifa-cobro')">Cancelar</button></div>
+  </div>
+</div>
+
+<div id="modal-editar-plan-cobro" class="modal-overlay" onclick="if(event.target===this)cerrarModal('modal-editar-plan-cobro')">
+  <div class="modal" style="max-width:650px;max-height:90vh;overflow-y:auto">
+    <div class="modal-title">Editar plan de cuotas</div>
+    <input type="hidden" id="cobro-edit-plan-id">
+    <div class="form-grid cols-3">
+      <div class="field"><label>Canal</label><input id="cobro-edit-plan-canal"></div>
+      <div class="field"><label>Cuotas</label><input type="number" min="1" id="cobro-edit-plan-cuotas"></div>
+      <div class="field"><label>Quién absorbe</label><select id="cobro-edit-plan-absorbe"><option value="ninguno">Ninguno</option><option value="negocio">Negocio</option><option value="cliente">Cliente</option><option value="compartido">Compartido</option></select></div>
+      <div class="field"><label>Costo del negocio (%)</label><input type="number" min="0" step="0.01" id="cobro-edit-plan-costo"></div>
+      <div class="field"><label>Recargo al cliente (%)</label><input type="number" min="0" step="0.01" id="cobro-edit-plan-recargo"></div>
+      <div class="field"><label>Monto mínimo ($)</label><input type="number" min="0" id="cobro-edit-plan-minimo"></div>
+      <div class="field"><label>Margen mínimo (%)</label><input type="number" min="0" max="100" step="0.1" id="cobro-edit-plan-margen"></div>
+      <div class="field"><label>Estado</label><select id="cobro-edit-plan-activo"><option value="true">Activo</option><option value="false">Inactivo</option></select></div>
+    </div>
+    <div class="field" style="margin-top:12px"><label>Notas</label><input id="cobro-edit-plan-notas"></div>
+    <div class="field" style="margin-top:12px"><label>Motivo del cambio</label><input id="cobro-edit-plan-motivo" placeholder="Ej: cambio de promoción"></div>
+    <div class="modal-actions"><button class="btn btn-primary" onclick="conBotonCargando(this,'Guardando...',guardarPlanCobroV2)">Guardar cambios</button><button class="btn btn-secondary" onclick="verHistorialPlanCobro()">Ver historial</button><button class="btn btn-secondary" onclick="cerrarModal('modal-editar-plan-cobro')">Cancelar</button></div>
+  </div>
+</div>
+
+<div id="modal-historial-cobro" class="modal-overlay" onclick="if(event.target===this)cerrarModal('modal-historial-cobro')">
+  <div class="modal" style="max-width:850px;max-height:88vh;overflow-y:auto">
+    <div class="modal-title" id="cobro-historial-titulo">Historial</div>
+    <div id="cobro-historial-body"></div>
+    <div class="modal-actions"><button class="btn btn-secondary" onclick="cerrarModal('modal-historial-cobro')">Cerrar</button></div>
   </div>
 </div>
 
@@ -2737,7 +2785,7 @@ function descargarListaPrecios(){
 <script src="js/productos.js?v=20260824-1"></script>
 <script src="js/stock.js?v=20260824-1"></script>
 <script src="js/ingresos.js?v=20260824-1"></script>
-<script src="js/medios-pago.js?v=20260824-2"></script>
+<script src="js/medios-pago.js?v=20260824-3"></script>
 <script src="js/clientes.js?v=20260824-1"></script>
 <script src="js/cuentas-por-cobrar.js?v=20260824-1"></script>
 <script src="js/categorias.js?v=20260823-2"></script>

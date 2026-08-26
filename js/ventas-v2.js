@@ -12,6 +12,16 @@
   const procesadorNombre = id => procesadoresCobroData.find(p => String(p[0]) === String(id))?.[1] || id || '';
   const cuentaNombre = id => cuentasData.find(c => String(c[0]) === String(id))?.[1] || id || '';
   const esEfectivoTarifa = tarifa => String(tarifa?.[3] || '').toLowerCase() === 'efectivo';
+  const normalizarCobro = valor => String(valor || '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase();
+  const tarifaAdmiteCuotas = tarifa => {
+    const tipo=normalizarCobro(tarifa?.[4]);
+    return tipo.includes('credito')||tipo.includes('prepaga');
+  };
+  const planesParaTarifa = (tarifa,base) => {
+    if(!tarifa||!tarifaAdmiteCuotas(tarifa))return [];
+    const vistos=new Set();
+    return planesCuotasData.filter(p=>activoCobro(p[13])&&String(p[1])===String(tarifa[2])&&(p[2]==='*'||normalizarCobro(p[2])===normalizarCobro(tarifa[3]))&&base>=n(p[8])&&(!n(p[9])||base<=n(p[9]))&&!(normalizarCobro(p[7])==='cliente'&&n(p[6])<=0)).sort((a,b)=>n(a[4])-n(b[4])).filter(p=>{const cuotas=n(p[4])||1;if(vistos.has(cuotas))return false;vistos.add(cuotas);return true;});
+  };
   const fechaLocal = () => {
     const d = new Date(), pad = value => String(value).padStart(2, '0');
     return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
@@ -152,7 +162,8 @@
       const tarifas=tarifasCobroData.filter(t=>activoCobro(t[10])).sort((a,b)=>prioridad(a)-prioridad(b)||String(a[3]).localeCompare(String(b[3]))||n(a[5])-n(b[5]));
       lista.innerHTML=vtaPagosFila.map((fila,i)=>{
         const tarifa=tarifaPorId(fila.id_tarifa),efectivo=esEfectivoTarifa(tarifa),base=n(fila.base_asignada)||calcularVentaV2().baseComercial;
-        const planes=planesCuotasData.filter(p=>activoCobro(p[13])&&String(p[1])===String(tarifa?.[2])&&(p[2]==='*'||String(p[2])===String(tarifa?.[3]))&&base>=n(p[8])&&(!n(p[9])||base<=n(p[9]))&&!(String(p[7]).toLowerCase()==='cliente'&&n(p[6])<=0));
+        const planes=planesParaTarifa(tarifa,base);
+        if(fila.id_plan&&!planes.some(p=>String(p[0])===String(fila.id_plan)))fila.id_plan='';
         const etiqueta=t=>`${cuentaNombre(t[1])} · ${t[3]} · ${t[4]} · ${n(t[5])?`${t[5]} días`:'inmediata'}`;
         const planLabel=p=>`${n(p[4])||1} cuota${n(p[4])===1?'':'s'}${String(p[7]).toLowerCase()==='negocio'?' sin interés':''}${!esVendedor()&&n(p[5])?` · costo ${p[5]}%`:''}`;
         return `<div style="display:grid;grid-template-columns:1.35fr .8fr .8fr 1.15fr auto;gap:10px;align-items:end;margin-bottom:12px;padding:10px;background:var(--off-white);border-radius:8px">

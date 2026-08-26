@@ -85,8 +85,8 @@
     return base > 0 || id ? [usaCobrosV2()?{ id_tarifa:id, id_plan:'', base_asignada:base }:{ id_medio:id, base_asignada:base }] : [];
   }
 
-  function tarjetaResumen(label, valor, fuerte) {
-    return `<div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-light)">${label}</div><div style="font-size:${fuerte?'18':'14'}px;font-weight:${fuerte?'700':'600'};color:${fuerte?'var(--teal)':'var(--navy)'}">${formatPeso(valor)}</div></div>`;
+  function tarjetaResumen(label, valor, fuerte, alerta) {
+    return `<div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-light)">${label}</div><div style="font-size:${fuerte?'18':'14'}px;font-weight:${fuerte?'700':'600'};color:${alerta?'var(--error)':fuerte?'var(--teal)':'var(--navy)'}">${formatPeso(valor)}</div></div>`;
   }
 
   window.iniciarVentas = async function () {
@@ -198,9 +198,17 @@
     document.getElementById('vta-resumen').innerHTML = [
       ['Precio Lista',c.precioLista],['Descuento General',c.descuentoGeneral],['Subtotal después del descuento',c.baseComercial],
       ['Total Final',c.totalFinal,true],
-      ...(!esVendedor()?[['Costo Cobranza',c.costoCobranza],['Neto Esperado',c.netoEsperado,true],['Costo Mercadería',c.costoMercaderia],['Margen antes de cobranza',c.margenComercial],['Margen final estimado',c.margenEstimado,true]]:[]),
+      ...(!esVendedor()?[['Costo Cobranza',c.costoCobranza],['Neto Esperado',c.netoEsperado,true],['Costo Mercadería',c.costoMercaderia],['Margen antes de cobranza',c.margenComercial,false,c.margenComercial<0],['Margen final estimado',c.margenEstimado,true,c.margenEstimado<0]]:[]),
       ...(c.esCuenta?[['Saldo pendiente',c.saldoPendiente]]:[])
     ].map(x=>tarjetaResumen(...x)).join('');
+    const margenPct=c.netoEsperado>0?(c.margenEstimado/c.netoEsperado)*100:-100;
+    const margenMinimo=Math.max(0,...c.pagos.map(p=>n(p.plan?.[15])));
+    const margenEnRiesgo=c.margenEstimado<0||(margenMinimo>0&&margenPct<margenMinimo);
+    const alertaMargen=document.getElementById('vta-alerta-margen');
+    if(alertaMargen){
+      alertaMargen.style.display=margenEnRiesgo?'block':'none';
+      if(margenEnRiesgo)alertaMargen.textContent=esVendedor()?'⚠️ Esta venta requiere autorización de la administradora por margen insuficiente.':c.margenEstimado<0?`⚠️ Atención: esta venta genera una pérdida estimada de ${formatPeso(Math.abs(c.margenEstimado))}. Al confirmar se solicitará autorización.`:`⚠️ Atención: el margen final estimado es ${margenPct.toLocaleString('es-AR',{maximumFractionDigits:1})}% y el mínimo configurado es ${margenMinimo}%.`;
+    }
     c.pagos.forEach((p,i) => {
       const el=document.getElementById(`vta-pago-info-${i}`); if(!el)return;
       const fila=vtaPagosFila[i], recibido=n(fila?.entregado), diferencia=recibido-p.montoCliente;

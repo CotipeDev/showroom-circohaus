@@ -86,14 +86,19 @@
   }
 
   function tarjetaResumen(label, valor, fuerte, alerta) {
-    return `<div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-light)">${label}</div><div style="font-size:${fuerte?'18':'14'}px;font-weight:${fuerte?'700':'600'};color:${alerta?'var(--error)':fuerte?'var(--teal)':'var(--navy)'}">${formatPeso(valor)}</div></div>`;
+    const contenido=valor===null?'—':formatPeso(valor);
+    return `<div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-light)">${label}</div><div style="font-size:${fuerte?'18':'14'}px;font-weight:${fuerte?'700':'600'};color:${alerta?'var(--error)':fuerte?'var(--teal)':'var(--navy)'}">${contenido}</div></div>`;
   }
 
   window.iniciarVentas = async function () {
     setFechaHoy('vta-fecha');
     try {
-      const [dataMp, dataCuentas, dataCli] = await Promise.all([cacheGet('getMediosPago'), cacheGet('getCuentas'), cacheGet('getClientes')]);
-      mediosPagoData = dataMp.slice(1); cuentasData = dataCuentas.slice(1); clientesData = dataCli.slice(1);
+      const [dataMp,dataCuentas,dataCli]=await Promise.all([cacheGet('getMediosPago'),cacheGet('getCuentas'),cacheGet('getClientes')]);
+      mediosPagoData=dataMp.slice(1);cuentasData=dataCuentas.slice(1);clientesData=dataCli.slice(1);
+      if(!tarifasCobroData.length){
+        try{const[dataProcesadores,dataTarifas,dataPlanes]=await Promise.all([cacheGet('getProcesadoresCobro'),cacheGet('getTarifasCobro'),cacheGet('getPlanesCuotas')]);procesadoresCobroData=dataProcesadores.slice(1);tarifasCobroData=dataTarifas.slice(1);planesCuotasData=dataPlanes.slice(1);}
+        catch(e){if(!esVendedor())throw e;}
+      }
       llenarSelectClientes();
       if (!vtaPagosFila.length) vtaPagosFila = [{ id_medio:'', id_tarifa:'', id_plan:'', base_asignada:0, entregado:0 }];
       renderFilasPago(); toggleTipoVenta(); actualizarTotalesVenta();
@@ -195,15 +200,16 @@
       c=calcularVentaV2();
     }
     document.getElementById('vta-lista-bruto').textContent = formatPeso(c.precioLista);
+    const cobroListo=c.esCuenta||c.pagos.length>0;
     document.getElementById('vta-resumen').innerHTML = [
       ['Precio Lista',c.precioLista],['Descuento General',c.descuentoGeneral],['Subtotal después del descuento',c.baseComercial],
       ['Total Final',c.totalFinal,true],
-      ...(!esVendedor()?[['Costo Cobranza',c.costoCobranza],['Neto Esperado',c.netoEsperado,true],['Costo Mercadería',c.costoMercaderia],['Margen antes de cobranza',c.margenComercial,false,c.margenComercial<0],['Margen final estimado',c.margenEstimado,true,c.margenEstimado<0]]:[]),
+      ...(!esVendedor()?[['Costo Cobranza',cobroListo?c.costoCobranza:null],['Neto Esperado',cobroListo?c.netoEsperado:null,true],['Costo Mercadería',c.costoMercaderia],['Margen antes de cobranza',c.margenComercial,false,c.margenComercial<0],['Margen final estimado',cobroListo?c.margenEstimado:null,true,cobroListo&&c.margenEstimado<0]]:[]),
       ...(c.esCuenta?[['Saldo pendiente',c.saldoPendiente]]:[])
     ].map(x=>tarjetaResumen(...x)).join('');
     const margenPct=c.netoEsperado>0?(c.margenEstimado/c.netoEsperado)*100:-100;
     const margenMinimo=Math.max(0,...c.pagos.map(p=>n(p.plan?.[15])));
-    const margenEnRiesgo=c.margenEstimado<0||(margenMinimo>0&&margenPct<margenMinimo);
+    const margenEnRiesgo=cobroListo&&(c.margenEstimado<0||(margenMinimo>0&&margenPct<margenMinimo));
     const alertaMargen=document.getElementById('vta-alerta-margen');
     if(alertaMargen){
       alertaMargen.style.display=margenEnRiesgo?'block':'none';

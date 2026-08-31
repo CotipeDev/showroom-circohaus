@@ -2348,10 +2348,11 @@ async function precargarDatosBase(){
   categoriasData=(dataCategorias||[]).slice(1).map(c=>c[0]).filter(Boolean);
   stockData=productosData;
   prodTablaData=productosData;
-  cargarProveedores();
-  cargarCategorias();
+  await Promise.all([cargarProveedores(),cargarCategorias()]);
   iniciarHome();
   cargarNotificaciones();
+  // Si el módulo se abrió antes de recibir estos datos, actualizarlo sin F5.
+  aplicarRuta();
 }
 
 async function iniciarAplicacion(){
@@ -2359,6 +2360,8 @@ async function iniciarAplicacion(){
   aplicarPermisosUI();
   aplicarRuta();
   precargarDatosBase().catch(e=>console.warn('No se pudo completar la carga inicial:',e));
+  // Darle al navegador un cuadro para pintar la ruta correcta detrás del cargador.
+  await new Promise(resolve=>requestAnimationFrame(resolve));
 }
 function mostrarCargaAplicacion(mostrar){const pantalla=document.getElementById('app-loading-screen');if(pantalla)pantalla.style.display=mostrar?'flex':'none';}
 document.addEventListener('DOMContentLoaded',()=>{

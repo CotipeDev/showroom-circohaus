@@ -88,6 +88,7 @@
 
   function tarjetaResumen(label, valor, fuerte, alerta) {
     const contenido=valor===null?'—':formatPeso(valor);
+    if(label==='Total a pagar por el cliente')return `<div style="background:var(--teal);padding:10px 12px;border-radius:8px;box-shadow:0 2px 8px rgba(55,157,171,.22)"><div style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:white;font-weight:600">${label}</div><div style="font-size:24px;line-height:1.2;font-weight:800;color:white;margin-top:2px">${contenido}</div></div>`;
     return `<div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-light)">${label}</div><div style="font-size:${fuerte?'18':'14'}px;font-weight:${fuerte?'700':'600'};color:${alerta?'var(--error)':fuerte?'var(--teal)':'var(--navy)'}">${contenido}</div></div>`;
   }
 
@@ -204,7 +205,7 @@
     const cobroListo=c.esCuenta||c.pagos.length>0;
     document.getElementById('vta-resumen').innerHTML = [
       ['Precio Lista',c.precioLista],['Descuento General',c.descuentoGeneral],['Subtotal después del descuento',c.baseComercial],
-      ['Total Final',c.totalFinal,true],
+      ['Total a pagar por el cliente',c.totalFinal,true],
       ...(!esVendedor()?[['Costo Cobranza',cobroListo?c.costoCobranza:null],['Neto Esperado',cobroListo?c.netoEsperado:null,true],['Costo Mercadería',c.costoMercaderia],['Margen antes de cobranza',c.margenComercial,false,c.margenComercial<0],['Margen final estimado',cobroListo?c.margenEstimado:null,true,cobroListo&&c.margenEstimado<0]]:[]),
       ...(c.esCuenta?[['Saldo pendiente',c.saldoPendiente]]:[])
     ].map(x=>tarjetaResumen(...x)).join('');

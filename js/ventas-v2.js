@@ -1,5 +1,6 @@
 // Ventas V2: implementación única que reemplaza los handlers legacy del HTML.
 (function () {
+  const MARGEN_MINIMO_VENTA_PCT = 20;
   const n = value => Math.max(0, Number(value) || 0);
   const redondear = value => Math.round(n(value));
   const activo = medio => medio && (medio[7] === true || String(medio[7]).toUpperCase() === 'TRUE' || Number(medio[7]) === 1);
@@ -208,7 +209,7 @@
       ...(c.esCuenta?[['Saldo pendiente',c.saldoPendiente]]:[])
     ].map(x=>tarjetaResumen(...x)).join('');
     const margenPct=c.netoEsperado>0?(c.margenEstimado/c.netoEsperado)*100:-100;
-    const margenMinimo=Math.max(0,...c.pagos.map(p=>n(p.plan?.[15])));
+    const margenMinimo=Math.max(MARGEN_MINIMO_VENTA_PCT,...c.pagos.map(p=>n(p.plan?.[15])));
     const margenEnRiesgo=cobroListo&&(c.margenEstimado<0||(margenMinimo>0&&margenPct<margenMinimo));
     const alertaMargen=document.getElementById('vta-alerta-margen');
     if(alertaMargen){
@@ -249,7 +250,7 @@
       for(const item of vtaItemsCarrito){const p=productosData.find(x=>String(x[0])===String(item.codigo));if(!p||item.cantidad>n(p[5]))throw new Error(`Stock insuficiente para ${item.codigo}.`);}
       btn.disabled=true;btn.textContent='Procesando...';
       const tipoDesc=document.getElementById('vta-descuento-tipo').value, valorDesc=n(document.getElementById('vta-descuento-general').value);
-      const payload={fecha,tipo,id_cliente:idCliente||'',notas:document.getElementById('vta-notas').value,aplicar_descuento_medios:false,confirmar_margen_bajo:confirmarMargenBajo,
+      const payload={fecha,tipo,id_cliente:idCliente||'',notas:document.getElementById('vta-notas').value,aplicar_descuento_medios:false,confirmar_margen_bajo:confirmarMargenBajo,margen_minimo_pct:MARGEN_MINIMO_VENTA_PCT,
         descuento_general_pct:tipoDesc==='pct'?valorDesc:0,descuento_general_importe:tipoDesc==='importe'?valorDesc:0,
         items:vtaItemsCarrito.map(i=>({codigo:i.codigo,cantidad:i.cantidad,descuento_item_pct:0,descuento_item_importe:0})),
         pagos:pagosEntrada.filter(p=>(p.id_tarifa||p.id_medio)&&n(p.base_asignada)>0).map(p=>p.id_tarifa?({id_tarifa:p.id_tarifa,id_plan:p.id_plan||'',base_asignada:redondear(p.base_asignada)}):({id_medio:p.id_medio,base_asignada:redondear(p.base_asignada)}))};

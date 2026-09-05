@@ -2253,6 +2253,21 @@ async function verDetalleVenta(idVenta){
     const netoEsperado=esV2?Number(venta[20])||0:Number(venta?.[6])||0;
     const saldoPendiente=esV2?Number(venta[18])||0:0;
     const montoPagado=esV2?Number(venta[17])||0:Number(venta?.[5])||0;
+    const nombreFormaCobro=p=>{
+      const id=String(p[1]||'');
+      const tarifa=tarifasCobroData.find(t=>String(t[0])===id);
+      if(tarifa){
+        const cuenta=cuentasData.find(c=>String(c[0])===String(tarifa[1]));
+        const nombreCuenta=cuenta?cuenta[1]:tarifa[1];
+        const canal=String(tarifa[3]||'');
+        const tipo=String(tarifa[4]||'');
+        const dias=Number(tarifa[5])||0;
+        if(canal.toLowerCase()==='efectivo')return 'Efectivo';
+        return [nombreCuenta,canal,tipo,dias?`${dias} días`:'inmediata'].filter(Boolean).join(' · ');
+      }
+      const medio=mediosPagoData.find(m=>String(m[0])===id);
+      return medio?medio[2]:id;
+    };
     document.getElementById('detalle-vta-titulo').textContent=`Detalle — ${idVenta}`;
     const clienteVenta=venta&&venta[3]?clientesData.find(c=>String(c[0])===String(venta[3])):null;
     document.getElementById('detalle-vta-body').innerHTML=`
@@ -2274,7 +2289,7 @@ async function verDetalleVenta(idVenta){
       </div>
       <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-mid);margin-bottom:6px">Pagos</div>
       <table><thead><tr><th>Medio</th><th>Importe original</th><th>Neto efectivo</th><th>Estado</th></tr></thead><tbody>
-        ${pagos.length?pagos.map(p=>{const mp=mediosPagoData.find(m=>String(m[0])===String(p[1]));const pagoCancelado=estadoVenta==='cancelada'||String(p[21]||'').toUpperCase()==='CANCELADO';return`<tr style="${pagoCancelado?'opacity:.65':''}"><td>${mp?mp[2]:p[1]}</td><td>${formatPeso(p[2])}</td><td style="color:${pagoCancelado?'var(--text-light)':'var(--success)'}">${formatPeso(pagoCancelado?0:p[6])}</td><td><span class="badge ${pagoCancelado?'badge-zero':'badge-ok'}">${pagoCancelado?'Cancelado':(p[21]||'Registrado')}</span></td></tr>`}).join(''):'<tr><td colspan="4" style="text-align:center;color:var(--text-light)">Sin pago inicial</td></tr>'}
+        ${pagos.length?pagos.map(p=>{const pagoCancelado=estadoVenta==='cancelada'||String(p[21]||'').toUpperCase()==='CANCELADO';return`<tr style="${pagoCancelado?'opacity:.65':''}"><td>${nombreFormaCobro(p)}</td><td>${formatPeso(p[2])}</td><td style="color:${pagoCancelado?'var(--text-light)':'var(--success)'}">${formatPeso(pagoCancelado?0:p[6])}</td><td><span class="badge ${pagoCancelado?'badge-zero':'badge-ok'}">${pagoCancelado?'Cancelado':(p[21]||'Registrado')}</span></td></tr>`}).join(''):'<tr><td colspan="4" style="text-align:center;color:var(--text-light)">Sin pago inicial</td></tr>'}
       </tbody></table>`;
     const btnCancelar=document.getElementById('btn-cancelar-vta');
     btnCancelar.style.display=estadoVenta==='cancelada'||esVendedor()?'none':'';

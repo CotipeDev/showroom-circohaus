@@ -228,7 +228,7 @@
       ventasHistData=[]; limpiarVenta(); setTimeout(()=>cargarProductos(),1500);
     } catch(e) {
       const mensaje=String(e.message||'Error al registrar la venta');
-      if(mensaje.startsWith('MARGEN_BAJO|')&&!esVendedor()&&!confirmarMargenBajo&&confirm(mensaje.split('|').slice(1).join('|')+'\n\n¿Confirmar igualmente como administradora?')){if(btn){btn.disabled=false;btn.textContent='✓ Confirmar venta';}return confirmarVenta(true);}
+      if(mensaje.startsWith('MARGEN_BAJO|')&&!esVendedor()&&!confirmarMargenBajo&&confirm(mensaje.split('|').slice(1).join('|')+'\n\n¿Confirmar igualmente como administradora?')){if(btn){btn.disabled=false;btn.textContent='✓ Confirmar venta';}return await confirmarVenta(true);}
       showToast(mensaje.replace(/^MARGEN_BAJO\|/,''),'error');
     }
     finally { if(btn){btn.disabled=false;btn.textContent='✓ Confirmar venta';} }

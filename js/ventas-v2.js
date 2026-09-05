@@ -3,11 +3,7 @@
   const MARGEN_MINIMO_VENTA_PCT = 20;
   const n = value => Math.max(0, Number(value) || 0);
   const redondear = value => Math.round(n(value));
-  const activo = medio => medio && (medio[7] === true || String(medio[7]).toUpperCase() === 'TRUE' || Number(medio[7]) === 1);
   const activoCobro = valor => valor === true || String(valor).toUpperCase() === 'TRUE' || Number(valor) === 1;
-  const medioPorId = id => mediosPagoData.find(m => String(m[0]) === String(id));
-  const esEfectivo = medio => String(medio?.[2] || '').toLowerCase().includes('efectivo');
-  const usaCobrosV2 = () => tarifasCobroData.some(t => activoCobro(t[10]));
   const tarifaPorId = id => tarifasCobroData.find(t => String(t[0]) === String(id));
   const planPorId = id => planesCuotasData.find(p => String(p[0]) === String(id));
   const procesadorNombre = id => procesadoresCobroData.find(p => String(p[0]) === String(id))?.[1] || id || '';
@@ -49,8 +45,7 @@
     const esCuenta = document.getElementById('vta-tipo')?.value === 'cuenta_por_cobrar';
     const filas = esCuenta ? pagoInicialCuenta() : vtaPagosFila;
     let totalBase = 0, montoPagado = 0, costoCobranza = 0, netoPagos = 0, recargoCliente = 0;
-    const pagos = filas.filter(f => (f.id_tarifa || f.id_medio) && n(f.base_asignada) > 0).map(f => {
-      if (f.id_tarifa) {
+    const pagos = filas.filter(f => f.id_tarifa && n(f.base_asignada) > 0).map(f => {
         const tarifa=tarifaPorId(f.id_tarifa),plan=planPorId(f.id_plan),base=redondear(f.base_asignada);
         const quien=String(plan?.[7]||'ninguno').toLowerCase();
         const costoPlan=(quien==='negocio'||quien==='compartido')?n(plan?.[5]):0;
@@ -60,17 +55,6 @@
         const costo=redondear(montoCliente*costoPct/100),neto=montoCliente-costo;
         totalBase+=base;montoPagado+=montoCliente;costoCobranza+=costo;netoPagos+=neto;recargoCliente+=montoCliente-base;
         return {id_tarifa:f.id_tarifa,id_plan:f.id_plan||'',base_asignada:base,tarifa,plan,montoCliente,comision:costo,costoFinanciero:0,neto,costoPct};
-      }
-      const medio = medioPorId(f.id_medio);
-      const base = redondear(f.base_asignada);
-      const comisionPct = n(medio?.[4]), cfPct = n(medio?.[5]);
-      const montoCliente = base;
-      const comision = redondear(montoCliente * comisionPct / 100);
-      const costoFinanciero = redondear(montoCliente * cfPct / 100);
-      const neto = montoCliente - comision - costoFinanciero;
-      totalBase += base; montoPagado += montoCliente;
-      costoCobranza += comision + costoFinanciero; netoPagos += neto;
-      return { id_medio:f.id_medio, base_asignada:base, medio, montoCliente, comision, costoFinanciero, neto };
     });
     const saldoPendiente = esCuenta ? Math.max(0, baseComercial - totalBase) : 0;
     const netoEsperado = netoPagos + saldoPendiente;
@@ -83,7 +67,7 @@
   function pagoInicialCuenta() {
     const base = n(document.getElementById('vta-fiado-monto-inicial')?.value);
     const id = document.getElementById('vta-fiado-medio-inicial')?.value || '';
-    return base > 0 || id ? [usaCobrosV2()?{ id_tarifa:id, id_plan:'', base_asignada:base }:{ id_medio:id, base_asignada:base }] : [];
+    return base > 0 || id ? [{ id_tarifa:id, id_plan:'', base_asignada:base }] : [];
   }
 
   function tarjetaResumen(label, valor, fuerte, alerta) {
@@ -95,14 +79,14 @@
   window.iniciarVentas = async function () {
     setFechaHoy('vta-fecha');
     try {
-      const [dataMp,dataCuentas,dataCli]=await Promise.all([cacheGet('getMediosPago'),cacheGet('getCuentas'),cacheGet('getClientes')]);
-      mediosPagoData=dataMp.slice(1);cuentasData=dataCuentas.slice(1);clientesData=dataCli.slice(1);
+      const [dataCuentas,dataCli]=await Promise.all([cacheGet('getCuentas'),cacheGet('getClientes')]);
+      cuentasData=dataCuentas.slice(1);clientesData=dataCli.slice(1);
       if(!tarifasCobroData.length){
         try{const[dataProcesadores,dataTarifas,dataPlanes]=await Promise.all([cacheGet('getProcesadoresCobro'),cacheGet('getTarifasCobro'),cacheGet('getPlanesCuotas')]);procesadoresCobroData=dataProcesadores.slice(1);tarifasCobroData=dataTarifas.slice(1);planesCuotasData=dataPlanes.slice(1);}
         catch(e){if(!esVendedor())throw e;}
       }
       llenarSelectClientes();
-      if (!vtaPagosFila.length) vtaPagosFila = [{ id_medio:'', id_tarifa:'', id_plan:'', base_asignada:0, entregado:0 }];
+      if (!vtaPagosFila.length) vtaPagosFila = [{ id_tarifa:'', id_plan:'', base_asignada:0, entregado:0 }];
       renderFilasPago(); toggleTipoVenta(); actualizarTotalesVenta();
     } catch (e) { showToast(e.message || 'Error al cargar datos de ventas', 'error'); }
   };
@@ -146,12 +130,7 @@
   };
 
   window.quitarItemVenta = i => { vtaItemsCarrito.splice(i,1); renderCarritoVenta(); };
-  window.agregarPagoVenta = () => { vtaPagosFila.push({id_medio:'',id_tarifa:'',id_plan:'',base_asignada:0,entregado:0}); renderFilasPago(); };
-  window.cambiarMedioPago = (i,val) => {
-    vtaPagosFila[i].id_medio=val;
-    if(vtaPagosFila.length===1)vtaPagosFila[i].base_asignada=calcularVentaV2().baseComercial;
-    renderFilasPago(); actualizarTotalesVenta();
-  };
+  window.agregarPagoVenta = () => { vtaPagosFila.push({id_tarifa:'',id_plan:'',base_asignada:0,entregado:0}); renderFilasPago(); };
   window.cambiarTarifaPago = (i,val) => {
     vtaPagosFila[i].id_tarifa=val;vtaPagosFila[i].id_plan='';
     if(vtaPagosFila.length===1)vtaPagosFila[i].base_asignada=calcularVentaV2().baseComercial;
@@ -164,10 +143,9 @@
 
   window.renderFilasPago = function () {
     const lista = document.getElementById('vta-pagos-lista'); if (!lista) return;
-    if(usaCobrosV2()){
-      const prioridad=t=>esEfectivoTarifa(t)?0:String(t[3]||'').toLowerCase()==='transferencia'?1:2;
-      const tarifas=tarifasCobroData.filter(t=>activoCobro(t[10])).sort((a,b)=>prioridad(a)-prioridad(b)||String(a[3]).localeCompare(String(b[3]))||n(a[5])-n(b[5]));
-      lista.innerHTML=vtaPagosFila.map((fila,i)=>{
+    const prioridad=t=>esEfectivoTarifa(t)?0:String(t[3]||'').toLowerCase()==='transferencia'?1:2;
+    const tarifas=tarifasCobroData.filter(t=>activoCobro(t[10])).sort((a,b)=>prioridad(a)-prioridad(b)||String(a[3]).localeCompare(String(b[3]))||n(a[5])-n(b[5]));
+    lista.innerHTML=vtaPagosFila.map((fila,i)=>{
         const tarifa=tarifaPorId(fila.id_tarifa),efectivo=esEfectivoTarifa(tarifa),base=n(fila.base_asignada)||calcularVentaV2().baseComercial;
         const planes=planesParaTarifa(tarifa,base);
         if(fila.id_plan&&!planes.some(p=>String(p[0])===String(fila.id_plan)))fila.id_plan='';
@@ -180,25 +158,14 @@
           <div class="field" style="margin:0"><label>${efectivo?'Efectivo recibido':esVendedor()?'Información':'Costo del cobro'}</label>${efectivo?`<input type="number" min="0" value="${fila.entregado||''}" placeholder="Ingresá lo que entrega" oninput="cambiarEntregado(${i},this.value)">`:esVendedor()?'<div style="font-size:11px;padding:9px 0">Cobro electrónico</div>':`<div style="font-size:11px;padding:9px 0">${tarifa?`Tarifa ${n(tarifa[6])}% + IVA${fila.id_plan?` · plan ${n(planPorId(fila.id_plan)?.[5])}%`:''}`:'Seleccioná una forma'}</div>`}</div>
           ${vtaPagosFila.length>1?`<button class="btn-danger" onclick="quitarFilaPago(${i})" style="height:40px">✕</button>`:'<div></div>'}
           <div id="vta-pago-info-${i}" style="grid-column:1/-1;font-size:11px;color:var(--text-mid)"></div></div>`;
-      }).join('');return;
-    }
-    const medios = mediosPagoData.filter(activo);
-    lista.innerHTML = vtaPagosFila.map((fila,i) => {
-      const mp = medioPorId(fila.id_medio), efectivo = esEfectivo(mp);
-      return `<div style="display:grid;grid-template-columns:1.2fr .8fr 1.2fr auto;gap:10px;align-items:end;margin-bottom:12px;padding:10px;background:var(--off-white);border-radius:8px">
-        <div class="field" style="margin:0"><label>Medio de pago</label><select onchange="cambiarMedioPago(${i},this.value)"><option value="">Seleccioná...</option>${medios.map(m=>`<option value="${m[0]}" ${String(m[0])===String(fila.id_medio)?'selected':''}>${m[2]}</option>`).join('')}</select></div>
-        <div class="field" style="margin:0;${vtaPagosFila.length===1?'display:none':''}"><label>Parte de la venta</label><input type="number" min="0" value="${fila.base_asignada||''}" oninput="cambiarBasePago(${i},this.value)"></div>
-        <div class="field" style="margin:0"><label>${efectivo?'Efectivo recibido':esVendedor()?'Información':'Costos del medio'}</label>${efectivo?`<input type="number" min="0" value="${fila.entregado||''}" placeholder="Ingresá lo que entrega" oninput="cambiarEntregado(${i},this.value)">`:esVendedor()?'<div style="font-size:11px;padding:9px 0">Cobro electrónico</div>':`<div style="font-size:11px;padding:9px 0">Comisión ${n(mp?.[4])}% · Costo financiero ${n(mp?.[5])}%</div>`}</div>
-        ${vtaPagosFila.length>1?`<button class="btn-danger" onclick="quitarFilaPago(${i})" style="height:40px">✕</button>`:'<div></div>'}
-        <div id="vta-pago-info-${i}" style="grid-column:1/-1;font-size:11px;color:var(--text-mid)"></div></div>`;
-    }).join('');
+      }).join('');
   };
 
   window.actualizarTotalesVenta = function () {
     let c = calcularVentaV2();
-    if(!c.esCuenta&&vtaPagosFila.length===1&&(vtaPagosFila[0].id_tarifa||vtaPagosFila[0].id_medio)&&vtaPagosFila[0].base_asignada!==c.baseComercial){
+    if(!c.esCuenta&&vtaPagosFila.length===1&&vtaPagosFila[0].id_tarifa&&vtaPagosFila[0].base_asignada!==c.baseComercial){
       vtaPagosFila[0].base_asignada=c.baseComercial;
-      if(usaCobrosV2())renderFilasPago();
+      renderFilasPago();
       c=calcularVentaV2();
     }
     document.getElementById('vta-lista-bruto').textContent = formatPeso(c.precioLista);
@@ -220,7 +187,7 @@
     c.pagos.forEach((p,i) => {
       const el=document.getElementById(`vta-pago-info-${i}`); if(!el)return;
       const fila=vtaPagosFila[i], recibido=n(fila?.entregado), diferencia=recibido-p.montoCliente;
-      const pagoEfectivo=p.tarifa?esEfectivoTarifa(p.tarifa):esEfectivo(p.medio);
+      const pagoEfectivo=esEfectivoTarifa(p.tarifa);
       const efectivoInfo=pagoEfectivo?(recibido<=0?'':diferencia>=0?` · Vuelto ${formatPeso(diferencia)}`:` · Falta recibir ${formatPeso(Math.abs(diferencia))}`):'';
       el.textContent=esVendedor()?`Cliente paga ${formatPeso(p.montoCliente)}${efectivoInfo}`:`Cliente paga ${formatPeso(p.montoCliente)} · Comisión ${formatPeso(p.comision)} · Costo financiero ${formatPeso(p.costoFinanciero)} · Neto ${formatPeso(p.neto)}${efectivoInfo}`;
     });
@@ -232,7 +199,7 @@
     document.getElementById('vta-seccion-pagos').style.display=cuenta?'none':'block';
     document.getElementById('vta-cliente-wrap').style.display=cuenta?'block':'none';
     const sel=document.getElementById('vta-fiado-medio-inicial');
-    sel.innerHTML='<option value="">Sin pago inicial</option>'+(usaCobrosV2()?tarifasCobroData.filter(t=>activoCobro(t[10])).map(t=>`<option value="${t[0]}">${cuentaNombre(t[1])} · ${t[3]} · ${t[4]} · ${n(t[5])?`${t[5]} días`:'inmediata'}</option>`).join(''):mediosPagoData.filter(activo).map(m=>`<option value="${m[0]}">${m[2]}</option>`).join(''));
+    sel.innerHTML='<option value="">Sin pago inicial</option>'+tarifasCobroData.filter(t=>activoCobro(t[10])).map(t=>`<option value="${t[0]}">${cuentaNombre(t[1])} · ${t[3]} · ${t[4]} · ${n(t[5])?`${t[5]} días`:'inmediata'}</option>`).join('');
     sel.onchange=actualizarTotalesVenta; actualizarTotalesVenta();
   };
 
@@ -245,7 +212,7 @@
       if(!fecha)throw new Error('Seleccioná una fecha.'); if(tipo==='cuenta_por_cobrar'&&!idCliente)throw new Error('Seleccioná un cliente.');
       const c=calcularVentaV2();
       const pagosEntrada=tipo==='cuenta_por_cobrar'?pagoInicialCuenta():vtaPagosFila;
-      if(pagosEntrada.some(p=>{const id=p.id_tarifa||p.id_medio;return(id&&!n(p.base_asignada))||(!id&&n(p.base_asignada));}))throw new Error('Completá la forma de cobro y el importe en cada pago.');
+      if(pagosEntrada.some(p=>{const id=p.id_tarifa;return(id&&!n(p.base_asignada))||(!id&&n(p.base_asignada));}))throw new Error('Completá la forma de cobro y el importe en cada pago.');
       if(tipo!=='cuenta_por_cobrar'&&redondear(c.totalBase)!==redondear(c.baseComercial))throw new Error(`La suma de bases (${formatPeso(c.totalBase)}) debe igualar la Base Comercial (${formatPeso(c.baseComercial)}).`);
       if(tipo==='cuenta_por_cobrar'&&c.totalBase>c.baseComercial)throw new Error('El pago inicial no puede superar la Base Comercial.');
       for(const item of vtaItemsCarrito){const p=productosData.find(x=>String(x[0])===String(item.codigo));if(!p||item.cantidad>n(p[5]))throw new Error(`Stock insuficiente para ${item.codigo}.`);}
@@ -254,7 +221,7 @@
       const payload={fecha,tipo,id_cliente:idCliente||'',notas:document.getElementById('vta-notas').value,aplicar_descuento_medios:false,confirmar_margen_bajo:confirmarMargenBajo,margen_minimo_pct:MARGEN_MINIMO_VENTA_PCT,
         descuento_general_pct:tipoDesc==='pct'?valorDesc:0,descuento_general_importe:tipoDesc==='importe'?valorDesc:0,
         items:vtaItemsCarrito.map(i=>({codigo:i.codigo,cantidad:i.cantidad,descuento_item_pct:0,descuento_item_importe:0})),
-        pagos:pagosEntrada.filter(p=>(p.id_tarifa||p.id_medio)&&n(p.base_asignada)>0).map(p=>p.id_tarifa?({id_tarifa:p.id_tarifa,id_plan:p.id_plan||'',base_asignada:redondear(p.base_asignada)}):({id_medio:p.id_medio,base_asignada:redondear(p.base_asignada)}))};
+        pagos:pagosEntrada.filter(p=>p.id_tarifa&&n(p.base_asignada)>0).map(p=>({id_tarifa:p.id_tarifa,id_plan:p.id_plan||'',base_asignada:redondear(p.base_asignada)}))};
       const res=await apiPost('registrarVentaV2',payload);
       showToast(`✅ Venta ${res.id||res.id_venta||''} registrada`); cacheInvalidar('getVentas','getDetalleVentas','getPagosVenta','getProductos','getCuentasPorCobrar','getMovimientos');
       ventasData=[];detalleVentasData=[];pagosVentaData=[];cuentasPorCobrarData=[];cxcDataGlobal={};
@@ -268,7 +235,7 @@
   };
 
   window.limpiarVenta = function () {
-    vtaItemsCarrito=[];vtaPagosFila=[{id_medio:'',id_tarifa:'',id_plan:'',base_asignada:0,entregado:0}];vtaProductoSel=null;
+    vtaItemsCarrito=[];vtaPagosFila=[{id_tarifa:'',id_plan:'',base_asignada:0,entregado:0}];vtaProductoSel=null;
     ['vta-buscar','vta-notas','vta-fiado-monto-inicial'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
     document.getElementById('vta-tipo').value='venta';document.getElementById('vta-descuento-tipo').value='pct';document.getElementById('vta-descuento-general').value='0';
     setFechaHoy('vta-fecha');renderCarritoVenta();renderFilasPago();toggleTipoVenta();

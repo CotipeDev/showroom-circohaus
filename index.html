@@ -1467,7 +1467,7 @@ const cache={
   setDesdeCompleto(datosCompletos){
     const mapeo={
       'Productos':'getProductos','Proveedores':'getProveedores','Categorias':'getCategorias',
-      'Medios_Pago':'getMediosPago','Procesadores_Cobro':'getProcesadoresCobro',
+      'Procesadores_Cobro':'getProcesadoresCobro',
       'Tarifas_Cobro':'getTarifasCobro','Planes_Cuotas':'getPlanesCuotas',
       'Cuentas':'getCuentas','Clientes':'getClientes',
       'Ventas':'getVentas','Detalle_Ventas':'getDetalleVentas','Pagos_Venta':'getPagosVenta',
@@ -2351,8 +2351,7 @@ async function verDetalleVenta(idVenta){
         const planTexto=cuotas>1?`${cuotas} cuotas${sinInteres?' sin interés':''}`:'';
         return [nombreCuenta,canal,tipo,dias?`${dias} días`:'inmediata',planTexto].filter(Boolean).join(' · ');
       }
-      const medio=mediosPagoData.find(m=>String(m[0])===id);
-      return medio?medio[2]:id;
+      return id;
     };
     document.getElementById('detalle-vta-titulo').textContent=`Detalle — ${idVenta}`;
     const clienteVenta=venta&&venta[3]?clientesData.find(c=>String(c[0])===String(venta[3])):null;
@@ -2399,7 +2398,6 @@ async function precargarDatos(){
     productosData=(datos.Productos||[]).slice(1);
     proveedoresData=(datos.Proveedores||[]).slice(1);
     categoriasData=(datos.Categorias||[]).slice(1).map(c=>c[0]).filter(Boolean);
-    mediosPagoData=(datos.Medios_Pago||[]).slice(1);
     procesadoresCobroData=(datos.Procesadores_Cobro||[]).slice(1);
     tarifasCobroData=(datos.Tarifas_Cobro||[]).slice(1);
     planesCuotasData=(datos.Planes_Cuotas||[]).slice(1);
@@ -2427,7 +2425,6 @@ async function precargarDatos(){
         cacheGet('getProductos').then(d=>{productosData=d.slice(1)}),
         cacheGet('getProveedores').then(d=>{proveedoresData=d.slice(1)}),
         cacheGet('getCategorias').then(d=>{categoriasData=d.slice(1).map(c=>c[0]).filter(Boolean)}),
-        cacheGet('getMediosPago').then(d=>{mediosPagoData=d.slice(1)}),
         cacheGet('getProcesadoresCobro').then(d=>{procesadoresCobroData=d.slice(1)}),
         cacheGet('getTarifasCobro').then(d=>{tarifasCobroData=d.slice(1)}),
         cacheGet('getPlanesCuotas').then(d=>{planesCuotasData=d.slice(1)}),
@@ -2644,7 +2641,7 @@ async function generarReportes(){
   const rawDetalle=detalleVentasData.length?detalleVentasData:(await cacheGet('getDetalleVentas')).slice(1);
   const rawPagos=pagosVentaData.length?pagosVentaData:(await cacheGet('getPagosVenta')).slice(1);
   const productos=productosData.length?productosData:(await cacheGet('getProductos')).slice(1);
-  const medios=mediosPagoData.length?mediosPagoData:(await cacheGet('getMediosPago')).slice(1);
+  const medios=tarifasCobroData.length?tarifasCobroData:(await cacheGet('getTarifasCobro')).slice(1);
   const cuentas=cuentasData.length?cuentasData:(await cacheGet('getCuentas')).slice(1);
   const movs=movimientosData.length?movimientosData:(await cacheGet('getMovimientos')).slice(1);
 
@@ -2765,7 +2762,7 @@ async function generarReportes(){
     porMedio[id].cobrado+=Number(p[2]);
     porMedio[id].neto+=Number(p[6]);
   });
-  const medioNombre=id=>{const m=medios.find(x=>String(x[0])===id);return m?m[2]:id};
+  const medioNombre=id=>{const m=medios.find(x=>String(x[0])===id);return m?[m[3],m[4]].filter(Boolean).join(' · '):id};
   document.getElementById('rep-medios-body').innerHTML=Object.keys(porMedio).length===0
     ?'<tr><td colspan="3" style="text-align:center;color:var(--text-light);padding:16px">Sin datos</td></tr>'
     :Object.entries(porMedio).sort((a,b)=>b[1].cobrado-a[1].cobrado).map(([id,v])=>`

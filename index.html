@@ -1182,7 +1182,7 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
         <button id="cobros-tab-planes" class="btn btn-secondary" onclick="mostrarPestanaCobros('planes')">Planes de cuotas</button>
       </div>
       <div id="cobros-vista-tarifas" class="card">
-        <div class="card-title">Canales y tarifas vigentes</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px"><div class="card-title" style="margin:0">Canales y tarifas vigentes</div><button class="btn btn-primary" onclick="abrirNuevaTarifaCobroV2()">+ Nuevo canal</button></div>
         <div id="cobros-resumen-tarifas" class="stats-grid" style="margin-bottom:18px"></div>
         <div style="overflow-x:auto"><table>
           <thead><tr><th>Cuenta</th><th>Procesador</th><th>Canal</th><th>Tipo de pago</th><th>Acreditación</th><th>Costo sin IVA</th><th>Costo estimado con IVA</th><th>Estado</th><th></th></tr></thead>
@@ -1204,7 +1204,7 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
 
 <div id="modal-editar-tarifa-cobro" class="modal-overlay" onclick="if(event.target===this)cerrarModal('modal-editar-tarifa-cobro')">
   <div class="modal" style="max-width:680px;max-height:90vh;overflow-y:auto">
-    <div class="modal-title">Editar tarifa de cobro</div>
+    <div class="modal-title" id="cobro-tarifa-modal-titulo">Editar tarifa de cobro</div>
     <input type="hidden" id="cobro-edit-tarifa-id">
     <div class="form-grid cols-3">
       <div class="field"><label>Cuenta</label><select id="cobro-edit-tarifa-cuenta"></select></div>
@@ -1217,8 +1217,8 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
       <div class="field"><label>Estado</label><select id="cobro-edit-tarifa-activa"><option value="true">Activa</option><option value="false">Inactiva</option></select></div>
     </div>
     <div class="field" style="margin-top:12px"><label>Notas</label><input id="cobro-edit-tarifa-notas"></div>
-    <div class="field" style="margin-top:12px"><label>Motivo del cambio</label><input id="cobro-edit-tarifa-motivo" placeholder="Ej: Mercado Pago actualizó la comisión"></div>
-    <div class="modal-actions"><button class="btn btn-primary" onclick="conBotonCargando(this,'Guardando...',guardarTarifaCobroV2)">Guardar cambios</button><button class="btn btn-secondary" onclick="verHistorialTarifaCobro()">Ver historial</button><button class="btn btn-secondary" onclick="cerrarModal('modal-editar-tarifa-cobro')">Cancelar</button></div>
+    <div class="field" id="cobro-edit-tarifa-motivo-wrap" style="margin-top:12px"><label>Motivo del cambio</label><input id="cobro-edit-tarifa-motivo" placeholder="Ej: Mercado Pago actualizó la comisión"></div>
+    <div class="modal-actions"><button class="btn btn-primary" onclick="conBotonCargando(this,'Guardando...',guardarTarifaCobroV2)"><span id="cobro-tarifa-guardar-texto">Guardar cambios</span></button><button id="cobro-tarifa-historial-btn" class="btn btn-secondary" onclick="verHistorialTarifaCobro()">Ver historial</button><button class="btn btn-secondary" onclick="cerrarModal('modal-editar-tarifa-cobro')">Cancelar</button></div>
   </div>
 </div>
 
@@ -2812,7 +2812,7 @@ function descargarListaPrecios(){
 <script src="js/productos.js?v=20260824-1"></script>
 <script src="js/stock.js?v=20260824-1"></script>
 <script src="js/ingresos.js?v=20260824-1"></script>
-<script src="js/medios-pago.js?v=20260907-1"></script>
+<script src="js/medios-pago.js?v=20260907-2"></script>
 <script src="js/clientes.js?v=20260824-1"></script>
 <script src="js/cuentas-por-cobrar.js?v=20260824-1"></script>
 <script src="js/categorias.js?v=20260823-2"></script>

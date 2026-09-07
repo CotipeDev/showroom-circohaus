@@ -65,6 +65,7 @@ function opcionesCobro(datos,valor){return datos.map(x=>`<option value="${x[0]}"
 
 function abrirEditarTarifaCobroV2(id){
   const t=tarifasCobroData.find(x=>String(x[0])===String(id));if(!t)return;
+  document.getElementById('cobro-tarifa-modal-titulo').textContent='Editar tarifa de cobro';document.getElementById('cobro-tarifa-guardar-texto').textContent='Guardar cambios';document.getElementById('cobro-tarifa-historial-btn').style.display='';document.getElementById('cobro-edit-tarifa-motivo-wrap').style.display='block';
   document.getElementById('cobro-edit-tarifa-id').value=t[0];
   document.getElementById('cobro-edit-tarifa-cuenta').innerHTML=opcionesCobro(cuentasData,t[1]);
   document.getElementById('cobro-edit-tarifa-procesador').innerHTML=opcionesCobro(procesadoresCobroData,t[2]);
@@ -79,11 +80,18 @@ function abrirEditarTarifaCobroV2(id){
   document.getElementById('modal-editar-tarifa-cobro').classList.add('open');
 }
 
+function abrirNuevaTarifaCobroV2(){
+  document.getElementById('cobro-tarifa-modal-titulo').textContent='Nuevo canal y tarifa';document.getElementById('cobro-tarifa-guardar-texto').textContent='Crear canal';document.getElementById('cobro-tarifa-historial-btn').style.display='none';document.getElementById('cobro-edit-tarifa-motivo-wrap').style.display='none';
+  document.getElementById('cobro-edit-tarifa-id').value='';document.getElementById('cobro-edit-tarifa-cuenta').innerHTML='<option value="">Seleccioná...</option>'+opcionesCobro(cuentasData,'');document.getElementById('cobro-edit-tarifa-procesador').innerHTML='<option value="">Seleccioná...</option>'+opcionesCobro(procesadoresCobroData,'');document.getElementById('cobro-edit-tarifa-canal').value='';document.getElementById('cobro-edit-tarifa-tipo').value='';document.getElementById('cobro-edit-tarifa-dias').value=0;document.getElementById('cobro-edit-tarifa-comision').value=0;document.getElementById('cobro-edit-tarifa-iva').value=21;document.getElementById('cobro-edit-tarifa-activa').value='true';document.getElementById('cobro-edit-tarifa-notas').value='';document.getElementById('cobro-edit-tarifa-motivo').value='';document.getElementById('modal-editar-tarifa-cobro').classList.add('open');
+}
+
 async function guardarTarifaCobroV2(){
   let id='',cambios=null;
   try{id=document.getElementById('cobro-edit-tarifa-id').value;const motivo=document.getElementById('cobro-edit-tarifa-motivo').value.trim();
-  if(!motivo)throw new Error('Indicá brevemente el motivo del cambio.');
+  if(id&&!motivo)throw new Error('Indicá brevemente el motivo del cambio.');
   cambios={ID_Cuenta:document.getElementById('cobro-edit-tarifa-cuenta').value,ID_Procesador:document.getElementById('cobro-edit-tarifa-procesador').value,Canal:document.getElementById('cobro-edit-tarifa-canal').value.trim(),Tipo_Pago:document.getElementById('cobro-edit-tarifa-tipo').value.trim(),Dias_Acreditacion:Number(document.getElementById('cobro-edit-tarifa-dias').value)||0,Comision_Base_Pct:Number(document.getElementById('cobro-edit-tarifa-comision').value)||0,IVA_Pct:Number(document.getElementById('cobro-edit-tarifa-iva').value)||0,Activo:document.getElementById('cobro-edit-tarifa-activa').value==='true',Notas:document.getElementById('cobro-edit-tarifa-notas').value.trim()};
+  if(!cambios.ID_Cuenta)throw new Error('Seleccioná una cuenta.');if(!cambios.ID_Procesador)throw new Error('Seleccioná un procesador.');if(!cambios.Canal)throw new Error('Ingresá el canal.');if(!cambios.Tipo_Pago)throw new Error('Ingresá el tipo de pago.');
+  if(!id){await apiPost('crearTarifaCobro',{datos:cambios});cache.invalidar('getTarifasCobro','getHistorialTarifasCobro');await recargarConfiguracionCobrosV2();cerrarModal('modal-editar-tarifa-cobro');showToast('Canal y tarifa creados');return;}
   await apiPost('editarTarifaCobro',{id_tarifa:id,motivo,cambios});const t=tarifasCobroData.find(x=>String(x[0])===String(id));if(t){t[1]=cambios.ID_Cuenta;t[2]=cambios.ID_Procesador;t[3]=cambios.Canal;t[4]=cambios.Tipo_Pago;t[5]=cambios.Dias_Acreditacion;t[6]=cambios.Comision_Base_Pct;t[7]=cambios.IVA_Pct;t[10]=cambios.Activo;t[11]=cambios.Notas;}cache.invalidar('getTarifasCobro','getHistorialTarifasCobro');
   cerrarModal('modal-editar-tarifa-cobro');renderConfiguracionCobrosV2();showToast('Tarifa actualizada');}catch(e){
     if(id&&cambios&&/tardando demasiado/i.test(String(e.message||''))){

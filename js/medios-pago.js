@@ -71,6 +71,44 @@ function renderConfiguracionCobrosV2(){
 
 function opcionesCobro(datos,valor){return datos.map(x=>`<option value="${x[0]}" ${String(x[0])===String(valor)?'selected':''}>${x[1]}</option>`).join('');}
 
+function abrirGestorProcesadoresCobro(){
+  cancelarEdicionProcesadorCobro();renderProcesadoresCobro();document.getElementById('modal-procesadores-cobro').classList.add('open');
+}
+
+function renderProcesadoresCobro(){
+  const body=document.getElementById('procesadores-cobro-body');if(!body)return;
+  const filas=[...procesadoresCobroData].sort((a,b)=>Number(cobroActivo(b[2]))-Number(cobroActivo(a[2]))||String(a[1]).localeCompare(String(b[1])));
+  body.innerHTML=filas.length?filas.map(p=>{const activo=cobroActivo(p[2]);return `<tr style="${activo?'':'opacity:.58'}"><td><strong>${p[1]}</strong></td><td><button class="toggle ${activo?'on':''}" onclick="toggleProcesadorCobro('${p[0]}')" title="${activo?'Desactivar':'Activar'}"></button></td><td style="display:flex;gap:7px"><button class="btn-warning" onclick="editarProcesadorCobro('${p[0]}')">✏️</button><button class="btn-danger" onclick="eliminarProcesadorCobro('${p[0]}')">✕</button></td></tr>`;}).join(''):'<tr><td colspan="3" style="text-align:center;color:var(--text-light);padding:18px">No hay procesadores.</td></tr>';
+}
+
+function editarProcesadorCobro(id){
+  const p=procesadoresCobroData.find(x=>String(x[0])===String(id));if(!p)return;
+  document.getElementById('procesador-edit-id').value=p[0];document.getElementById('procesador-edit-nombre').value=p[1]||'';document.getElementById('procesador-guardar-btn').textContent='Guardar';document.getElementById('procesador-cancelar-edicion').style.display='';
+}
+
+function cancelarEdicionProcesadorCobro(){
+  document.getElementById('procesador-edit-id').value='';document.getElementById('procesador-edit-nombre').value='';document.getElementById('procesador-guardar-btn').textContent='Agregar';document.getElementById('procesador-cancelar-edicion').style.display='none';
+}
+
+async function recargarProcesadoresCobro(){
+  cache.invalidar('getProcesadoresCobro');const data=await cacheGet('getProcesadoresCobro');procesadoresCobroData=data.slice(1);renderProcesadoresCobro();renderConfiguracionCobrosV2();
+}
+
+async function guardarProcesadorCobro(){
+  const id=document.getElementById('procesador-edit-id').value;const nombre=document.getElementById('procesador-edit-nombre').value.trim();if(!nombre)throw new Error('Ingresá el nombre del procesador.');
+  if(procesadoresCobroData.some(p=>String(p[0])!==String(id)&&String(p[1]||'').trim().toLowerCase()===nombre.toLowerCase()))throw new Error('Ya existe un procesador con ese nombre.');
+  if(id)await apiPost('editarProcesadorCobro',{id_procesador:id,cambios:{Nombre:nombre}});else await apiPost('crearProcesadorCobro',{nombre});
+  await recargarProcesadoresCobro();cancelarEdicionProcesadorCobro();showToast(id?'Procesador actualizado':'Procesador creado');
+}
+
+async function toggleProcesadorCobro(id){
+  const p=procesadoresCobroData.find(x=>String(x[0])===String(id));if(!p)return;const activar=!cobroActivo(p[2]);try{await apiPost('editarProcesadorCobro',{id_procesador:id,cambios:{Activo:activar}});await recargarProcesadoresCobro();showToast(activar?'Procesador activado':'Procesador desactivado');}catch(e){showToast(e.message||'No se pudo cambiar el procesador','error');}
+}
+
+async function eliminarProcesadorCobro(id){
+  const p=procesadoresCobroData.find(x=>String(x[0])===String(id));if(!p||!confirm(`¿Eliminar el procesador ${p[1]}? Solo se podrá eliminar si nunca fue utilizado.`))return;try{await apiPost('eliminarProcesadorCobro',{id_procesador:id});await recargarProcesadoresCobro();cancelarEdicionProcesadorCobro();showToast('Procesador eliminado');}catch(e){showToast(e.message||'No se puede eliminar este procesador','error');}
+}
+
 function abrirEditarTarifaCobroV2(id){
   const t=tarifasCobroData.find(x=>String(x[0])===String(id));if(!t)return;
   document.getElementById('cobro-tarifa-modal-titulo').textContent='Editar tarifa de cobro';document.getElementById('cobro-tarifa-guardar-texto').textContent='Guardar cambios';document.getElementById('cobro-tarifa-historial-btn').style.display='';document.getElementById('cobro-edit-tarifa-motivo-wrap').style.display='block';

@@ -14,7 +14,7 @@ async function iniciarCxc(){
     const ventas=ventasData.length?ventasData:(await cacheGet('getVentas')).slice(1);
     const clientes=clientesData.length?clientesData:(await cacheGet('getClientes')).slice(1);
     const pagos=pagosVentaData.length?pagosVentaData:(await cacheGet('getPagosVenta')).slice(1);
-    const medios=mediosPagoData.length?mediosPagoData:(await cacheGet('getMediosPago')).slice(1);
+    const medios=tarifasCobroData.length?tarifasCobroData:(await cacheGet('getTarifasCobro')).slice(1);
     const cuentas=cuentasData.length?cuentasData:(await cacheGet('getCuentas')).slice(1);
 
     // Actualizar variables globales
@@ -25,13 +25,13 @@ async function iniciarCxc(){
     // Cargar selects del modal de cobro
     const selMedio=document.getElementById('cxc-cobro-medio');
     const selCuenta=document.getElementById('cxc-cobro-cuenta');
-    selMedio.innerHTML='<option value="">Seleccioná...</option>'+medios.filter(m=>(m[7]===true||m[7]==='TRUE')&&(String(m[2]).toLowerCase().includes('efectivo')||String(m[2]).toLowerCase().includes('transfer'))).map(m=>`<option value="${m[0]}" data-cuenta="${m[1]}">${m[2]}</option>`).join('');
+    selMedio.innerHTML='<option value="">Seleccioná...</option>'+medios.filter(m=>cobroActivo(m[10])&&(String(m[3]).toLowerCase().includes('efectivo')||String(m[3]).toLowerCase().includes('transfer'))).map(m=>`<option value="${m[0]}" data-cuenta="${m[1]}">${m[3]} · ${m[4]}</option>`).join('');
     selCuenta.innerHTML='<option value="">Seleccioná...</option>'+cuentas.filter(c=>c[4]===true||c[4]==='TRUE').map(c=>`<option value="${c[0]}">${c[1]}</option>`).join('');
     selMedio.onchange=()=>{const op=selMedio.selectedOptions[0];if(op&&op.dataset.cuenta)selCuenta.value=op.dataset.cuenta;};
 
     const pendientes=cpcs.filter(c=>c[6]==='pendiente'||c[6]==='cobrada_parcial');
     const nombreCliente=id=>{const c=clientes.find(x=>String(x[0])===String(id));return c?c[1]:id||'Sin nombre'};
-    const nombreMedio=id=>{const m=medios.find(x=>String(x[0])===String(id));return m?m[2]:id||'—'};
+    const nombreMedio=id=>{const m=medios.find(x=>String(x[0])===String(id));return m?`${m[3]} · ${m[4]}`:id||'—'};
 
     // KPIs
     const hoy=new Date();
@@ -185,7 +185,7 @@ async function abrirFichaClientePorCpc(idCpc){
   try{
     const[dataCpc,dataVentas,dataClientes,dataPagos,dataMedios,dataCuentas]=await Promise.all([
       cacheGet('getCuentasPorCobrar'),cacheGet('getVentas'),cacheGet('getClientes'),
-      cacheGet('getPagosVenta'),cacheGet('getMediosPago'),cacheGet('getCuentas')
+      cacheGet('getPagosVenta'),cacheGet('getTarifasCobro'),cacheGet('getCuentas')
     ]);
     const cpcs=Array.isArray(dataCpc)?dataCpc.slice(1):[];
     const ventas=Array.isArray(dataVentas)?dataVentas.slice(1):[];
@@ -193,7 +193,7 @@ async function abrirFichaClientePorCpc(idCpc){
     const pagos=Array.isArray(dataPagos)?dataPagos.slice(1):[];
     const medios=Array.isArray(dataMedios)?dataMedios.slice(1):[];
     const nombreCliente=id=>{const c=clientes.find(x=>String(x[0])===String(id));return c?c[1]:id||'Sin nombre'};
-    const nombreMedio=id=>{const m=medios.find(x=>String(x[0])===String(id));return m?m[2]:id||'—'};
+    const nombreMedio=id=>{const m=medios.find(x=>String(x[0])===String(id));return m?`${m[3]} · ${m[4]}`:id||'—'};
     // Encontrar la CxC y su cliente
     const cpc=cpcs.find(c=>String(c[0])===String(idCpc));
     if(!cpc)return;
@@ -240,19 +240,19 @@ async function confirmarCobroCxc(){
   const idCpc=document.getElementById('cxc-cobro-id').value;
   const fecha=document.getElementById('cxc-cobro-fecha').value;
   const monto=Number(document.getElementById('cxc-cobro-monto').value);
-  const idMedio=document.getElementById('cxc-cobro-medio').value;
+  const idTarifa=document.getElementById('cxc-cobro-medio').value;
   const idCuenta=document.getElementById('cxc-cobro-cuenta').value;
   const saldo=Number(document.getElementById('modal-cobro-cxc').dataset.saldo)||0;
   if(!fecha){showToast('Seleccioná la fecha del pago','error');return;}
   if(!monto||monto<=0){showToast('Ingresá un monto válido','error');return;}
   if(monto>saldo){showToast(`El pago no puede superar el saldo de ${formatPeso(saldo)}`,'error');return;}
-  if(!idMedio){showToast('Seleccioná un medio de pago','error');return;}
+  if(!idTarifa){showToast('Seleccioná una forma de cobro','error');return;}
   if(!idCuenta){showToast('Seleccioná una cuenta','error');return;}
   const btnConfirmar=document.querySelector('#modal-cobro-cxc .btn-primary');
   if(btnConfirmar?.disabled)return;
   if(btnConfirmar){btnConfirmar.disabled=true;btnConfirmar.textContent='Guardando...';}
   try{
-    await apiPost('registrarCobroCPC',{id_cpc:idCpc,fecha,monto,id_medio:idMedio,id_cuenta:idCuenta});
+    await apiPost('registrarCobroCPC',{id_cpc:idCpc,fecha,monto,id_tarifa:idTarifa,id_cuenta:idCuenta});
     showToast('✅ Pago registrado');
     cerrarModal('modal-cobro-cxc');
     cache.invalidar('getCuentasPorCobrar','getMovimientos','getVentas');

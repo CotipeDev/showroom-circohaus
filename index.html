@@ -956,13 +956,13 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
         <div class="form-grid" style="margin-top:16px">
           <div class="field"><label>Fecha</label><input type="date" id="cxc-cobro-fecha"></div>
           <div class="field"><label>Monto</label><input type="number" id="cxc-cobro-monto" min="0" placeholder="0"></div>
-          <div class="field"><label>Medio de pago</label>
+          <div class="field"><label>Forma de cobro</label>
             <select id="cxc-cobro-medio" style="width:100%;background:var(--off-white);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none">
               <option value="">Seleccioná...</option>
             </select>
           </div>
           <div class="field"><label>Cuenta destino</label>
-            <select id="cxc-cobro-cuenta" style="width:100%;background:var(--off-white);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none">
+            <select id="cxc-cobro-cuenta" disabled style="width:100%;background:var(--off-white);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none">
               <option value="">Seleccioná...</option>
             </select>
           </div>
@@ -2923,7 +2923,7 @@ function descargarListaPrecios(){
 <script src="js/ingresos.js?v=20260824-1"></script>
 <script src="js/medios-pago.js?v=20260907-8"></script>
 <script src="js/clientes.js?v=20260824-1"></script>
-<script src="js/cuentas-por-cobrar.js?v=20260824-1"></script>
+<script src="js/cuentas-por-cobrar.js?v=20260907-2"></script>
 <script src="js/categorias.js?v=20260823-2"></script>
 <script src="js/ventas-v2.js?v=20260906-1"></script>
 </body>

@@ -78,7 +78,7 @@ function abrirGestorProcesadoresCobro(){
 function renderProcesadoresCobro(){
   const body=document.getElementById('procesadores-cobro-body');if(!body)return;
   const filas=[...procesadoresCobroData].sort((a,b)=>Number(cobroActivo(b[2]))-Number(cobroActivo(a[2]))||String(a[1]).localeCompare(String(b[1])));
-  body.innerHTML=filas.length?filas.map(p=>{const activo=cobroActivo(p[2]);return `<tr style="${activo?'':'opacity:.58'}"><td><strong>${p[1]}</strong></td><td><button class="toggle ${activo?'on':''}" onclick="toggleProcesadorCobro('${p[0]}')" title="${activo?'Desactivar':'Activar'}"></button></td><td style="display:flex;gap:7px"><button class="btn-warning" onclick="editarProcesadorCobro('${p[0]}')">✏️</button><button class="btn-danger" onclick="eliminarProcesadorCobro('${p[0]}')">✕</button></td></tr>`;}).join(''):'<tr><td colspan="3" style="text-align:center;color:var(--text-light);padding:18px">No hay procesadores.</td></tr>';
+  body.innerHTML=filas.length?filas.map(p=>{const activo=cobroActivo(p[2]),procesando=cobrosProcesando.has(`procesador:${p[0]}`);return `<tr style="${activo?'':'opacity:.58'}"><td><strong>${p[1]}</strong></td><td><div style="display:flex;align-items:center;gap:7px"><button class="toggle ${activo?'on':''}" ${procesando?'disabled style="opacity:.45"':''} onclick="toggleProcesadorCobro('${p[0]}')" title="${procesando?'Procesando...':activo?'Desactivar':'Activar'}"></button>${procesando?`<span style="font-size:10px;color:var(--text-mid)">${activo?'Desactivando…':'Activando…'}</span>`:''}</div></td><td style="display:flex;gap:7px"><button class="btn-warning" ${procesando?'disabled style="opacity:.45"':''} onclick="editarProcesadorCobro('${p[0]}')">✏️</button><button class="btn-danger" ${procesando?'disabled style="opacity:.45"':''} onclick="eliminarProcesadorCobro('${p[0]}')">✕</button></td></tr>`;}).join(''):'<tr><td colspan="3" style="text-align:center;color:var(--text-light);padding:18px">No hay procesadores.</td></tr>';
 }
 
 function editarProcesadorCobro(id){
@@ -102,7 +102,9 @@ async function guardarProcesadorCobro(){
 }
 
 async function toggleProcesadorCobro(id){
-  const p=procesadoresCobroData.find(x=>String(x[0])===String(id));if(!p)return;const activar=!cobroActivo(p[2]);try{await apiPost('editarProcesadorCobro',{id_procesador:id,cambios:{Activo:activar}});await recargarProcesadoresCobro();showToast(activar?'Procesador activado':'Procesador desactivado');}catch(e){showToast(e.message||'No se pudo cambiar el procesador','error');}
+  const p=procesadoresCobroData.find(x=>String(x[0])===String(id));if(!p)return;
+  const clave=`procesador:${id}`;if(cobrosProcesando.has(clave))return;const activar=!cobroActivo(p[2]);cobrosProcesando.add(clave);renderProcesadoresCobro();
+  try{await apiPost('editarProcesadorCobro',{id_procesador:id,cambios:{Activo:activar}});p[2]=activar;cache.invalidar('getProcesadoresCobro');showToast(activar?'Procesador activado':'Procesador desactivado');}catch(e){showToast(e.message||'No se pudo cambiar el procesador','error');}finally{cobrosProcesando.delete(clave);renderProcesadoresCobro();renderConfiguracionCobrosV2();}
 }
 
 async function eliminarProcesadorCobro(id){

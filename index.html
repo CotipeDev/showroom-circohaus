@@ -1266,7 +1266,7 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
     </div>
     <div class="field" style="margin-top:12px"><label>Notas</label><input id="cobro-edit-plan-notas"></div>
     <div class="field" id="cobro-edit-plan-motivo-wrap" style="margin-top:12px"><label>Motivo del cambio</label><input id="cobro-edit-plan-motivo" placeholder="Ej: cambio de promoción"></div>
-    <div class="modal-actions"><button class="btn btn-primary" onclick="conBotonCargando(this,'Guardando...',guardarPlanCobroV2)"><span id="cobro-plan-guardar-texto">Guardar cambios</span></button><button id="cobro-plan-historial-btn" class="btn btn-secondary" onclick="verHistorialPlanCobro()">Ver historial</button><button class="btn btn-secondary" onclick="cerrarModal('modal-editar-plan-cobro')">Cancelar</button></div>
+    <div class="modal-actions"><button class="btn btn-primary" onclick="conBotonCargando(this,'Guardando...',guardarPlanCobroV2)"><span id="cobro-plan-guardar-texto">Guardar cambios</span></button><button id="cobro-plan-eliminar-btn" class="btn btn-danger" onclick="conBotonCargando(this,'Eliminando...',eliminarPlanCobroV2)">Eliminar</button><button id="cobro-plan-historial-btn" class="btn btn-secondary" onclick="verHistorialPlanCobro()">Ver historial</button><button class="btn btn-secondary" onclick="cerrarModal('modal-editar-plan-cobro')">Cancelar</button></div>
   </div>
 </div>
 
@@ -2917,7 +2917,7 @@ function descargarListaPrecios(){
 <script src="js/productos.js?v=20260824-1"></script>
 <script src="js/stock.js?v=20260824-1"></script>
 <script src="js/ingresos.js?v=20260824-1"></script>
-<script src="js/medios-pago.js?v=20260907-5"></script>
+<script src="js/medios-pago.js?v=20260907-6"></script>
 <script src="js/clientes.js?v=20260824-1"></script>
 <script src="js/cuentas-por-cobrar.js?v=20260824-1"></script>
 <script src="js/categorias.js?v=20260823-2"></script>

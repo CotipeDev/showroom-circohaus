@@ -157,12 +157,12 @@ async function toggleTarifaCobroV2(id){
 
 function abrirEditarPlanCobroV2(id){
   const p=planesCuotasData.find(x=>String(x[0])===String(id));if(!p)return;
-  document.getElementById('cobro-plan-modal-titulo').textContent='Editar plan de cuotas';document.getElementById('cobro-plan-guardar-texto').textContent='Guardar cambios';document.getElementById('cobro-plan-historial-btn').style.display='';document.getElementById('cobro-edit-plan-motivo-wrap').style.display='block';
+  document.getElementById('cobro-plan-modal-titulo').textContent='Editar plan de cuotas';document.getElementById('cobro-plan-guardar-texto').textContent='Guardar cambios';document.getElementById('cobro-plan-eliminar-btn').style.display='';document.getElementById('cobro-plan-historial-btn').style.display='';document.getElementById('cobro-edit-plan-motivo-wrap').style.display='block';
   document.getElementById('cobro-edit-plan-id').value=p[0];document.getElementById('cobro-edit-plan-procesador').innerHTML=opcionesCobro(procesadoresCobroData,p[1]);document.getElementById('cobro-edit-plan-canal').value=p[2]||'*';document.getElementById('cobro-edit-plan-cuotas').value=Number(p[4])||1;document.getElementById('cobro-edit-plan-absorbe').value=String(p[7]||'ninguno').toLowerCase();document.getElementById('cobro-edit-plan-costo').value=Number(p[5])||0;document.getElementById('cobro-edit-plan-recargo').value=Number(p[6])||0;document.getElementById('cobro-edit-plan-minimo').value=Number(p[8])||0;document.getElementById('cobro-edit-plan-margen').value=Number(p[15])||0;document.getElementById('cobro-edit-plan-activo').value=String(cobroActivo(p[13]));document.getElementById('cobro-edit-plan-notas').value=p[14]||'';document.getElementById('cobro-edit-plan-motivo').value='';document.getElementById('modal-editar-plan-cobro').classList.add('open');
 }
 
 function abrirNuevoPlanCobroV2(){
-  document.getElementById('cobro-plan-modal-titulo').textContent='Nuevo plan de cuotas';document.getElementById('cobro-plan-guardar-texto').textContent='Crear plan';document.getElementById('cobro-plan-historial-btn').style.display='none';document.getElementById('cobro-edit-plan-motivo-wrap').style.display='none';
+  document.getElementById('cobro-plan-modal-titulo').textContent='Nuevo plan de cuotas';document.getElementById('cobro-plan-guardar-texto').textContent='Crear plan';document.getElementById('cobro-plan-eliminar-btn').style.display='none';document.getElementById('cobro-plan-historial-btn').style.display='none';document.getElementById('cobro-edit-plan-motivo-wrap').style.display='none';
   document.getElementById('cobro-edit-plan-id').value='';document.getElementById('cobro-edit-plan-procesador').innerHTML='<option value="">Seleccioná...</option>'+opcionesCobro(procesadoresCobroData,'');document.getElementById('cobro-edit-plan-canal').value='*';document.getElementById('cobro-edit-plan-cuotas').value=1;document.getElementById('cobro-edit-plan-absorbe').value='ninguno';document.getElementById('cobro-edit-plan-costo').value=0;document.getElementById('cobro-edit-plan-recargo').value=0;document.getElementById('cobro-edit-plan-minimo').value=0;document.getElementById('cobro-edit-plan-margen').value=20;document.getElementById('cobro-edit-plan-activo').value='true';document.getElementById('cobro-edit-plan-notas').value='';document.getElementById('cobro-edit-plan-motivo').value='';document.getElementById('modal-editar-plan-cobro').classList.add('open');
 }
 
@@ -176,6 +176,15 @@ async function guardarPlanCobroV2(){
 }
 
 async function togglePlanCobroV2(id){const p=planesCuotasData.find(x=>String(x[0])===String(id));if(!p)return;const clave=`plan:${id}`;if(cobrosProcesando.has(clave))return;const estabaActivo=cobroActivo(p[13]);cobrosProcesando.add(clave);renderConfiguracionCobrosV2();try{await apiPost('editarPlanCuotas',{id_plan:id,motivo:estabaActivo?'Plan desactivado':'Plan activado',cambios:{Activo:!estabaActivo}});p[13]=!estabaActivo;cache.invalidar('getPlanesCuotas','getHistorialPlanesCuotas');showToast(estabaActivo?'Plan desactivado':'Plan activado');}catch(e){showToast(e.message||'No se pudo cambiar el estado','error');}finally{cobrosProcesando.delete(clave);renderConfiguracionCobrosV2();}}
+
+async function eliminarPlanCobroV2(){
+  const id=document.getElementById('cobro-edit-plan-id').value;if(!id)return;
+  if(!confirm('¿Eliminar este plan? Solo se podrá eliminar si todavía no fue utilizado en una venta.'))return;
+  await apiPost('eliminarPlanCuotas',{id_plan:id});
+  planesCuotasData=planesCuotasData.filter(p=>String(p[0])!==String(id));
+  cache.invalidar('getPlanesCuotas','getHistorialPlanesCuotas');
+  cerrarModal('modal-editar-plan-cobro');renderConfiguracionCobrosV2();showToast('Plan eliminado');
+}
 
 async function recargarConfiguracionCobrosV2(){cache.invalidar('getTarifasCobro','getPlanesCuotas','getHistorialTarifasCobro','getHistorialPlanesCuotas');const[t,p]=await Promise.all([cacheGet('getTarifasCobro'),cacheGet('getPlanesCuotas')]);tarifasCobroData=t.slice(1);planesCuotasData=p.slice(1);renderConfiguracionCobrosV2();}
 

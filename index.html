@@ -2253,6 +2253,8 @@ async function verDetalleVenta(idVenta){
     const netoEsperado=esV2?Number(venta[20])||0:Number(venta?.[6])||0;
     const saldoPendiente=esV2?Number(venta[18])||0:0;
     const montoPagado=esV2?Number(venta[17])||0:Number(venta?.[5])||0;
+    const encabezadosPagos=(dataPagos[0]||[]).map(h=>String(h||'').trim());
+    const indicePago=nombre=>encabezadosPagos.indexOf(nombre);
     const nombreFormaCobro=p=>{
       const id=String(p[1]||'');
       const tarifa=tarifasCobroData.find(t=>String(t[0])===id);
@@ -2263,7 +2265,14 @@ async function verDetalleVenta(idVenta){
         const tipo=String(tarifa[4]||'');
         const dias=Number(tarifa[5])||0;
         if(canal.toLowerCase()==='efectivo')return 'Efectivo';
-        return [nombreCuenta,canal,tipo,dias?`${dias} días`:'inmediata'].filter(Boolean).join(' · ');
+        const idxCuotas=indicePago('Cuotas');
+        const idxPlan=indicePago('ID_Plan');
+        const cuotas=idxCuotas>=0?Number(p[idxCuotas])||1:1;
+        const idPlan=idxPlan>=0?String(p[idxPlan]||''):'';
+        const plan=planesCuotasData.find(x=>String(x[0])===idPlan);
+        const sinInteres=String(plan?.[7]||'').toLowerCase()==='negocio';
+        const planTexto=cuotas>1?`${cuotas} cuotas${sinInteres?' sin interés':''}`:'';
+        return [nombreCuenta,canal,tipo,dias?`${dias} días`:'inmediata',planTexto].filter(Boolean).join(' · ');
       }
       const medio=mediosPagoData.find(m=>String(m[0])===id);
       return medio?medio[2]:id;
@@ -2839,6 +2848,6 @@ function descargarListaPrecios(){
 <script src="js/clientes.js?v=20260824-1"></script>
 <script src="js/cuentas-por-cobrar.js?v=20260824-1"></script>
 <script src="js/categorias.js?v=20260823-2"></script>
-<script src="js/ventas-v2.js?v=20260905-2"></script>
+<script src="js/ventas-v2.js?v=20260906-1"></script>
 </body>
 </html>

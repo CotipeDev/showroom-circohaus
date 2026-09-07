@@ -1159,13 +1159,15 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
 
     <div id="modal-nueva-cuenta" class="modal-overlay" onclick="if(event.target===this)cerrarModal('modal-nueva-cuenta')">
       <div class="modal" style="max-width:560px">
-        <div class="modal-title">Nueva cuenta</div>
+        <div class="modal-title" id="cuenta-modal-titulo">Nueva cuenta</div>
+        <input type="hidden" id="cuenta-edit-id">
         <div class="form-grid">
           <div class="field"><label>Nombre</label><input id="cuenta-nueva-nombre" placeholder="Ej: Banco Provincia"></div>
           <div class="field"><label>Tipo</label><select id="cuenta-nueva-tipo"><option value="">Seleccioná...</option><option value="Banco">Banco</option><option value="Billetera digital">Billetera digital</option><option value="Efectivo">Efectivo</option><option value="Caja">Caja</option></select></div>
           <div class="field"><label>Saldo inicial ($)</label><input type="number" id="cuenta-nueva-saldo" value="0" step="0.01"></div>
+          <div class="field" id="cuenta-estado-wrap" style="display:none"><label>Estado</label><select id="cuenta-edit-activa"><option value="true">Activa</option><option value="false">Inactiva</option></select></div>
         </div>
-        <div class="modal-actions"><button class="btn btn-primary" onclick="conBotonCargando(this,'Guardando...',guardarNuevaCuenta)">Crear cuenta</button><button class="btn btn-secondary" onclick="cerrarModal('modal-nueva-cuenta')">Cancelar</button></div>
+        <div class="modal-actions"><button class="btn btn-primary" onclick="conBotonCargando(this,'Guardando...',guardarCuenta)" id="cuenta-guardar-btn">Crear cuenta</button><button class="btn btn-danger" id="cuenta-eliminar-btn" style="display:none" onclick="eliminarCuentaActual()">Eliminar</button><button class="btn btn-secondary" onclick="cerrarModal('modal-nueva-cuenta')">Cancelar</button></div>
       </div>
     </div>
 
@@ -1702,25 +1704,74 @@ async function iniciarCuentas(){
 }
 
 function abrirNuevaCuenta(){
+  document.getElementById('cuenta-modal-titulo').textContent='Nueva cuenta';
+  document.getElementById('cuenta-edit-id').value='';
   document.getElementById('cuenta-nueva-nombre').value='';
   document.getElementById('cuenta-nueva-tipo').value='';
   document.getElementById('cuenta-nueva-saldo').value='0';
+  document.getElementById('cuenta-estado-wrap').style.display='none';
+  document.getElementById('cuenta-guardar-btn').textContent='Crear cuenta';
+  document.getElementById('cuenta-eliminar-btn').style.display='none';
   document.getElementById('modal-nueva-cuenta').classList.add('open');
 }
 
-async function guardarNuevaCuenta(){
+function abrirEditarCuenta(idCuenta){
+  const c=cuentasData.find(x=>String(x[0])===String(idCuenta));
+  if(!c)return;
+  document.getElementById('cuenta-modal-titulo').textContent='Editar cuenta';
+  document.getElementById('cuenta-edit-id').value=c[0];
+  document.getElementById('cuenta-nueva-nombre').value=c[1]||'';
+  document.getElementById('cuenta-nueva-tipo').value=c[2]||'';
+  document.getElementById('cuenta-nueva-saldo').value=Number(c[3])||0;
+  document.getElementById('cuenta-edit-activa').value=(c[4]===true||c[4]==='TRUE')?'true':'false';
+  document.getElementById('cuenta-estado-wrap').style.display='block';
+  document.getElementById('cuenta-guardar-btn').textContent='Guardar cambios';
+  document.getElementById('cuenta-eliminar-btn').style.display='inline-flex';
+  document.getElementById('modal-nueva-cuenta').classList.add('open');
+}
+
+async function recargarCuentas(){
+  cacheInvalidar('getCuentas','getDatosCompletos');
+  cuentasData=[];
+  await iniciarCuentas();
+}
+
+async function guardarCuenta(){
+  const idCuenta=document.getElementById('cuenta-edit-id').value;
   const nombre=document.getElementById('cuenta-nueva-nombre').value.trim();
   const tipo=document.getElementById('cuenta-nueva-tipo').value;
   const saldoInicial=Number(document.getElementById('cuenta-nueva-saldo').value)||0;
   if(!nombre)throw new Error('Ingresá el nombre de la cuenta.');
   if(!tipo)throw new Error('Seleccioná el tipo de cuenta.');
-  if(cuentasData.some(c=>String(c[1]||'').trim().toLowerCase()===nombre.toLowerCase()))throw new Error('Ya existe una cuenta con ese nombre.');
-  await apiPost('agregarCuenta',{nombre,tipo,saldo_inicial:saldoInicial});
+  if(cuentasData.some(c=>String(c[0])!==String(idCuenta)&&String(c[1]||'').trim().toLowerCase()===nombre.toLowerCase()))throw new Error('Ya existe una cuenta con ese nombre.');
+  if(idCuenta){
+    const activa=document.getElementById('cuenta-edit-activa').value==='true';
+    await apiPost('editarCuenta',{id:idCuenta,nombre,tipo,saldo_inicial:saldoInicial,activa});
+  }else{
+    await apiPost('agregarCuenta',{nombre,tipo,saldo_inicial:saldoInicial});
+  }
   cerrarModal('modal-nueva-cuenta');
-  cacheInvalidar('getCuentas','getDatosCompletos');
-  cuentasData=[];
-  await iniciarCuentas();
-  showToast('Cuenta creada');
+  await recargarCuentas();
+  showToast(idCuenta?'Cuenta actualizada':'Cuenta creada');
+}
+
+async function toggleCuenta(idCuenta){
+  const c=cuentasData.find(x=>String(x[0])===String(idCuenta));
+  if(!c)return;
+  const activa=!(c[4]===true||c[4]==='TRUE');
+  await apiPost('editarCuenta',{id:c[0],nombre:c[1],tipo:c[2],saldo_inicial:Number(c[3])||0,activa});
+  await recargarCuentas();
+  showToast(activa?'Cuenta activada':'Cuenta desactivada');
+}
+
+async function eliminarCuentaActual(){
+  const idCuenta=document.getElementById('cuenta-edit-id').value;
+  if(!idCuenta)return;
+  if(!confirm('¿Eliminar esta cuenta? Solo se podrá eliminar si todavía no fue utilizada.'))return;
+  await apiPost('eliminarCuenta',{id_cuenta:idCuenta});
+  cerrarModal('modal-nueva-cuenta');
+  await recargarCuentas();
+  showToast('Cuenta eliminada');
 }
 
 function fechaStr(val){
@@ -1737,7 +1788,8 @@ function renderCuentasCards(){
   const grid=document.getElementById('cuentas-grid');
   if(!cuentasData.length){grid.innerHTML='<p style="color:var(--text-mid);font-size:13px">No hay cuentas registradas.</p>';return}
   const hoy=new Date().toISOString().split('T')[0];
-  grid.innerHTML=cuentasData.filter(c=>c[4]===true||c[4]==='TRUE').map(c=>{
+  grid.innerHTML=[...cuentasData].sort((a,b)=>Number(!(a[4]===true||a[4]==='TRUE'))-Number(!(b[4]===true||b[4]==='TRUE'))).map(c=>{
+    const activa=c[4]===true||c[4]==='TRUE';
     const saldoInicial=Number(c[3])||0;
     const movsCuenta=movimientosData.filter(m=>String(m[2])===String(c[0])&&movimientoAfectaSaldo(m));
     // Saldo disponible: ingresos cuya fecha_acreditacion <= hoy
@@ -1755,8 +1807,14 @@ function renderCuentasCards(){
       return fa&&fa>hoy;
     }).reduce((s,m)=>s+Number(m[5]),0);
     const clsSaldo=saldoDisp>=0?'positivo':'negativo';
-    return`<div class="cuenta-card">
-      <div class="cuenta-card-nombre">${c[1]}</div>
+    return`<div class="cuenta-card" style="${activa?'':'opacity:.58'}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+        <div class="cuenta-card-nombre">${c[1]}${activa?'':' · Inactiva'}</div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <button class="toggle ${activa?'on':''}" title="${activa?'Desactivar':'Activar'} cuenta" onclick="toggleCuenta('${c[0]}')"></button>
+          <button class="btn btn-sm btn-secondary" title="Editar cuenta" onclick="abrirEditarCuenta('${c[0]}')">✏️</button>
+        </div>
+      </div>
       <div class="cuenta-card-tipo">${c[2]||''}</div>
       <div class="cuenta-card-saldo-label">Disponible hoy</div>
       <div class="cuenta-card-saldo ${clsSaldo}">${formatPeso(saldoDisp)}</div>

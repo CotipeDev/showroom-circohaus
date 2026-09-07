@@ -2843,7 +2843,7 @@ async function generarReportes(){
     if(!margenData[cod].desc){const p=productos.find(x=>String(x[0])===cod);if(p){margenData[cod].desc=p[1];margenData[cod].costoActual=Number(p[4])||0;}}
   });
 
-  const medioNombreCorto=id=>{const m=medios.find(x=>String(x[0])===id);return m?m[2]:id};
+  const medioNombreCorto=id=>{const m=medios.find(x=>String(x[0])===id);return m?[m[3],m[4]].filter(Boolean).join(' · '):id};
 
   document.getElementById('rep-margen-body').innerHTML=Object.keys(margenData).length===0
     ?'<tr><td colspan="6" style="text-align:center;color:var(--text-light);padding:16px">Sin datos</td></tr>'

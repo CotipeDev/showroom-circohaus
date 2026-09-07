@@ -78,7 +78,7 @@ function abrirGestorProcesadoresCobro(){
 function renderProcesadoresCobro(){
   const body=document.getElementById('procesadores-cobro-body');if(!body)return;
   const filas=[...procesadoresCobroData].sort((a,b)=>Number(cobroActivo(b[2]))-Number(cobroActivo(a[2]))||String(a[1]).localeCompare(String(b[1])));
-  body.innerHTML=filas.length?filas.map(p=>{const activo=cobroActivo(p[2]),procesando=cobrosProcesando.has(`procesador:${p[0]}`);return `<tr style="${activo?'':'opacity:.58'}"><td><strong>${p[1]}</strong></td><td><div style="display:flex;align-items:center;gap:7px"><button class="toggle ${activo?'on':''}" ${procesando?'disabled style="opacity:.45"':''} onclick="toggleProcesadorCobro('${p[0]}')" title="${procesando?'Procesando...':activo?'Desactivar':'Activar'}"></button>${procesando?`<span style="font-size:10px;color:var(--text-mid)">${activo?'Desactivando…':'Activando…'}</span>`:''}</div></td><td style="display:flex;gap:7px"><button class="btn-warning" ${procesando?'disabled style="opacity:.45"':''} onclick="editarProcesadorCobro('${p[0]}')">✏️</button><button class="btn-danger" ${procesando?'disabled style="opacity:.45"':''} onclick="eliminarProcesadorCobro('${p[0]}')">✕</button></td></tr>`;}).join(''):'<tr><td colspan="3" style="text-align:center;color:var(--text-light);padding:18px">No hay procesadores.</td></tr>';
+  body.innerHTML=filas.length?filas.map(p=>{const activo=cobroActivo(p[2]),cambiando=cobrosProcesando.has(`procesador:${p[0]}`),eliminando=cobrosProcesando.has(`eliminarProcesador:${p[0]}`),procesando=cambiando||eliminando;return `<tr style="${activo?'':'opacity:.58'}"><td><strong>${p[1]}</strong></td><td><div style="display:flex;align-items:center;gap:7px"><button class="toggle ${activo?'on':''}" ${procesando?'disabled style="opacity:.45"':''} onclick="toggleProcesadorCobro('${p[0]}')" title="${procesando?'Procesando...':activo?'Desactivar':'Activar'}"></button>${procesando?`<span style="font-size:10px;color:var(--text-mid)">${eliminando?'Eliminando…':activo?'Desactivando…':'Activando…'}</span>`:''}</div></td><td style="display:flex;gap:7px"><button class="btn-warning" ${procesando?'disabled style="opacity:.45"':''} onclick="editarProcesadorCobro('${p[0]}')">✏️</button><button class="btn-danger" ${procesando?'disabled style="opacity:.45"':''} onclick="eliminarProcesadorCobro('${p[0]}')">✕</button></td></tr>`;}).join(''):'<tr><td colspan="3" style="text-align:center;color:var(--text-light);padding:18px">No hay procesadores.</td></tr>';
 }
 
 function editarProcesadorCobro(id){
@@ -108,12 +108,14 @@ async function toggleProcesadorCobro(id){
 }
 
 async function eliminarProcesadorCobro(id){
-  const p=procesadoresCobroData.find(x=>String(x[0])===String(id));if(!p||!confirm(`¿Eliminar el procesador ${p[1]}? Solo se podrá eliminar si nunca fue utilizado.`))return;try{await apiPost('eliminarProcesadorCobro',{id_procesador:id});await recargarProcesadoresCobro();cancelarEdicionProcesadorCobro();showToast('Procesador eliminado');}catch(e){showToast(e.message||'No se puede eliminar este procesador','error');}
+  const p=procesadoresCobroData.find(x=>String(x[0])===String(id));if(!p||!confirm(`¿Eliminar el procesador ${p[1]}? Solo se podrá eliminar si nunca fue utilizado.`))return;
+  const clave=`eliminarProcesador:${id}`;if(cobrosProcesando.has(clave))return;cobrosProcesando.add(clave);renderProcesadoresCobro();
+  try{await apiPost('eliminarProcesadorCobro',{id_procesador:id});procesadoresCobroData=procesadoresCobroData.filter(x=>String(x[0])!==String(id));cache.invalidar('getProcesadoresCobro');cancelarEdicionProcesadorCobro();showToast('Procesador eliminado');}catch(e){showToast(e.message||'No se puede eliminar este procesador','error');}finally{cobrosProcesando.delete(clave);renderProcesadoresCobro();renderConfiguracionCobrosV2();}
 }
 
 function abrirEditarTarifaCobroV2(id){
   const t=tarifasCobroData.find(x=>String(x[0])===String(id));if(!t)return;
-  document.getElementById('cobro-tarifa-modal-titulo').textContent='Editar tarifa de cobro';document.getElementById('cobro-tarifa-guardar-texto').textContent='Guardar cambios';document.getElementById('cobro-tarifa-historial-btn').style.display='';document.getElementById('cobro-edit-tarifa-motivo-wrap').style.display='block';
+  document.getElementById('cobro-tarifa-modal-titulo').textContent='Editar tarifa de cobro';document.getElementById('cobro-tarifa-guardar-texto').textContent='Guardar cambios';document.getElementById('cobro-tarifa-eliminar-btn').style.display='';document.getElementById('cobro-tarifa-historial-btn').style.display='';document.getElementById('cobro-edit-tarifa-motivo-wrap').style.display='block';
   document.getElementById('cobro-edit-tarifa-id').value=t[0];
   document.getElementById('cobro-edit-tarifa-cuenta').innerHTML=opcionesCobro(cuentasData,t[1]);
   document.getElementById('cobro-edit-tarifa-procesador').innerHTML=opcionesCobro(procesadoresCobroData,t[2]);
@@ -129,7 +131,7 @@ function abrirEditarTarifaCobroV2(id){
 }
 
 function abrirNuevaTarifaCobroV2(){
-  document.getElementById('cobro-tarifa-modal-titulo').textContent='Nuevo canal y tarifa';document.getElementById('cobro-tarifa-guardar-texto').textContent='Crear canal';document.getElementById('cobro-tarifa-historial-btn').style.display='none';document.getElementById('cobro-edit-tarifa-motivo-wrap').style.display='none';
+  document.getElementById('cobro-tarifa-modal-titulo').textContent='Nuevo canal y tarifa';document.getElementById('cobro-tarifa-guardar-texto').textContent='Crear canal';document.getElementById('cobro-tarifa-eliminar-btn').style.display='none';document.getElementById('cobro-tarifa-historial-btn').style.display='none';document.getElementById('cobro-edit-tarifa-motivo-wrap').style.display='none';
   document.getElementById('cobro-edit-tarifa-id').value='';document.getElementById('cobro-edit-tarifa-cuenta').innerHTML='<option value="">Seleccioná...</option>'+opcionesCobro(cuentasData,'');document.getElementById('cobro-edit-tarifa-procesador').innerHTML='<option value="">Seleccioná...</option>'+opcionesCobro(procesadoresCobroData,'');document.getElementById('cobro-edit-tarifa-canal').innerHTML=opcionesTextoCobro(canalesCobroDisponibles,'','Seleccioná...');document.getElementById('cobro-edit-tarifa-tipo').innerHTML=opcionesTextoCobro(tiposPagoDisponibles,'','Seleccioná...');document.getElementById('cobro-edit-tarifa-dias').value=0;document.getElementById('cobro-edit-tarifa-comision').value=0;document.getElementById('cobro-edit-tarifa-iva').value=21;document.getElementById('cobro-edit-tarifa-activa').value='true';document.getElementById('cobro-edit-tarifa-notas').value='';document.getElementById('cobro-edit-tarifa-motivo').value='';document.getElementById('modal-editar-tarifa-cobro').classList.add('open');
 }
 
@@ -153,6 +155,19 @@ async function toggleTarifaCobroV2(id){
   const t=tarifasCobroData.find(x=>String(x[0])===String(id));if(!t)return;
   const clave=`tarifa:${id}`;if(cobrosProcesando.has(clave))return;const estabaActiva=cobroActivo(t[10]);cobrosProcesando.add(clave);renderConfiguracionCobrosV2();
   try{await apiPost('editarTarifaCobro',{id_tarifa:id,motivo:estabaActiva?'Tarifa desactivada':'Tarifa activada',cambios:{Activo:!estabaActiva}});t[10]=!estabaActiva;cache.invalidar('getTarifasCobro','getHistorialTarifasCobro');showToast(estabaActiva?'Tarifa desactivada':'Tarifa activada');}catch(e){showToast(e.message||'No se pudo cambiar el estado','error');}finally{cobrosProcesando.delete(clave);renderConfiguracionCobrosV2();}
+}
+
+async function eliminarTarifaCobroV2(){
+  const id=document.getElementById('cobro-edit-tarifa-id').value;if(!id)return;
+  if(!confirm('¿Eliminar este canal y su tarifa? Solo se podrá eliminar si todavía no fue utilizado en una venta.'))return;
+  try{
+    await apiPost('eliminarTarifaCobro',{id_tarifa:id});
+    tarifasCobroData=tarifasCobroData.filter(t=>String(t[0])!==String(id));
+    cache.invalidar('getTarifasCobro','getHistorialTarifasCobro');
+    cerrarModal('modal-editar-tarifa-cobro');renderConfiguracionCobrosV2();showToast('Canal y tarifa eliminados');
+  }catch(e){
+    showToast(e.message||'No se puede eliminar este canal. Podés desactivarlo.','error');
+  }
 }
 
 function abrirEditarPlanCobroV2(id){

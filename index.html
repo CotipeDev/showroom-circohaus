@@ -1231,7 +1231,7 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
     </div>
     <div class="field" style="margin-top:12px"><label>Notas</label><input id="cobro-edit-tarifa-notas"></div>
     <div class="field" id="cobro-edit-tarifa-motivo-wrap" style="margin-top:12px"><label>Motivo del cambio</label><input id="cobro-edit-tarifa-motivo" placeholder="Ej: Mercado Pago actualizó la comisión"></div>
-    <div class="modal-actions"><button class="btn btn-primary" onclick="conBotonCargando(this,'Guardando...',guardarTarifaCobroV2)"><span id="cobro-tarifa-guardar-texto">Guardar cambios</span></button><button id="cobro-tarifa-historial-btn" class="btn btn-secondary" onclick="verHistorialTarifaCobro()">Ver historial</button><button class="btn btn-secondary" onclick="cerrarModal('modal-editar-tarifa-cobro')">Cancelar</button></div>
+    <div class="modal-actions"><button class="btn btn-primary" onclick="conBotonCargando(this,'Guardando...',guardarTarifaCobroV2)"><span id="cobro-tarifa-guardar-texto">Guardar cambios</span></button><button id="cobro-tarifa-eliminar-btn" class="btn btn-danger" onclick="conBotonCargando(this,'Eliminando...',eliminarTarifaCobroV2)">Eliminar</button><button id="cobro-tarifa-historial-btn" class="btn btn-secondary" onclick="verHistorialTarifaCobro()">Ver historial</button><button class="btn btn-secondary" onclick="cerrarModal('modal-editar-tarifa-cobro')">Cancelar</button></div>
   </div>
 </div>
 
@@ -2921,7 +2921,7 @@ function descargarListaPrecios(){
 <script src="js/productos.js?v=20260824-1"></script>
 <script src="js/stock.js?v=20260824-1"></script>
 <script src="js/ingresos.js?v=20260824-1"></script>
-<script src="js/medios-pago.js?v=20260907-7"></script>
+<script src="js/medios-pago.js?v=20260907-8"></script>
 <script src="js/clientes.js?v=20260824-1"></script>
 <script src="js/cuentas-por-cobrar.js?v=20260824-1"></script>
 <script src="js/categorias.js?v=20260823-2"></script>

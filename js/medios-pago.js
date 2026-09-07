@@ -19,6 +19,14 @@ function cobroActivo(valor){
   return valor===true||String(valor).toUpperCase()==='TRUE'||Number(valor)===1;
 }
 const cobrosProcesando=new Set();
+const canalesCobroDisponibles=['Efectivo','Transferencia','Point','QR','Link de pago','Terminal / POS','Débito automático'];
+const tiposPagoDisponibles=['Efectivo','Transferencia','Débito','Crédito','Prepaga','Dinero en cuenta','Cuotas sin tarjeta','Pix','Todos'];
+
+function opcionesTextoCobro(valores,actual,placeholder){
+  const opciones=[...valores];
+  if(actual&&!opciones.some(x=>String(x).toLowerCase()===String(actual).toLowerCase()))opciones.push(actual);
+  return `<option value="">${placeholder}</option>`+opciones.map(x=>`<option value="${x}" ${String(x).toLowerCase()===String(actual).toLowerCase()?'selected':''}>${x}</option>`).join('');
+}
 
 function mostrarPestanaCobros(pestana){
   ['tarifas','planes'].forEach(nombre=>{
@@ -69,8 +77,8 @@ function abrirEditarTarifaCobroV2(id){
   document.getElementById('cobro-edit-tarifa-id').value=t[0];
   document.getElementById('cobro-edit-tarifa-cuenta').innerHTML=opcionesCobro(cuentasData,t[1]);
   document.getElementById('cobro-edit-tarifa-procesador').innerHTML=opcionesCobro(procesadoresCobroData,t[2]);
-  document.getElementById('cobro-edit-tarifa-canal').value=t[3]||'';
-  document.getElementById('cobro-edit-tarifa-tipo').value=t[4]||'';
+  document.getElementById('cobro-edit-tarifa-canal').innerHTML=opcionesTextoCobro(canalesCobroDisponibles,t[3]||'','Seleccioná...');
+  document.getElementById('cobro-edit-tarifa-tipo').innerHTML=opcionesTextoCobro(tiposPagoDisponibles,t[4]||'','Seleccioná...');
   document.getElementById('cobro-edit-tarifa-dias').value=Number(t[5])||0;
   document.getElementById('cobro-edit-tarifa-comision').value=Number(t[6])||0;
   document.getElementById('cobro-edit-tarifa-iva').value=Number(t[7])||0;
@@ -82,7 +90,7 @@ function abrirEditarTarifaCobroV2(id){
 
 function abrirNuevaTarifaCobroV2(){
   document.getElementById('cobro-tarifa-modal-titulo').textContent='Nuevo canal y tarifa';document.getElementById('cobro-tarifa-guardar-texto').textContent='Crear canal';document.getElementById('cobro-tarifa-historial-btn').style.display='none';document.getElementById('cobro-edit-tarifa-motivo-wrap').style.display='none';
-  document.getElementById('cobro-edit-tarifa-id').value='';document.getElementById('cobro-edit-tarifa-cuenta').innerHTML='<option value="">Seleccioná...</option>'+opcionesCobro(cuentasData,'');document.getElementById('cobro-edit-tarifa-procesador').innerHTML='<option value="">Seleccioná...</option>'+opcionesCobro(procesadoresCobroData,'');document.getElementById('cobro-edit-tarifa-canal').value='';document.getElementById('cobro-edit-tarifa-tipo').value='';document.getElementById('cobro-edit-tarifa-dias').value=0;document.getElementById('cobro-edit-tarifa-comision').value=0;document.getElementById('cobro-edit-tarifa-iva').value=21;document.getElementById('cobro-edit-tarifa-activa').value='true';document.getElementById('cobro-edit-tarifa-notas').value='';document.getElementById('cobro-edit-tarifa-motivo').value='';document.getElementById('modal-editar-tarifa-cobro').classList.add('open');
+  document.getElementById('cobro-edit-tarifa-id').value='';document.getElementById('cobro-edit-tarifa-cuenta').innerHTML='<option value="">Seleccioná...</option>'+opcionesCobro(cuentasData,'');document.getElementById('cobro-edit-tarifa-procesador').innerHTML='<option value="">Seleccioná...</option>'+opcionesCobro(procesadoresCobroData,'');document.getElementById('cobro-edit-tarifa-canal').innerHTML=opcionesTextoCobro(canalesCobroDisponibles,'','Seleccioná...');document.getElementById('cobro-edit-tarifa-tipo').innerHTML=opcionesTextoCobro(tiposPagoDisponibles,'','Seleccioná...');document.getElementById('cobro-edit-tarifa-dias').value=0;document.getElementById('cobro-edit-tarifa-comision').value=0;document.getElementById('cobro-edit-tarifa-iva').value=21;document.getElementById('cobro-edit-tarifa-activa').value='true';document.getElementById('cobro-edit-tarifa-notas').value='';document.getElementById('cobro-edit-tarifa-motivo').value='';document.getElementById('modal-editar-tarifa-cobro').classList.add('open');
 }
 
 async function guardarTarifaCobroV2(){

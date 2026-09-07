@@ -1167,7 +1167,7 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
           <div class="field"><label>Saldo inicial ($)</label><input type="number" id="cuenta-nueva-saldo" value="0" step="0.01"></div>
           <div class="field" id="cuenta-estado-wrap" style="display:none"><label>Estado</label><select id="cuenta-edit-activa"><option value="true">Activa</option><option value="false">Inactiva</option></select></div>
         </div>
-        <div class="modal-actions"><button class="btn btn-primary" onclick="conBotonCargando(this,'Guardando...',guardarCuenta)" id="cuenta-guardar-btn">Crear cuenta</button><button class="btn btn-danger" id="cuenta-eliminar-btn" style="display:none" onclick="eliminarCuentaActual()">Eliminar</button><button class="btn btn-secondary" onclick="cerrarModal('modal-nueva-cuenta')">Cancelar</button></div>
+        <div class="modal-actions"><button class="btn btn-primary" onclick="conBotonCargando(this,'Guardando...',guardarCuenta)" id="cuenta-guardar-btn">Crear cuenta</button><button class="btn btn-danger" id="cuenta-eliminar-btn" style="display:none" onclick="conBotonCargando(this,'Eliminando...',eliminarCuentaActual)">Eliminar</button><button class="btn btn-secondary" onclick="cerrarModal('modal-nueva-cuenta')">Cancelar</button></div>
       </div>
     </div>
 
@@ -1768,10 +1768,14 @@ async function eliminarCuentaActual(){
   const idCuenta=document.getElementById('cuenta-edit-id').value;
   if(!idCuenta)return;
   if(!confirm('¿Eliminar esta cuenta? Solo se podrá eliminar si todavía no fue utilizada.'))return;
-  await apiPost('eliminarCuenta',{id_cuenta:idCuenta});
-  cerrarModal('modal-nueva-cuenta');
-  await recargarCuentas();
-  showToast('Cuenta eliminada');
+  try{
+    await apiPost('eliminarCuenta',{id_cuenta:idCuenta});
+    cerrarModal('modal-nueva-cuenta');
+    await recargarCuentas();
+    showToast('Cuenta eliminada');
+  }catch(e){
+    showToast(e.message||'No se puede eliminar esta cuenta. Podés desactivarla.','error');
+  }
 }
 
 function fechaStr(val){
@@ -2917,7 +2921,7 @@ function descargarListaPrecios(){
 <script src="js/productos.js?v=20260824-1"></script>
 <script src="js/stock.js?v=20260824-1"></script>
 <script src="js/ingresos.js?v=20260824-1"></script>
-<script src="js/medios-pago.js?v=20260907-6"></script>
+<script src="js/medios-pago.js?v=20260907-7"></script>
 <script src="js/clientes.js?v=20260824-1"></script>
 <script src="js/cuentas-por-cobrar.js?v=20260824-1"></script>
 <script src="js/categorias.js?v=20260823-2"></script>

@@ -180,10 +180,14 @@ async function togglePlanCobroV2(id){const p=planesCuotasData.find(x=>String(x[0
 async function eliminarPlanCobroV2(){
   const id=document.getElementById('cobro-edit-plan-id').value;if(!id)return;
   if(!confirm('¿Eliminar este plan? Solo se podrá eliminar si todavía no fue utilizado en una venta.'))return;
-  await apiPost('eliminarPlanCuotas',{id_plan:id});
-  planesCuotasData=planesCuotasData.filter(p=>String(p[0])!==String(id));
-  cache.invalidar('getPlanesCuotas','getHistorialPlanesCuotas');
-  cerrarModal('modal-editar-plan-cobro');renderConfiguracionCobrosV2();showToast('Plan eliminado');
+  try{
+    await apiPost('eliminarPlanCuotas',{id_plan:id});
+    planesCuotasData=planesCuotasData.filter(p=>String(p[0])!==String(id));
+    cache.invalidar('getPlanesCuotas','getHistorialPlanesCuotas');
+    cerrarModal('modal-editar-plan-cobro');renderConfiguracionCobrosV2();showToast('Plan eliminado');
+  }catch(e){
+    showToast(e.message||'No se puede eliminar este plan. Podés desactivarlo.','error');
+  }
 }
 
 async function recargarConfiguracionCobrosV2(){cache.invalidar('getTarifasCobro','getPlanesCuotas','getHistorialTarifasCobro','getHistorialPlanesCuotas');const[t,p]=await Promise.all([cacheGet('getTarifasCobro'),cacheGet('getPlanesCuotas')]);tarifasCobroData=t.slice(1);planesCuotasData=p.slice(1);renderConfiguracionCobrosV2();}

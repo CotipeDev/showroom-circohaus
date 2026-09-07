@@ -2239,7 +2239,10 @@ async function cancelarVenta(idVenta){
 async function abrirDetalleVenta(id){return verDetalleVenta(id);}
 async function verDetalleVenta(idVenta){
   try{
-    const[dataVentas,dataDetalle,dataPagos]=await Promise.all([cacheGet('getVentas'),cacheGet('getDetalleVentas'),cacheGet('getPagosVenta')]);
+    const[dataVentas,dataDetalle,dataPagos,dataTarifas,dataPlanes,dataCuentas]=await Promise.all([cacheGet('getVentas'),cacheGet('getDetalleVentas'),cacheGet('getPagosVenta'),cacheGet('getTarifasCobro'),cacheGet('getPlanesCuotas'),cacheGet('getCuentas')]);
+    tarifasCobroData=dataTarifas.slice(1);
+    planesCuotasData=dataPlanes.slice(1);
+    cuentasData=dataCuentas.slice(1);
     const items=dataDetalle.slice(1).filter(d=>String(d[0])===String(idVenta));
     const pagos=dataPagos.slice(1).filter(p=>String(p[0])===String(idVenta));
     const venta=dataVentas.slice(1).find(v=>String(v[0])===String(idVenta));

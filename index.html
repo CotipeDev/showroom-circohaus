@@ -1119,8 +1119,7 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
 
     <!-- CUENTAS -->
     <div id="panel-cuentas" class="panel">
-      <div class="section-title">Cuentas</div>
-      <div class="section-sub">Saldo actual y movimientos por cuenta</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px"><div><div class="section-title">Cuentas</div><div class="section-sub">Saldo actual y movimientos por cuenta</div></div><button class="btn btn-primary" onclick="abrirNuevaCuenta()">+ Nueva cuenta</button></div>
       <div id="cuentas-cards-loading" class="spinner-wrap"><div class="spinner"></div> Cargando...</div>
       <div id="cuentas-grid" class="cuentas-grid"></div>
       <div class="card">
@@ -1155,6 +1154,18 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
         </div>
         <div id="mov-loading" class="spinner-wrap"><div class="spinner"></div> Cargando...</div>
         <table id="mov-table" style="display:none"><thead><tr><th>Fecha</th><th>Cuenta</th><th>Tipo</th><th>Categoría</th><th>Descripción</th><th>Acreditación</th><th>Estado</th><th style="text-align:right">Monto</th></tr></thead><tbody id="mov-body"></tbody></table>
+      </div>
+    </div>
+
+    <div id="modal-nueva-cuenta" class="modal-overlay" onclick="if(event.target===this)cerrarModal('modal-nueva-cuenta')">
+      <div class="modal" style="max-width:560px">
+        <div class="modal-title">Nueva cuenta</div>
+        <div class="form-grid">
+          <div class="field"><label>Nombre</label><input id="cuenta-nueva-nombre" placeholder="Ej: Banco Provincia"></div>
+          <div class="field"><label>Tipo</label><select id="cuenta-nueva-tipo"><option value="">Seleccioná...</option><option value="Banco">Banco</option><option value="Billetera digital">Billetera digital</option><option value="Efectivo">Efectivo</option><option value="Caja">Caja</option></select></div>
+          <div class="field"><label>Saldo inicial ($)</label><input type="number" id="cuenta-nueva-saldo" value="0" step="0.01"></div>
+        </div>
+        <div class="modal-actions"><button class="btn btn-primary" onclick="conBotonCargando(this,'Guardando...',guardarNuevaCuenta)">Crear cuenta</button><button class="btn btn-secondary" onclick="cerrarModal('modal-nueva-cuenta')">Cancelar</button></div>
       </div>
     </div>
 
@@ -1674,6 +1685,28 @@ async function iniciarCuentas(){
     document.getElementById('mov-loading').style.display='none';
     document.getElementById('mov-table').style.display='table';
   }catch(e){showToast('Error al cargar cuentas','error')}
+}
+
+function abrirNuevaCuenta(){
+  document.getElementById('cuenta-nueva-nombre').value='';
+  document.getElementById('cuenta-nueva-tipo').value='';
+  document.getElementById('cuenta-nueva-saldo').value='0';
+  document.getElementById('modal-nueva-cuenta').classList.add('open');
+}
+
+async function guardarNuevaCuenta(){
+  const nombre=document.getElementById('cuenta-nueva-nombre').value.trim();
+  const tipo=document.getElementById('cuenta-nueva-tipo').value;
+  const saldoInicial=Number(document.getElementById('cuenta-nueva-saldo').value)||0;
+  if(!nombre)throw new Error('Ingresá el nombre de la cuenta.');
+  if(!tipo)throw new Error('Seleccioná el tipo de cuenta.');
+  if(cuentasData.some(c=>String(c[1]||'').trim().toLowerCase()===nombre.toLowerCase()))throw new Error('Ya existe una cuenta con ese nombre.');
+  await apiPost('agregarCuenta',{nombre,tipo,saldo_inicial:saldoInicial});
+  cerrarModal('modal-nueva-cuenta');
+  cacheInvalidar('getCuentas','getDatosCompletos');
+  cuentasData=[];
+  await iniciarCuentas();
+  showToast('Cuenta creada');
 }
 
 function fechaStr(val){

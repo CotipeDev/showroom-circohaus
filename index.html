@@ -2067,6 +2067,9 @@ async function verDetalleVenta(idVenta){
     const items=dataDetalle.slice(1).filter(d=>String(d[0])===String(idVenta));
     const pagos=dataPagos.slice(1).filter(p=>String(p[0])===String(idVenta));
     const venta=dataVentas.slice(1).find(v=>String(v[0])===String(idVenta));
+    const encabezadosVentas=(dataVentas[0]||[]).map(h=>String(h||'').trim());
+    const indiceUsuarioVenta=encabezadosVentas.indexOf('Usuario_Registro');
+    const usuarioVenta=venta&&indiceUsuarioVenta>=0?String(venta[indiceUsuarioVenta]||'').trim():'';
     const prodNombre=cod=>{const p=productosData.find(x=>String(x[0])===String(cod));return p?p[1]:cod};
     const esV2=String(venta?.[25]||'').trim()==='V2';
     const estadoVenta=String(venta?.[7]||'').toLowerCase();
@@ -2111,6 +2114,7 @@ async function verDetalleVenta(idVenta){
       <div style="margin-bottom:12px">
         <strong>Fecha:</strong> ${venta?fechaStr(venta[1]):'—'} &nbsp;|&nbsp; <strong>Estado:</strong> ${venta?venta[7]:'—'}
         ${clienteVenta?`&nbsp;|&nbsp; <strong>Cliente:</strong> ${clienteVenta[1]}`:''}
+        ${usuarioVenta?`&nbsp;|&nbsp; <strong>Registrada por:</strong> ${textoSeguro(usuarioVenta)}`:''}
       </div>
       <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-mid);margin-bottom:6px">Productos</div>
       <table style="margin-bottom:16px"><thead><tr><th>Código</th><th>Desc</th><th>Cant</th><th>Precio</th><th>Subtotal</th></tr></thead><tbody>

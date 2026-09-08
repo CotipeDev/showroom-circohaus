@@ -157,6 +157,28 @@
   window.cambiarEntregado = (i,val) => { vtaPagosFila[i].entregado=n(val); actualizarTotalesVenta(); };
   window.quitarFilaPago = i => { vtaPagosFila.splice(i,1); renderFilasPago(); actualizarTotalesVenta(); };
 
+  window.cambiarDescuentoVenta = function () {
+    const nuevaBase=calcularVentaV2().baseComercial;
+    const totalAsignado=vtaPagosFila.reduce((s,f)=>s+redondear(f.base_asignada),0);
+    if(vtaPagosFila.length>1&&totalAsignado>0){
+      let acumulado=0,planQuitado=false;
+      vtaPagosFila.forEach((fila,i)=>{
+        const esUltima=i===vtaPagosFila.length-1;
+        const disponible=Math.max(0,nuevaBase-acumulado);
+        const nuevaParte=esUltima?disponible:Math.min(disponible,redondear(nuevaBase*redondear(fila.base_asignada)/totalAsignado));
+        fila.base_asignada=nuevaParte;
+        acumulado+=nuevaParte;
+        const tarifa=tarifaPorId(fila.id_tarifa);
+        if(fila.id_plan&&!planesParaTarifa(tarifa,nuevaParte).some(p=>String(p[0])===String(fila.id_plan))){
+          fila.id_plan='';planQuitado=true;
+        }
+      });
+      renderFilasPago();
+      if(planQuitado)showToast('Se quitó un plan de cuotas porque el nuevo importe no alcanza su monto mínimo.','error');
+    }
+    actualizarTotalesVenta();
+  };
+
   window.renderFilasPago = function () {
     const lista = document.getElementById('vta-pagos-lista'); if (!lista) return;
     const prioridad=t=>esEfectivoTarifa(t)?0:String(t[3]||'').toLowerCase()==='transferencia'?1:2;

@@ -1058,8 +1058,8 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
         </div>
 
         <div style="display:grid;grid-template-columns:160px 1fr;gap:10px;margin-bottom:16px">
-          <div class="field"><label>Descuento general</label><select id="vta-descuento-tipo" onchange="actualizarTotalesVenta()"><option value="pct">Porcentaje (%)</option><option value="importe">Importe ($)</option></select></div>
-          <div class="field"><label>Valor</label><input type="number" id="vta-descuento-general" min="0" value="0" oninput="actualizarTotalesVenta()"></div>
+          <div class="field"><label>Descuento general</label><select id="vta-descuento-tipo" onchange="cambiarDescuentoVenta()"><option value="pct">Porcentaje (%)</option><option value="importe">Importe ($)</option></select></div>
+          <div class="field"><label>Valor</label><input type="number" id="vta-descuento-general" min="0" value="0" oninput="cambiarDescuentoVenta()"></div>
         </div>
         <div id="vta-seccion-pagos">
           <div style="font-size:12px;color:var(--text-mid);margin-bottom:10px">Elegí cómo paga. El descuento se define únicamente arriba; el medio de pago sólo determina sus costos de cobranza. Si usás un solo medio, el importe se completa automáticamente.</div>

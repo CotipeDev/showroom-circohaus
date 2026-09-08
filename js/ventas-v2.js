@@ -177,7 +177,8 @@
       c=calcularVentaV2();
     }
     document.getElementById('vta-lista-bruto').textContent = formatPeso(c.precioLista);
-    const cobroListo=c.esCuenta||c.pagos.length>0;
+    const distribucionCompleta=c.esCuenta||redondear(c.totalBase)===redondear(c.baseComercial);
+    const cobroListo=(c.esCuenta||c.pagos.length>0)&&distribucionCompleta;
     const estadoDistribucion=document.getElementById('vta-distribucion-pagos');
     if(estadoDistribucion){
       const diferencia=redondear(c.baseComercial-c.totalBase),exacta=diferencia===0;

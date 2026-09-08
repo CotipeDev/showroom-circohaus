@@ -23,6 +23,54 @@
     const d = new Date(), pad = value => String(value).padStart(2, '0');
     return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
   };
+  let timerValidacionMargen=null;
+  let versionValidacionMargen=0;
+
+  function programarValidacionMargen(cobroListo) {
+    if(!esVendedor())return;
+    const alerta=document.getElementById('vta-alerta-margen');
+    const version=++versionValidacionMargen;
+    clearTimeout(timerValidacionMargen);
+    if(!alerta||!cobroListo||!vtaItemsCarrito.length){
+      if(alerta)alerta.style.display='none';
+      return;
+    }
+    alerta.style.display='block';
+    alerta.style.background='#fff3df';
+    alerta.style.color='#9a6515';
+    alerta.textContent='Comprobando margen…';
+    timerValidacionMargen=setTimeout(async()=>{
+      try{
+        const tipo=document.getElementById('vta-tipo').value;
+        const tipoDesc=document.getElementById('vta-descuento-tipo').value;
+        const valorDesc=n(document.getElementById('vta-descuento-general').value);
+        const pagosEntrada=tipo==='cuenta_por_cobrar'?pagoInicialCuenta():vtaPagosFila;
+        const resultado=await apiPost('registrarVentaV2',{
+          solo_validar_margen:true,
+          fecha:document.getElementById('vta-fecha').value||fechaLocal(),
+          tipo,
+          id_cliente:document.getElementById('vta-cliente').value||'',
+          aplicar_descuento_medios:false,
+          margen_minimo_pct:MARGEN_MINIMO_VENTA_PCT,
+          descuento_general_pct:tipoDesc==='pct'?valorDesc:0,
+          descuento_general_importe:tipoDesc==='importe'?valorDesc:0,
+          items:vtaItemsCarrito.map(i=>({codigo:i.codigo,cantidad:i.cantidad,descuento_item_pct:0,descuento_item_importe:0})),
+          pagos:pagosEntrada.filter(p=>p.id_tarifa&&n(p.base_asignada)>0).map(p=>({id_tarifa:p.id_tarifa,id_plan:p.id_plan||'',base_asignada:redondear(p.base_asignada)}))
+        });
+        if(version!==versionValidacionMargen)return;
+        if(resultado?.requiere_autorizacion===true){
+          alerta.style.display='block';
+          alerta.style.background='#fde8e6';
+          alerta.style.color='var(--error)';
+          alerta.textContent='⚠️ Esta venta requiere autorización de la administradora por margen insuficiente.';
+        }else{
+          alerta.style.display='none';
+        }
+      }catch(e){
+        if(version===versionValidacionMargen)alerta.style.display='none';
+      }
+    },600);
+  }
 
   function descuento(bruto, tipo, valor) {
     const limite = redondear(bruto);
@@ -232,9 +280,12 @@
     const margenEnRiesgo=cobroListo&&(c.margenEstimado<0||(margenMinimo>0&&margenPct<margenMinimo));
     const alertaMargen=document.getElementById('vta-alerta-margen');
     if(alertaMargen){
-      alertaMargen.style.display=margenEnRiesgo?'block':'none';
-      if(margenEnRiesgo)alertaMargen.textContent=esVendedor()?'⚠️ Esta venta requiere autorización de la administradora por margen insuficiente.':c.margenEstimado<0?`⚠️ Atención: esta venta genera una pérdida estimada de ${formatPeso(Math.abs(c.margenEstimado))}. Al confirmar se solicitará autorización.`:`⚠️ Atención: el margen final estimado es ${margenPct.toLocaleString('es-AR',{maximumFractionDigits:1})}% y el mínimo configurado es ${margenMinimo}%.`;
+      if(!esVendedor()){
+        alertaMargen.style.display=margenEnRiesgo?'block':'none';
+        if(margenEnRiesgo)alertaMargen.textContent=c.margenEstimado<0?`⚠️ Atención: esta venta genera una pérdida estimada de ${formatPeso(Math.abs(c.margenEstimado))}. Al confirmar se solicitará autorización.`:`⚠️ Atención: el margen final estimado es ${margenPct.toLocaleString('es-AR',{maximumFractionDigits:1})}% y el mínimo configurado es ${margenMinimo}%.`;
+      }
     }
+    programarValidacionMargen(cobroListo);
     c.pagos.forEach((p,i) => {
       const el=document.getElementById(`vta-pago-info-${i}`); if(!el)return;
       const fila=vtaPagosFila[i], recibido=n(fila?.entregado), diferencia=recibido-p.montoCliente;

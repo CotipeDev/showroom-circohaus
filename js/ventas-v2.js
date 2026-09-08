@@ -162,7 +162,11 @@
     const prioridad=t=>esEfectivoTarifa(t)?0:String(t[3]||'').toLowerCase()==='transferencia'?1:2;
     const tarifas=tarifasCobroData.filter(t=>activoCobro(t[10])).sort((a,b)=>prioridad(a)-prioridad(b)||String(a[3]).localeCompare(String(b[3]))||n(a[5])-n(b[5]));
     lista.innerHTML=vtaPagosFila.map((fila,i)=>{
-        const tarifa=tarifaPorId(fila.id_tarifa),efectivo=esEfectivoTarifa(tarifa),base=n(fila.base_asignada)||calcularVentaV2().baseComercial;
+        const tarifa=tarifaPorId(fila.id_tarifa),efectivo=esEfectivoTarifa(tarifa);
+        const calculo=calcularVentaV2();
+        const asignadoEnOtros=vtaPagosFila.reduce((s,f,j)=>j===i?s:s+redondear(f.base_asignada),0);
+        const remanente=Math.max(0,calculo.baseComercial-asignadoEnOtros);
+        const base=n(fila.base_asignada)||remanente;
         const planes=planesParaTarifa(tarifa,base);
         if(fila.id_plan&&!planes.some(p=>String(p[0])===String(fila.id_plan)))fila.id_plan='';
         const etiqueta=t=>`${cuentaNombre(t[1])} · ${t[3]} · ${t[4]} · ${n(t[5])?`${t[5]} días`:'inmediata'}`;

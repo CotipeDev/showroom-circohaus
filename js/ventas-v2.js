@@ -137,7 +137,15 @@
     renderFilasPago();actualizarTotalesVenta();
   };
   window.cambiarPlanPago = (i,val) => { vtaPagosFila[i].id_plan=val;actualizarTotalesVenta();renderFilasPago(); };
-  window.cambiarBasePago = (i,val) => { vtaPagosFila[i].base_asignada=n(val); actualizarTotalesVenta(); };
+  window.cambiarBasePago = (i,input) => {
+    const baseComercial=calcularVentaV2().baseComercial;
+    const asignadoEnOtros=vtaPagosFila.reduce((s,f,j)=>j===i?s:s+redondear(f.base_asignada),0);
+    const maximo=Math.max(0,baseComercial-asignadoEnOtros);
+    const valor=Math.min(redondear(input.value),maximo);
+    vtaPagosFila[i].base_asignada=valor;
+    if(Number(input.value)!==valor)input.value=valor||'';
+    actualizarTotalesVenta();
+  };
   window.cambiarEntregado = (i,val) => { vtaPagosFila[i].entregado=n(val); actualizarTotalesVenta(); };
   window.quitarFilaPago = i => { vtaPagosFila.splice(i,1); renderFilasPago(); actualizarTotalesVenta(); };
 
@@ -154,7 +162,7 @@
         return `<div style="display:grid;grid-template-columns:1.35fr .8fr .8fr 1.15fr auto;gap:10px;align-items:end;margin-bottom:12px;padding:10px;background:var(--off-white);border-radius:8px">
           <div class="field" style="margin:0"><label>Forma de cobro</label><select onchange="cambiarTarifaPago(${i},this.value)"><option value="">Seleccioná...</option>${tarifas.map(t=>`<option value="${t[0]}" ${String(t[0])===String(fila.id_tarifa)?'selected':''}>${etiqueta(t)}</option>`).join('')}</select></div>
           <div class="field" style="margin:0"><label>Plan</label><select onchange="cambiarPlanPago(${i},this.value)" ${!tarifa?'disabled':''}><option value="">1 cuota</option>${planes.filter(p=>n(p[4])>1).map(p=>`<option value="${p[0]}" ${String(p[0])===String(fila.id_plan)?'selected':''}>${planLabel(p)}</option>`).join('')}</select></div>
-          <div class="field" style="margin:0;${vtaPagosFila.length===1?'display:none':''}"><label>Parte de la venta</label><input type="number" min="0" value="${fila.base_asignada||''}" oninput="cambiarBasePago(${i},this.value)"></div>
+          <div class="field" style="margin:0;${vtaPagosFila.length===1?'display:none':''}"><label>Parte de la venta</label><input type="number" min="0" value="${fila.base_asignada||''}" oninput="cambiarBasePago(${i},this)"></div>
           <div class="field" style="margin:0"><label>${efectivo?'Efectivo recibido':esVendedor()?'Información':'Costo del cobro'}</label>${efectivo?`<input type="number" min="0" value="${fila.entregado||''}" placeholder="Ingresá lo que entrega" oninput="cambiarEntregado(${i},this.value)">`:esVendedor()?'<div style="font-size:11px;padding:9px 0">Cobro electrónico</div>':`<div style="font-size:11px;padding:9px 0">${tarifa?`Tarifa ${n(tarifa[6])}% + IVA${fila.id_plan?` · plan ${n(planPorId(fila.id_plan)?.[5])}%`:''}`:'Seleccioná una forma'}</div>`}</div>
           ${vtaPagosFila.length>1?`<button class="btn-danger" onclick="quitarFilaPago(${i})" style="height:40px">✕</button>`:'<div></div>'}
           <div id="vta-pago-info-${i}" style="grid-column:1/-1;font-size:11px;color:var(--text-mid)"></div></div>`;
@@ -170,6 +178,14 @@
     }
     document.getElementById('vta-lista-bruto').textContent = formatPeso(c.precioLista);
     const cobroListo=c.esCuenta||c.pagos.length>0;
+    const estadoDistribucion=document.getElementById('vta-distribucion-pagos');
+    if(estadoDistribucion){
+      const diferencia=redondear(c.baseComercial-c.totalBase),exacta=diferencia===0;
+      estadoDistribucion.style.display=!c.esCuenta&&vtaPagosFila.length>1?'block':'none';
+      estadoDistribucion.style.background=exacta?'#e8f5ee':'#fff3df';
+      estadoDistribucion.style.color=exacta?'var(--success)':'#9a6515';
+      estadoDistribucion.textContent=exacta?`✓ Total distribuido: ${formatPeso(c.totalBase)}`:`Falta asignar ${formatPeso(diferencia)} del total de ${formatPeso(c.baseComercial)}.`;
+    }
     document.getElementById('vta-resumen').innerHTML = [
       ['Precio Lista',c.precioLista],['Descuento General',c.descuentoGeneral],['Subtotal después del descuento',c.baseComercial],
       ['Total a pagar por el cliente',c.totalFinal,true],

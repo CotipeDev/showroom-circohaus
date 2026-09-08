@@ -146,6 +146,14 @@
     if(Number(input.value)!==valor)input.value=valor||'';
     actualizarTotalesVenta();
   };
+  window.finalizarCambioBasePago = i => {
+    const fila=vtaPagosFila[i],tarifa=tarifaPorId(fila?.id_tarifa);
+    if(fila?.id_plan&&!planesParaTarifa(tarifa,redondear(fila.base_asignada)).some(p=>String(p[0])===String(fila.id_plan))){
+      fila.id_plan='';
+      showToast('El plan de cuotas dejó de estar disponible porque esta parte de la venta no alcanza el monto mínimo.','error');
+    }
+    renderFilasPago();actualizarTotalesVenta();
+  };
   window.cambiarEntregado = (i,val) => { vtaPagosFila[i].entregado=n(val); actualizarTotalesVenta(); };
   window.quitarFilaPago = i => { vtaPagosFila.splice(i,1); renderFilasPago(); actualizarTotalesVenta(); };
 
@@ -162,7 +170,7 @@
         return `<div style="display:grid;grid-template-columns:1.35fr .8fr .8fr 1.15fr auto;gap:10px;align-items:end;margin-bottom:12px;padding:10px;background:var(--off-white);border-radius:8px">
           <div class="field" style="margin:0"><label>Forma de cobro</label><select onchange="cambiarTarifaPago(${i},this.value)"><option value="">Seleccioná...</option>${tarifas.map(t=>`<option value="${t[0]}" ${String(t[0])===String(fila.id_tarifa)?'selected':''}>${etiqueta(t)}</option>`).join('')}</select></div>
           <div class="field" style="margin:0"><label>Plan</label><select onchange="cambiarPlanPago(${i},this.value)" ${!tarifa?'disabled':''}><option value="">1 cuota</option>${planes.filter(p=>n(p[4])>1).map(p=>`<option value="${p[0]}" ${String(p[0])===String(fila.id_plan)?'selected':''}>${planLabel(p)}</option>`).join('')}</select></div>
-          <div class="field" style="margin:0;${vtaPagosFila.length===1?'display:none':''}"><label>Parte de la venta</label><input type="number" min="0" value="${fila.base_asignada||''}" oninput="cambiarBasePago(${i},this)"></div>
+          <div class="field" style="margin:0;${vtaPagosFila.length===1?'display:none':''}"><label>Parte de la venta</label><input type="number" min="0" value="${fila.base_asignada||''}" oninput="cambiarBasePago(${i},this)" onchange="finalizarCambioBasePago(${i})"></div>
           <div class="field" style="margin:0"><label>${efectivo?'Efectivo recibido':esVendedor()?'Información':'Costo del cobro'}</label>${efectivo?`<input type="number" min="0" value="${fila.entregado||''}" placeholder="Ingresá lo que entrega" oninput="cambiarEntregado(${i},this.value)">`:esVendedor()?'<div style="font-size:11px;padding:9px 0">Cobro electrónico</div>':`<div style="font-size:11px;padding:9px 0">${tarifa?`Tarifa ${n(tarifa[6])}% + IVA${fila.id_plan?` · plan ${n(planPorId(fila.id_plan)?.[5])}%`:''}`:'Seleccioná una forma'}</div>`}</div>
           ${vtaPagosFila.length>1?`<button class="btn-danger" onclick="quitarFilaPago(${i})" style="height:40px">✕</button>`:'<div></div>'}
           <div id="vta-pago-info-${i}" style="grid-column:1/-1;font-size:11px;color:var(--text-mid)"></div></div>`;
@@ -232,6 +240,11 @@
       if(pagosEntrada.some(p=>{const id=p.id_tarifa;return(id&&!n(p.base_asignada))||(!id&&n(p.base_asignada));}))throw new Error('Completá la forma de cobro y el importe en cada pago.');
       if(tipo!=='cuenta_por_cobrar'&&redondear(c.totalBase)!==redondear(c.baseComercial))throw new Error(`La suma de bases (${formatPeso(c.totalBase)}) debe igualar la Base Comercial (${formatPeso(c.baseComercial)}).`);
       if(tipo==='cuenta_por_cobrar'&&c.totalBase>c.baseComercial)throw new Error('El pago inicial no puede superar la Base Comercial.');
+      for(const pago of pagosEntrada){
+        if(!pago.id_plan)continue;
+        const tarifa=tarifaPorId(pago.id_tarifa),disponibles=planesParaTarifa(tarifa,redondear(pago.base_asignada));
+        if(!disponibles.some(p=>String(p[0])===String(pago.id_plan)))throw new Error('El plan de cuotas elegido no está disponible para el importe asignado a ese medio de pago.');
+      }
       for(const item of vtaItemsCarrito){const p=productosData.find(x=>String(x[0])===String(item.codigo));if(!p||item.cantidad>n(p[5]))throw new Error(`Stock insuficiente para ${item.codigo}.`);}
       btn.disabled=true;btn.textContent='Procesando...';
       const tipoDesc=document.getElementById('vta-descuento-tipo').value, valorDesc=n(document.getElementById('vta-descuento-general').value);

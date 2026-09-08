@@ -2194,7 +2194,8 @@ async function precargarDatosBase(){
   // El vendedor ya recibe una respuesta completa y segura desde Apps Script.
   // Cargarla de una vez evita varias ejecuciones consecutivas (y sus cold starts).
   if(esVendedor()){
-    const datos=await apiGet('getDatosCompletos');
+    const respuesta=await apiGet('getDatosCompletos');
+    const datos=respuesta?.datos||respuesta;
     cache.setDesdeCompleto(datos);
     productosData=(datos.Productos||[]).slice(1);
     proveedoresData=(datos.Proveedores||[]).slice(1);

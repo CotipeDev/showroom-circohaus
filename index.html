@@ -2191,6 +2191,31 @@ async function precargarDatos(){
 }
 
 async function precargarDatosBase(){
+  // El vendedor ya recibe una respuesta completa y segura desde Apps Script.
+  // Cargarla de una vez evita varias ejecuciones consecutivas (y sus cold starts).
+  if(esVendedor()){
+    const datos=await apiGet('getDatosCompletos');
+    cache.setDesdeCompleto(datos);
+    productosData=(datos.Productos||[]).slice(1);
+    proveedoresData=(datos.Proveedores||[]).slice(1);
+    categoriasData=(datos.Categorias||[]).slice(1).map(c=>c[0]).filter(Boolean);
+    procesadoresCobroData=(datos.Procesadores_Cobro||[]).slice(1);
+    tarifasCobroData=(datos.Tarifas_Cobro||[]).slice(1);
+    planesCuotasData=(datos.Planes_Cuotas||[]).slice(1);
+    cuentasData=(datos.Cuentas||[]).slice(1);
+    clientesData=(datos.Clientes||[]).slice(1);
+    ventasHistData=(datos.Ventas||[]).slice(1);
+    ventasData=ventasHistData;
+    detalleVentasData=(datos.Detalle_Ventas||[]).slice(1);
+    pagosVentaData=(datos.Pagos_Venta||[]).slice(1);
+    cuentasPorCobrarData=(datos.Cuentas_Por_Cobrar||[]).slice(1);
+    stockData=productosData;
+    prodTablaData=productosData;
+    iniciarHome();
+    cargarNotificaciones();
+    aplicarRuta();
+    return;
+  }
   const[dataProductos,dataProveedores,dataCategorias]=await Promise.all([
     cacheGet('getProductos'),cacheGet('getProveedores'),cacheGet('getCategorias')
   ]);
@@ -2209,6 +2234,11 @@ async function precargarDatosBase(){
 async function iniciarAplicacion(){
   setFechaHoy('ing-fecha');
   aplicarPermisosUI();
+  if(esVendedor()){
+    await precargarDatosBase();
+    await new Promise(resolve=>requestAnimationFrame(resolve));
+    return;
+  }
   aplicarRuta();
   precargarDatosBase().catch(e=>console.warn('No se pudo completar la carga inicial:',e));
   // Darle al navegador un cuadro para pintar la ruta correcta detrás del cargador.

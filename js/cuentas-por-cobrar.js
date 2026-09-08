@@ -117,8 +117,14 @@ async function abrirFichaCliente(idCli, abrirPago=false){
   document.getElementById('ficha-cliente-contenido').innerHTML='<p style="color:var(--text-light);text-align:center;padding:16px">Cargando...</p>';
   document.getElementById('modal-ficha-cliente').classList.add('open');
 
-  const dataMovs=await cacheGet('getMovimientos');
-  const movs=Array.isArray(dataMovs)?dataMovs.slice(1):[];
+  let movs=[];
+  try{
+    const dataMovs=await cacheGet('getMovimientos');
+    movs=Array.isArray(dataMovs)?dataMovs.slice(1):[];
+  }catch(e){
+    document.getElementById('ficha-cliente-contenido').innerHTML='<p style="color:#C44F4F;text-align:center;padding:16px">No se pudo cargar el historial de pagos.</p>';
+    return;
+  }
 
   let lineas=[];
   datos.cpcs.forEach(cpc=>{

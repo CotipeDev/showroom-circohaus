@@ -2093,7 +2093,6 @@ async function verDetalleVenta(idVenta){
         const nombreCuenta=cuenta?cuenta[1]:tarifa[1];
         const canal=String(tarifa[3]||'');
         const tipo=String(tarifa[4]||'');
-        const dias=Number(tarifa[5])||0;
         if(canal.toLowerCase()==='efectivo')return 'Efectivo';
         const idxCuotas=indicePago('Cuotas');
         const idxPlan=indicePago('ID_Plan');
@@ -2102,7 +2101,7 @@ async function verDetalleVenta(idVenta){
         const plan=planesCuotasData.find(x=>String(x[0])===idPlan);
         const sinInteres=String(plan?.[7]||'').toLowerCase()==='negocio';
         const planTexto=cuotas>1?`${cuotas} cuotas${sinInteres?' sin interés':''}`:'';
-        return [nombreCuenta,canal,tipo,dias?`${dias} días`:'inmediata',planTexto].filter(Boolean).join(' · ');
+        return [nombreCuenta,canal,tipo,planTexto].filter(Boolean).join(' · ');
       }
       return id;
     };
@@ -2137,7 +2136,7 @@ async function verDetalleVenta(idVenta){
     if(facturada||estadoVenta==='cancelada'||esVendedor()){btnFact.style.display='none';}
     else{btnFact.style.display='';btnFact.onclick=()=>emitirFactura(idVenta,venta?Number(venta[5]):0);}
     document.getElementById('modal-detalle-venta').classList.add('open');
-  }catch(e){showToast('Error al cargar detalle','error')}
+  }catch(e){showToast(e?.message?`Error al cargar detalle: ${e.message}`:'Error al cargar detalle','error')}
 }
 
 // ── PRECARGA INICIAL — una sola llamada al API ──

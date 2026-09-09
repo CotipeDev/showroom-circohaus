@@ -1190,7 +1190,7 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
         </div>
         <div id="conc-modal-diferencia" style="font-size:13px;margin-top:10px;color:var(--text-mid)"></div>
         <div class="field" style="margin-top:12px"><label>Nota (opcional)</label><input type="text" id="conc-modal-nota" placeholder="Ej: diferencia por retención"></div>
-        <div class="modal-actions"><button class="btn btn-primary" onclick="guardarConciliacion()">Confirmar conciliación</button><button class="btn btn-secondary" onclick="cerrarModal('modal-conciliar')">Cancelar</button></div>
+        <div class="modal-actions"><button class="btn btn-primary" onclick="conBotonCargando(this,'Procesando...',guardarConciliacion)">Confirmar conciliación</button><button class="btn btn-secondary" onclick="cerrarModal('modal-conciliar')">Cancelar</button></div>
       </div>
     </div>
 

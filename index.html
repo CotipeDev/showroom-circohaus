@@ -60,7 +60,7 @@ html,body{height:100%;font-family:'DM Sans',sans-serif;background:var(--pearl);c
 .btn-menu{width:34px;height:34px;border:1px solid rgba(255,255,255,.25);border-radius:7px;background:none;color:white;cursor:pointer;font-size:17px;display:flex;align-items:center;justify-content:center;transition:background .2s}
 .btn-menu:hover{background:rgba(255,255,255,.1)}
 .app-workspace{display:flex;flex:1;min-height:0;position:relative}
-.app-sidebar{width:232px;flex-shrink:0;background:var(--white);border-right:1px solid var(--border);overflow-y:auto;padding:16px 12px;transition:width .22s,transform .22s;z-index:120}
+.app-sidebar{width:232px;flex-shrink:0;background:var(--white);border-right:1px solid var(--border);overflow-y:auto;padding:16px 12px;transition:width .22s,transform .22s;z-index:120;display:flex;flex-direction:column}
 .app-content{flex:1;min-width:0;overflow-y:auto;padding:24px 20px;background:var(--pearl)}
 .sidebar-group{margin-bottom:18px}
 .sidebar-label{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text-light);padding:0 10px;margin-bottom:6px;white-space:nowrap;overflow:hidden}
@@ -69,11 +69,24 @@ html,body{height:100%;font-family:'DM Sans',sans-serif;background:var(--pearl);c
 .sidebar-link.active{background:#EEF7F9;color:var(--teal-dark);font-weight:600}
 .sidebar-icon{width:20px;text-align:center;flex-shrink:0}
 .sidebar-text{overflow:hidden;text-overflow:ellipsis}
+.sidebar-user{margin-top:auto;padding:14px 8px 4px;border-top:1px solid var(--border)}
+.sidebar-user .usuario-sesion{background:var(--pearl);border-color:var(--border);display:flex;flex-wrap:wrap;justify-content:space-between;padding:9px}
+.sidebar-user .usuario-sesion-datos{text-align:left}
+.sidebar-user .usuario-sesion-nombre{color:var(--navy)}
+.sidebar-user .usuario-sesion-rol{color:var(--text-light)}
+.sidebar-user .btn-cerrar-sesion{width:100%;margin-top:5px;padding:7px 4px;border:0;border-top:1px solid var(--border);color:var(--text-mid);text-align:left}
+.sidebar-user .btn-cerrar-sesion:hover{color:var(--error)}
 .sidebar-backdrop{display:none}
 .module-filters{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:16px}
 #app-main.sidebar-collapsed .app-sidebar{width:66px}
 #app-main.sidebar-collapsed .sidebar-label,#app-main.sidebar-collapsed .sidebar-text{display:none}
 #app-main.sidebar-collapsed .sidebar-link{justify-content:center;padding-left:8px;padding-right:8px}
+#app-main.sidebar-collapsed .sidebar-user{padding:10px 2px 2px}
+#app-main.sidebar-collapsed .sidebar-user .usuario-sesion-datos{display:none}
+#app-main.sidebar-collapsed .sidebar-user .btn-cerrar-sesion{font-size:0;text-align:center;border:0;margin:0;padding:7px 0}
+#app-main.sidebar-collapsed .sidebar-user .btn-cerrar-sesion::before{content:'↪';font-size:17px}
+#panel-inicio .kpis{margin:0 auto;padding:0;max-width:1100px}
+#panel-inicio .modulos-wrap{margin:34px auto 0;padding:0 0 40px;max-width:1100px}
 
 .tabs{display:flex;background:var(--pearl);flex-shrink:0;border-bottom:2px solid var(--border)}
 .tab{flex:1;background:none;border:none;border-bottom:3px solid transparent;color:var(--text-mid);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;padding:13px 8px;cursor:pointer;transition:all .2s;text-align:center}
@@ -183,6 +196,10 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
   #app-main.sidebar-collapsed .app-sidebar{width:250px}
   #app-main.sidebar-collapsed .sidebar-label,#app-main.sidebar-collapsed .sidebar-text{display:block}
   #app-main.sidebar-collapsed .sidebar-link{justify-content:flex-start;padding:9px 10px}
+  #app-main.sidebar-collapsed .sidebar-user{padding:14px 8px 4px}
+  #app-main.sidebar-collapsed .sidebar-user .usuario-sesion-datos{display:flex}
+  #app-main.sidebar-collapsed .sidebar-user .btn-cerrar-sesion{font-size:11px;text-align:left;border-top:1px solid var(--border);margin-top:5px;padding:7px 4px}
+  #app-main.sidebar-collapsed .sidebar-user .btn-cerrar-sesion::before{content:none}
   .sidebar-backdrop{position:absolute;inset:0;background:rgba(53,61,85,.32);z-index:110}
   #app-main.sidebar-open .sidebar-backdrop{display:block}
 }
@@ -312,7 +329,7 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
 
 /* Launcher compacto */
 .launcher-seccion{margin-bottom:24px}
-#home .launcher-seccion{display:none!important}
+#home .launcher-seccion,#panel-inicio .launcher-seccion{display:none!important}
 .launcher-label{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text-light);margin-bottom:10px;padding-left:2px}
 .launcher-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 .launcher-item{background:var(--white);border:1.5px solid var(--border);border-radius:14px;padding:18px 14px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:10px;transition:all .18s;box-shadow:0 1px 6px rgba(72,84,114,.05)}
@@ -342,7 +359,7 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
 .usuario-sesion-rol{font-size:9px;text-transform:uppercase;letter-spacing:.07em;color:rgba(255,255,255,.6)}
 .btn-cerrar-sesion{border:0;border-left:1px solid rgba(255,255,255,.16);background:transparent;color:var(--blue-mist);font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;padding:5px 7px 5px 10px;cursor:pointer}
 .btn-cerrar-sesion:hover{color:white}
-@media(max-width:700px){.usuario-sesion-datos{display:none}.btn-cerrar-sesion{border-left:0;padding-left:6px}.usuario-sesion{padding-left:6px}}
+@media(max-width:700px){.usuario-sesion-datos{display:none}.btn-cerrar-sesion{border-left:0;padding-left:6px}.usuario-sesion{padding-left:6px}.sidebar-user .usuario-sesion-datos{display:flex}.sidebar-user .usuario-sesion{padding:9px}}
 
 /* CUENTAS CARDS */
 .cuentas-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px}
@@ -514,7 +531,6 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
         </svg>
         <div>Circo<span>Haus</span><div class="app-logo-sub">Casa Atelier</div></div>
       </div>
-      <button class="btn-home" onclick="volverHome()">← Inicio</button>
       <span id="modulo-topbar-nombre" style="color:rgba(255,255,255,.7);font-size:13px;font-weight:600"></span>
     </div>
     <div style="display:flex;align-items:center;gap:10px">
@@ -522,10 +538,6 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
       <div style="position:relative">
         <button class="notif-btn" onclick="toggleNotif('app')">🔔 <span id="nb2" style="display:none;background:#C44F4F;color:white;font-size:10px;font-weight:700;border-radius:10px;padding:1px 6px"></span></button>
         <div class="notif-panel" id="np2"><div class="notif-panel-title" style="display:flex;justify-content:space-between;align-items:center">Alertas de stock <button onclick="event.stopPropagation();marcarAlertasVistas()" style="border:0;background:none;color:var(--teal);font-size:10px;cursor:pointer">Marcar vistas</button></div><div id="nl2" style="max-height:280px;overflow-y:auto;padding:8px 0"></div></div>
-      </div>
-      <div class="usuario-sesion">
-        <div class="usuario-sesion-datos"><span class="usuario-sesion-nombre" id="usuario-app-nombre"></span><span class="usuario-sesion-rol" id="usuario-app-rol"></span></div>
-        <button class="btn-cerrar-sesion" onclick="cerrarSesion()">Cerrar sesión</button>
       </div>
     </div>
   </div>
@@ -537,35 +549,36 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
       </div>
       <div class="sidebar-group">
         <div class="sidebar-label">Operación</div>
-        <button class="sidebar-link" data-modulo="ventas" onclick="irA('ventas')"><span class="sidebar-icon">🛒</span><span class="sidebar-text">Nueva venta</span></button>
         <button class="sidebar-link" data-modulo="historial-ventas" onclick="irA('historial-ventas')"><span class="sidebar-icon">🧾</span><span class="sidebar-text">Ventas</span></button>
         <button class="sidebar-link" data-modulo="clientes" onclick="irA('clientes')"><span class="sidebar-icon">👥</span><span class="sidebar-text">Clientes</span></button>
-        <button class="sidebar-link" data-modulo="cxc" onclick="irA('cxc')"><span class="sidebar-icon">📋</span><span class="sidebar-text">Cuentas por cobrar</span></button>
-      </div>
-      <div class="sidebar-group">
-        <div class="sidebar-label">Inventario</div>
-        <button class="sidebar-link" data-modulo="ingresos" onclick="irA('ingresos')"><span class="sidebar-icon">📦</span><span class="sidebar-text">Ingresos</span></button>
-        <button class="sidebar-link" data-modulo="stock" onclick="irA('stock')"><span class="sidebar-icon">📊</span><span class="sidebar-text">Stock e inventario</span></button>
         <button class="sidebar-link" data-modulo="productos" onclick="irA('productos')"><span class="sidebar-icon">🏷️</span><span class="sidebar-text">Productos</span></button>
-        <button class="sidebar-link" data-modulo="proveedores" onclick="irA('proveedores')"><span class="sidebar-icon">🤝</span><span class="sidebar-text">Proveedores</span></button>
-        <button class="sidebar-link" data-modulo="categorias" onclick="irA('categorias')"><span class="sidebar-icon">🗂️</span><span class="sidebar-text">Categorías</span></button>
       </div>
       <div class="sidebar-group">
         <div class="sidebar-label">Finanzas</div>
         <button class="sidebar-link" data-modulo="cuentas" onclick="irA('cuentas')"><span class="sidebar-icon">💰</span><span class="sidebar-text">Cuentas</span></button>
         <button class="sidebar-link" data-modulo="movimientos" onclick="irA('movimientos')"><span class="sidebar-icon">↕</span><span class="sidebar-text">Movimientos</span></button>
         <button class="sidebar-link" data-modulo="conciliacion" onclick="irA('conciliacion')"><span class="sidebar-icon">✓</span><span class="sidebar-text">Conciliación</span></button>
+        <button class="sidebar-link" data-modulo="cxc" onclick="irA('cxc')"><span class="sidebar-icon">📋</span><span class="sidebar-text">Cuentas por cobrar</span></button>
         <button class="sidebar-link" data-modulo="facturas" onclick="irA('facturas')"><span class="sidebar-icon">🧾</span><span class="sidebar-text">Facturación</span></button>
-        <button class="sidebar-link" data-modulo="reportes" onclick="irA('reportes')"><span class="sidebar-icon">📈</span><span class="sidebar-text">Análisis y reportes</span></button>
       </div>
       <div class="sidebar-group">
         <div class="sidebar-label">Configuración</div>
         <button class="sidebar-link" data-modulo="medios-pago" onclick="irA('medios-pago')"><span class="sidebar-icon">💳</span><span class="sidebar-text">Medios y planes de cobro</span></button>
-        <button class="sidebar-link" data-modulo="instructivos" onclick="irA('instructivos')"><span class="sidebar-icon">📚</span><span class="sidebar-text">Manuales de uso</span></button>
+        <button class="sidebar-link" data-modulo="proveedores" onclick="irA('proveedores')"><span class="sidebar-icon">🤝</span><span class="sidebar-text">Proveedores</span></button>
+        <button class="sidebar-link" data-modulo="categorias" onclick="irA('categorias')"><span class="sidebar-icon">🗂️</span><span class="sidebar-text">Categorías</span></button>
+        <button class="sidebar-link" type="button" disabled title="Módulo pendiente" style="opacity:.5;cursor:not-allowed"><span class="sidebar-icon">👤</span><span class="sidebar-text">Usuarios · próximamente</span></button>
+      </div>
+      <div class="sidebar-user">
+        <div class="usuario-sesion">
+          <div class="usuario-sesion-datos"><span class="usuario-sesion-nombre" id="usuario-app-nombre"></span><span class="usuario-sesion-rol" id="usuario-app-rol"></span></div>
+          <button class="btn-cerrar-sesion" onclick="cerrarSesion()">Cerrar sesión</button>
+        </div>
       </div>
     </aside>
     <div class="sidebar-backdrop" onclick="cerrarSidebarMovil()"></div>
     <main class="app-content">
+
+    <div id="panel-inicio" class="panel"></div>
 
     <!-- INGRESOS -->
     <div id="panel-ingresos" class="panel active">
@@ -1164,8 +1177,10 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
 
     <!-- HISTORIAL VENTAS -->
     <div id="panel-historial-ventas" class="panel">
-      <div class="section-title">Historial de ventas</div>
-      <div class="section-sub">Todas las ventas registradas</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+        <div><div class="section-title">Historial de ventas</div><div class="section-sub">Todas las ventas registradas</div></div>
+        <button class="btn btn-primary" onclick="irA('ventas')">+ Nueva venta</button>
+      </div>
       <div class="card">
         <div class="search-wrap" style="margin-bottom:12px">
           <input type="text" id="vta-hist-buscar" placeholder="🔍 Buscar por ID, cliente o usuario..." oninput="filtrarHistorialVentas()">
@@ -1648,7 +1663,7 @@ function formatPeso(n){return'$'+Number(n).toLocaleString('es-AR')}
 function textoSeguro(valor){return String(valor??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
 function setFechaHoy(id){document.getElementById(id).value=new Date().toISOString().split('T')[0]}
 
-const moduloNombres={ingresos:'📦 Ingresos',stock:'📊 Stock e inventario',productos:'🏷️ Productos',clientes:'👥 Clientes',ventas:'🛒 Nueva venta','historial-ventas':'🧾 Ventas',cuentas:'💰 Cuentas',movimientos:'↕ Movimientos',conciliacion:'✓ Conciliación',proveedores:'🤝 Proveedores',categorias:'🗂️ Categorías','medios-pago':'💳 Medios y planes de cobro',reportes:'📈 Análisis y reportes',cxc:'📋 Cuentas por cobrar',facturas:'🧾 Facturación',instructivos:'📚 Manuales de uso'};
+const moduloNombres={inicio:'Inicio',ingresos:'📦 Ingresos',stock:'📊 Stock e inventario',productos:'🏷️ Productos',clientes:'👥 Clientes',ventas:'🛒 Nueva venta','historial-ventas':'🧾 Ventas',cuentas:'💰 Cuentas',movimientos:'↕ Movimientos',conciliacion:'✓ Conciliación',proveedores:'🤝 Proveedores',categorias:'🗂️ Categorías','medios-pago':'💳 Medios y planes de cobro',reportes:'📈 Análisis y reportes',cxc:'📋 Cuentas por cobrar',facturas:'🧾 Facturación',instructivos:'📚 Manuales de uso'};
 const modulosVendedor=new Set(['ventas','historial-ventas','stock','productos','clientes','cxc']);
 const modulosConRuta=new Set(Object.keys(moduloNombres));
 let abrirAlertasPendiente=false;
@@ -1676,6 +1691,14 @@ function toggleSidebar(){
   }
 }
 function cerrarSidebarMovil(){document.getElementById('app-main')?.classList.remove('sidebar-open')}
+function prepararInicioEnAplicacion(){
+  const home=document.getElementById('home'),panel=document.getElementById('panel-inicio');
+  if(!home||!panel)return;
+  const kpis=home.querySelector('.kpis'),modulos=home.querySelector('.modulos-wrap');
+  if(kpis)panel.appendChild(kpis);
+  if(modulos)panel.appendChild(modulos);
+  home.remove();
+}
 function aplicarRuta(){
   if(!sesionActual()?.token)return;
   let nombre=rutaActual();
@@ -1683,16 +1706,14 @@ function aplicarRuta(){
   if(!location.hash||location.hash==='#/home')reemplazarRuta(nombre);
   if(nombre!=='inicio'&&!modulosConRuta.has(nombre)){nombre='inicio';reemplazarRuta(nombre);}
   if(nombre!=='inicio'&&esVendedor()&&!modulosVendedor.has(nombre)){showToast('Tu perfil no tiene acceso a este módulo','error');nombre='inicio';reemplazarRuta(nombre);}
-  const esInicio=nombre==='inicio';
-  document.getElementById('home').style.display=esInicio?'':'none';
-  document.getElementById('app-main').style.display=esInicio?'none':'flex';
-  if(esInicio){iniciarHome();return;}
+  document.getElementById('app-main').style.display='flex';
   showPanel(nombre);
+  if(nombre==='inicio'){iniciarHome();return;}
   if(nombre==='stock'&&abrirAlertasPendiente){abrirAlertasPendiente=false;cambiarVistaStock('analisis');}
 }
 window.addEventListener('hashchange',aplicarRuta);
 function showPanel(name){
-  if(esVendedor()&&!modulosVendedor.has(name)){showToast('Tu perfil no tiene acceso a este módulo','error');return;}
+  if(name!=='inicio'&&esVendedor()&&!modulosVendedor.has(name)){showToast('Tu perfil no tiene acceso a este módulo','error');return;}
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   document.getElementById('panel-'+name).classList.add('active');
   document.querySelectorAll('.sidebar-link').forEach(link=>link.classList.toggle('active',link.dataset.modulo===name));
@@ -2385,6 +2406,7 @@ async function precargarDatosBase(){
 }
 
 async function iniciarAplicacion(){
+  prepararInicioEnAplicacion();
   setFechaHoy('ing-fecha');
   if(window.innerWidth>1024&&localStorage.getItem('circohaus_sidebar_collapsed')==='1')document.getElementById('app-main')?.classList.add('sidebar-collapsed');
   aplicarPermisosUI();

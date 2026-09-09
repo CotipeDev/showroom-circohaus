@@ -1100,7 +1100,7 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
       <div class="section-sub">Todas las ventas registradas</div>
       <div class="card">
         <div class="search-wrap" style="margin-bottom:12px">
-          <input type="text" id="vta-hist-buscar" placeholder="🔍 Buscar por ID de venta o cliente..." oninput="filtrarHistorialVentas()">
+          <input type="text" id="vta-hist-buscar" placeholder="🔍 Buscar por ID, cliente o usuario..." oninput="filtrarHistorialVentas()">
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px;margin-bottom:16px">
           <input type="date" id="vta-hist-desde" style="background:var(--off-white);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:13px;outline:none" onchange="filtrarHistorialVentas()">
@@ -1118,7 +1118,7 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
           </select>
         </div>
         <div id="vta-hist-loading" class="spinner-wrap"><div class="spinner"></div> Cargando...</div>
-        <table id="vta-hist-table" style="display:none"><thead><tr><th>ID</th><th>Fecha</th><th>Total venta</th><th>Pagado</th><th>Saldo</th><th>Neto esperado</th><th>Estado</th><th>Factura</th><th></th></tr></thead><tbody id="vta-hist-body"></tbody></table>
+        <table id="vta-hist-table" style="display:none"><thead><tr><th>ID</th><th>Fecha</th><th>Total venta</th><th>Pagado</th><th>Saldo</th><th>Neto esperado</th><th>Registrada por</th><th>Estado</th><th>Factura</th><th></th></tr></thead><tbody id="vta-hist-body"></tbody></table>
       </div>
     </div>
 
@@ -2038,8 +2038,10 @@ function filtrarProductosVenta(){
 function renderHistorialVentas(rows){
   document.getElementById('vta-hist-loading').style.display='none';document.getElementById('vta-hist-table').style.display='table';
   const sorted=[...rows].reverse().slice(0,100);
+  const encabezados=(cache.data.getVentas?.[0]||[]).map(h=>String(h||'').trim());
+  const indiceUsuario=encabezados.indexOf('Usuario_Registro');
   document.getElementById('vta-hist-body').innerHTML=sorted.length===0
-    ?'<tr><td colspan="9" style="text-align:center;color:var(--text-mid);padding:20px">No hay ventas registradas</td></tr>'
+    ?'<tr><td colspan="10" style="text-align:center;color:var(--text-mid);padding:20px">No hay ventas registradas</td></tr>'
     :sorted.map(v=>{
       const estado=v[7]||'cobrada';
       const esV2=String(v[25]||'').trim()==='V2';
@@ -2060,6 +2062,7 @@ function renderHistorialVentas(rows){
         <td>${montoPagado===null?'—':formatPeso(montoPagado)}</td>
         <td style="color:${saldo>0?'var(--error)':'var(--text-light)'};font-weight:${saldo>0?'600':'400'}">${saldo===null?'—':formatPeso(saldo)}</td>
         <td style="color:var(--success);font-weight:600">${esVendedor()?'—':formatPeso(netoEsperado)}</td>
+        <td>${indiceUsuario>=0&&v[indiceUsuario]?textoSeguro(v[indiceUsuario]):'—'}</td>
         <td><span class="badge ${badgeCls}">${estadoLabel}</span></td>
         <td>${factBadge}</td>
         <td><button class="btn-warning" onclick="verDetalleVenta('${v[0]}')">👁</button>${!esVendedor()&&estado!=='cancelada'?`<button class="btn-danger" style="margin-left:6px" onclick="cancelarVenta('${v[0]}')">✕</button>`:''}</td>
@@ -2081,7 +2084,9 @@ function filtrarHistorialVentas(){
   if(factura==='no')rows=rows.filter(v=>!v[9]||v[9]===false||v[9]==='FALSE');
   if(buscar){
     const clienteNombre=id=>{const c=clientesData.find(x=>String(x[0])===String(id));return c?c[1].toLowerCase():'';};
-    rows=rows.filter(v=>String(v[0]).toLowerCase().includes(buscar)||clienteNombre(v[3]).includes(buscar));
+    const encabezados=(cache.data.getVentas?.[0]||[]).map(h=>String(h||'').trim());
+    const indiceUsuario=encabezados.indexOf('Usuario_Registro');
+    rows=rows.filter(v=>String(v[0]).toLowerCase().includes(buscar)||clienteNombre(v[3]).includes(buscar)||(indiceUsuario>=0&&String(v[indiceUsuario]||'').toLowerCase().includes(buscar)));
   }
   renderHistorialVentas(rows);
 }

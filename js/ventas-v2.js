@@ -325,7 +325,7 @@
       for(const item of vtaItemsCarrito){const p=productosData.find(x=>String(x[0])===String(item.codigo));if(!p||item.cantidad>n(p[5]))throw new Error(`Stock insuficiente para ${item.codigo}.`);}
       btn.disabled=true;btn.textContent='Procesando...';
       const tipoDesc=document.getElementById('vta-descuento-tipo').value, valorDesc=n(document.getElementById('vta-descuento-general').value);
-      const payload={fecha,tipo,id_cliente:idCliente||'',notas:document.getElementById('vta-notas').value,aplicar_descuento_medios:false,confirmar_margen_bajo:confirmarMargenBajo,margen_minimo_pct:MARGEN_MINIMO_VENTA_PCT,
+      const payload={fecha,tipo,canal_venta:document.getElementById('vta-canal').value||'Local / presencial',id_cliente:idCliente||'',notas:document.getElementById('vta-notas').value,aplicar_descuento_medios:false,confirmar_margen_bajo:confirmarMargenBajo,margen_minimo_pct:MARGEN_MINIMO_VENTA_PCT,
         descuento_general_pct:tipoDesc==='pct'?valorDesc:0,descuento_general_importe:tipoDesc==='importe'?valorDesc:0,
         items:vtaItemsCarrito.map(i=>({codigo:i.codigo,cantidad:i.cantidad,descuento_item_pct:0,descuento_item_importe:0})),
         pagos:pagosEntrada.filter(p=>p.id_tarifa&&n(p.base_asignada)>0).map(p=>({id_tarifa:p.id_tarifa,id_plan:p.id_plan||'',base_asignada:redondear(p.base_asignada)}))};
@@ -344,7 +344,7 @@
   window.limpiarVenta = function () {
     vtaItemsCarrito=[];vtaPagosFila=[{id_tarifa:'',id_plan:'',base_asignada:0,entregado:0}];vtaProductoSel=null;
     ['vta-buscar','vta-notas','vta-fiado-monto-inicial'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-    document.getElementById('vta-tipo').value='venta';document.getElementById('vta-descuento-tipo').value='pct';document.getElementById('vta-descuento-general').value='0';
+    document.getElementById('vta-tipo').value='venta';document.getElementById('vta-canal').value='Local / presencial';document.getElementById('vta-descuento-tipo').value='pct';document.getElementById('vta-descuento-general').value='0';
     setFechaHoy('vta-fecha');renderCarritoVenta();renderFilasPago();toggleTipoVenta();
   };
 

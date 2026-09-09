@@ -44,7 +44,12 @@ function cantidadProductosCategoria(nombre){
 function renderTablaCategorias(){
   document.getElementById('cat-body').innerHTML=categoriasData.length===0
     ?'<tr><td colspan="3" style="text-align:center;color:var(--text-mid);padding:20px">No hay categorías</td></tr>'
-    :categoriasData.map(c=>`<tr><td>${textoSeguro(c)}</td><td>${cantidadProductosCategoria(c)}</td><td style="text-align:right"><button class="btn-warning" data-categoria="${textoSeguro(c)}" onclick="abrirEditarCategoria(this)">✏️ Editar</button></td></tr>`).join('');
+    :categoriasData.map(c=>`<tr data-categoria="${textoSeguro(c)}" onclick="abrirProductosCategoria(this.dataset.categoria)" style="cursor:pointer" title="Ver productos de ${textoSeguro(c)}"><td>${textoSeguro(c)}</td><td><span style="font-weight:600;color:var(--teal)">${cantidadProductosCategoria(c)} · Ver →</span></td><td style="text-align:right"><button class="btn-warning" data-categoria="${textoSeguro(c)}" onclick="event.stopPropagation();abrirEditarCategoria(this)">✏️ Editar</button></td></tr>`).join('');
+}
+
+function abrirProductosCategoria(categoria){
+  categoriaProductosPendiente=String(categoria);
+  irA('productos');
 }
 
 function abrirEditarCategoria(btn){

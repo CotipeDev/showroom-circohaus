@@ -1677,7 +1677,7 @@ function formatPeso(n){return'$'+Number(n).toLocaleString('es-AR')}
 function textoSeguro(valor){return String(valor??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
 function setFechaHoy(id){document.getElementById(id).value=new Date().toISOString().split('T')[0]}
 
-const moduloNombres={inicio:'Inicio',ingresos:'📦 Ingresos',stock:'📊 Stock e inventario',productos:'🏷️ Productos',clientes:'👥 Clientes',ventas:'🛒 Nueva venta','historial-ventas':'🧾 Ventas',cuentas:'💰 Cuentas',movimientos:'↕ Movimientos',conciliacion:'✓ Conciliación',proveedores:'🤝 Proveedores',categorias:'🗂️ Categorías','medios-pago':'💳 Medios y planes de cobro',reportes:'📈 Análisis y reportes',cxc:'📋 Cuentas por cobrar',facturas:'🧾 Facturación',instructivos:'📚 Manuales de uso'};
+const moduloNombres={inicio:'🏠 Inicio',ingresos:'📦 Ingresos',stock:'📊 Stock e inventario',productos:'🏷️ Productos',clientes:'👥 Clientes',ventas:'🛒 Nueva venta','historial-ventas':'🧾 Ventas',cuentas:'💰 Cuentas',movimientos:'↕ Movimientos',conciliacion:'✓ Conciliación',proveedores:'🤝 Proveedores',categorias:'🗂️ Categorías','medios-pago':'💳 Medios y planes de cobro',reportes:'📈 Análisis y reportes',cxc:'📋 Cuentas por cobrar',facturas:'🧾 Facturación',instructivos:'📚 Manuales de uso'};
 const modulosVendedor=new Set(['ventas','historial-ventas','stock','productos','clientes','cxc']);
 const modulosConRuta=new Set(Object.keys(moduloNombres));
 let abrirAlertasPendiente=false;
@@ -2914,14 +2914,14 @@ function descargarListaPrecios(){
 // MÓDULO CUENTAS POR COBRAR
 // ─────────────────────────────────────────
 </script>
-<script src="js/proveedores.js?v=20260909-1"></script>
-<script src="js/productos.js?v=20260824-1"></script>
+<script src="js/proveedores.js?v=20260909-2"></script>
+<script src="js/productos.js?v=20260909-2"></script>
 <script src="js/stock.js?v=20260824-1"></script>
 <script src="js/ingresos.js?v=20260824-1"></script>
 <script src="js/medios-pago.js?v=20260907-8"></script>
 <script src="js/clientes.js?v=20260824-1"></script>
 <script src="js/cuentas-por-cobrar.js?v=20260907-2"></script>
-<script src="js/categorias.js?v=20260909-1"></script>
+<script src="js/categorias.js?v=20260909-2"></script>
 <script src="js/ventas-v2.js?v=20260908-3"></script>
 </body>
 </html>

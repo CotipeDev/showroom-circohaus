@@ -64,8 +64,13 @@ function renderResumenProveedores(){
 function renderTablaProveedores(){
   document.getElementById('prov-body').innerHTML=proveedoresData.length===0
     ?'<tr><td colspan="5" style="text-align:center;color:var(--text-mid);padding:20px">No hay proveedores</td></tr>'
-    :proveedoresData.map(p=>`<tr><td><code style="color:var(--teal);font-size:12px">${textoSeguro(p[0])}</code></td><td>${textoSeguro(p[1])}</td><td>${textoSeguro(p[2]||'—')}</td><td>${cantidadProductosProveedor(p)}</td><td style="text-align:right"><button class="btn-warning" data-codigo="${textoSeguro(p[0])}" onclick="abrirEditarProveedor(this)">✏️ Editar</button></td></tr>`).join('');
+    :proveedoresData.map(p=>`<tr data-codigo="${textoSeguro(p[0])}" onclick="abrirProductosProveedor(this.dataset.codigo)" style="cursor:pointer" title="Ver productos de ${textoSeguro(p[1])}"><td><code style="color:var(--teal);font-size:12px">${textoSeguro(p[0])}</code></td><td>${textoSeguro(p[1])}</td><td>${textoSeguro(p[2]||'—')}</td><td><span style="font-weight:600;color:var(--teal)">${cantidadProductosProveedor(p)} · Ver →</span></td><td style="text-align:right"><button class="btn-warning" data-codigo="${textoSeguro(p[0])}" onclick="event.stopPropagation();abrirEditarProveedor(this)">✏️ Editar</button></td></tr>`).join('');
   renderResumenProveedores();
+}
+
+function abrirProductosProveedor(codigo){
+  proveedorProductosPendiente=String(codigo);
+  irA('productos');
 }
 
 async function iniciarProveedores(){

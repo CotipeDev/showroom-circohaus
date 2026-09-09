@@ -2,6 +2,8 @@
 // CIRCO HAUS — Módulo de productos
 // Catálogo, precios, edición e historial por producto.
 // ============================================================
+let proveedorProductosPendiente='';
+let categoriaProductosPendiente='';
 
 async function cargarProductos(){try{const data=await cacheGet('getProductos');productosData=data.slice(1)}catch(e){}}
 async function refrescarProductosUI(){
@@ -24,12 +26,34 @@ async function iniciarProductos(){
   if(prodTablaData.length||productosData.length){
     prodTablaData=prodTablaData.length?prodTablaData:productosData;
     renderTablaProductos(prodTablaData);
+    aplicarProveedorProductosPendiente();
+    aplicarCategoriaProductosPendiente();
     document.getElementById('prod-loading').style.display='none';
     document.getElementById('prod-table').style.display='table';
     return;
   }
   document.getElementById('prod-loading').style.display='flex';document.getElementById('prod-table').style.display='none';
-  try{const data=await cacheGet('getProductos');prodTablaData=data.slice(1);renderTablaProductos(prodTablaData);document.getElementById('prod-loading').style.display='none';document.getElementById('prod-table').style.display='table'}catch(e){showToast('Error','error')}
+  try{const data=await cacheGet('getProductos');prodTablaData=data.slice(1);renderTablaProductos(prodTablaData);aplicarProveedorProductosPendiente();aplicarCategoriaProductosPendiente();document.getElementById('prod-loading').style.display='none';document.getElementById('prod-table').style.display='table'}catch(e){showToast('Error','error')}
+}
+function aplicarProveedorProductosPendiente(){
+  if(!proveedorProductosPendiente)return;
+  const filtro=document.getElementById('prod-filtro-prov');
+  if(!filtro||![...filtro.options].some(op=>String(op.value)===proveedorProductosPendiente))return;
+  document.getElementById('prod-buscar').value='';
+  document.getElementById('prod-filtro-cat').value='';
+  filtro.value=proveedorProductosPendiente;
+  proveedorProductosPendiente='';
+  filtrarTablaProductos();
+}
+function aplicarCategoriaProductosPendiente(){
+  if(!categoriaProductosPendiente)return;
+  const filtro=document.getElementById('prod-filtro-cat');
+  if(!filtro||![...filtro.options].some(op=>String(op.value)===categoriaProductosPendiente))return;
+  document.getElementById('prod-buscar').value='';
+  document.getElementById('prod-filtro-prov').value='';
+  filtro.value=categoriaProductosPendiente;
+  categoriaProductosPendiente='';
+  filtrarTablaProductos();
 }
 function renderTablaProductos(rows){
   const vendedor=esVendedor();

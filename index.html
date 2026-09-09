@@ -2060,12 +2060,14 @@ async function cancelarVenta(idVenta){
 async function abrirDetalleVenta(id){return verDetalleVenta(id);}
 async function verDetalleVenta(idVenta){
   try{
-    const[dataVentas,dataDetalle,dataPagos,dataTarifas,dataPlanes,dataCuentas]=await Promise.all([cacheGet('getVentas'),cacheGet('getDetalleVentas'),cacheGet('getPagosVenta'),cacheGet('getTarifasCobro'),cacheGet('getPlanesCuotas'),cacheGet('getCuentas')]);
+    const[dataVentas,dataDetalle,dataPagos,dataTarifas,dataPlanes,dataCuentas,dataCpc,dataMovimientos]=await Promise.all([cacheGet('getVentas'),cacheGet('getDetalleVentas'),cacheGet('getPagosVenta'),cacheGet('getTarifasCobro'),cacheGet('getPlanesCuotas'),cacheGet('getCuentas'),cacheGet('getCuentasPorCobrar'),cacheGet('getMovimientos')]);
     tarifasCobroData=dataTarifas.slice(1);
     planesCuotasData=dataPlanes.slice(1);
     cuentasData=dataCuentas.slice(1);
     const items=dataDetalle.slice(1).filter(d=>String(d[0])===String(idVenta));
     const pagos=dataPagos.slice(1).filter(p=>String(p[0])===String(idVenta));
+    const idsCpc=new Set((dataCpc||[]).slice(1).filter(c=>String(c[1])===String(idVenta)).map(c=>String(c[0])));
+    const cobrosPosteriores=(dataMovimientos||[]).slice(1).filter(m=>String(m[8]||'')==='cobro_cpc'&&idsCpc.has(String(m[7]||'')));
     const venta=dataVentas.slice(1).find(v=>String(v[0])===String(idVenta));
     const encabezadosVentas=(dataVentas[0]||[]).map(h=>String(h||'').trim());
     const indiceUsuarioVenta=encabezadosVentas.indexOf('Usuario_Registro');
@@ -2130,7 +2132,9 @@ async function verDetalleVenta(idVenta){
       </div>
       <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-mid);margin-bottom:6px">Pagos</div>
       <table><thead><tr><th>Medio</th><th>Importe original</th><th>Neto efectivo</th><th>Estado</th></tr></thead><tbody>
-        ${pagos.length?pagos.map(p=>{const pagoCancelado=estadoVenta==='cancelada'||String(p[21]||'').toUpperCase()==='CANCELADO';return`<tr style="${pagoCancelado?'opacity:.65':''}"><td>${nombreFormaCobro(p)}</td><td>${formatPeso(p[2])}</td><td style="color:${pagoCancelado?'var(--text-light)':'var(--success)'}">${formatPeso(pagoCancelado?0:p[6])}</td><td><span class="badge ${pagoCancelado?'badge-zero':'badge-ok'}">${pagoCancelado?'Cancelado':estadoPagoVisible(p[21])}</span></td></tr>`}).join(''):'<tr><td colspan="4" style="text-align:center;color:var(--text-light)">Sin pago inicial</td></tr>'}
+        ${pagos.map(p=>{const pagoCancelado=estadoVenta==='cancelada'||String(p[21]||'').toUpperCase()==='CANCELADO';return`<tr style="${pagoCancelado?'opacity:.65':''}"><td>${nombreFormaCobro(p)}</td><td>${formatPeso(p[2])}</td><td style="color:${pagoCancelado?'var(--text-light)':'var(--success)'}">${formatPeso(pagoCancelado?0:p[6])}</td><td><span class="badge ${pagoCancelado?'badge-zero':'badge-ok'}">${pagoCancelado?'Cancelado':estadoPagoVisible(p[21])}</span></td></tr>`}).join('')}
+        ${cobrosPosteriores.map(m=>`<tr><td>Pago parcial · ${fechaStr(m[1])||'—'}</td><td>${formatPeso(m[5])}</td><td style="color:var(--success)">${formatPeso(m[5])}</td><td><span class="badge badge-ok">Acreditado</span></td></tr>`).join('')}
+        ${!pagos.length&&!cobrosPosteriores.length?'<tr><td colspan="4" style="text-align:center;color:var(--text-light)">Sin pagos registrados</td></tr>':''}
       </tbody></table>`;
     const btnCancelar=document.getElementById('btn-cancelar-vta');
     btnCancelar.style.display=estadoVenta==='cancelada'||esVendedor()?'none':'';

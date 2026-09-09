@@ -2028,7 +2028,10 @@ function filtrarProductosVenta(){
   if(!q){lista.style.display='none';return}
   const f=productosData.filter(p=>p[0].toString().toLowerCase().includes(q)||p[1].toString().toLowerCase().includes(q)).slice(0,8);
   if(!f.length){lista.style.display='none';return}
-  lista.innerHTML=f.map(p=>`<div class="autocomplete-item" onclick="selProductoVenta('${p[0]}')"><code>${p[0]}</code> — ${p[1]} <span style="float:right;color:var(--teal)">${formatPeso(p[3])}</span></div>`).join('');
+  lista.innerHTML=f.map(p=>{
+    const stock=Math.max(0,Number(p[5])||0),sinStock=stock===0;
+    return`<div class="autocomplete-item" ${sinStock?'':'onclick="selProductoVenta(\''+p[0]+'\')"'} style="${sinStock?'opacity:.55;cursor:not-allowed;background:#fafafa':''}"><code>${p[0]}</code> — ${p[1]} <span style="float:right;display:flex;align-items:center;gap:12px"><span style="font-size:11px;font-weight:600;color:${sinStock?'var(--error)':'var(--success)'}">${sinStock?'Sin stock':`Stock: ${stock}`}</span><span style="color:var(--teal)">${formatPeso(p[3])}</span></span></div>`;
+  }).join('');
   lista.style.display='block';
 }
 

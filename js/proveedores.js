@@ -99,8 +99,15 @@ async function agregarProveedor(){
     await cargarProveedores();
     renderTablaProveedores();
     ['prov-codigo','prov-nombre','prov-contacto'].forEach(id=>document.getElementById(id).value='');
+    cerrarModal('modal-nuevo-proveedor');
     showToast('Proveedor guardado');
   }catch(e){showToast(e?.message||'No se pudo guardar el proveedor','error');}
+}
+
+function abrirNuevoProveedor(){
+  ['prov-codigo','prov-nombre','prov-contacto'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('modal-nuevo-proveedor').classList.add('open');
+  setTimeout(()=>document.getElementById('prov-codigo').focus(),100);
 }
 
 function abrirEditarProveedor(btn){

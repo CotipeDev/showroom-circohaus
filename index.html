@@ -547,7 +547,7 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
   <div class="app-workspace">
     <aside class="app-sidebar" id="app-sidebar" aria-label="Navegación principal">
       <div class="sidebar-group">
-        <button class="sidebar-link" data-modulo="inicio" onclick="irA('inicio')"><span class="sidebar-icon">⌂</span><span class="sidebar-text">Inicio</span></button>
+        <button class="sidebar-link" data-modulo="inicio" onclick="irA('inicio')"><span class="sidebar-icon">🏠</span><span class="sidebar-text">Inicio</span></button>
       </div>
       <div class="sidebar-group">
         <div class="sidebar-label">Operación</div>
@@ -740,22 +740,26 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
 
     <!-- PROVEEDORES -->
     <div id="panel-proveedores" class="panel">
-      <div class="section-title">Proveedores</div>
-      <div class="section-sub">Gestioná tus proveedores</div>
-      <div class="card">
-        <div class="card-title">Nuevo proveedor</div>
-        <div class="form-grid cols-3">
-          <div class="field"><label>Código</label><input type="text" id="prov-codigo" placeholder="PQY"></div>
-          <div class="field"><label>Nombre</label><input type="text" id="prov-nombre" placeholder="Nombre del proveedor"></div>
-          <div class="field"><label>Contacto</label><input type="text" id="prov-contacto" placeholder="Teléfono o email"></div>
-        </div>
-        <div class="form-actions"><button class="btn btn-primary" onclick="conBotonCargando(this,'Guardando...',agregarProveedor)">Guardar proveedor</button></div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:18px">
+        <div><div class="section-title">Proveedores</div><div class="section-sub">Gestioná tus proveedores</div></div>
+        <button class="btn btn-primary" onclick="abrirNuevoProveedor()">+ Nuevo proveedor</button>
       </div>
       <div class="card">
         <div class="card-title">Proveedores registrados</div>
         <div id="prov-resumen" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:14px"></div>
         <div id="prov-loading" class="spinner-wrap"><div class="spinner"></div> Cargando...</div>
         <table id="prov-table" style="display:none"><thead><tr><th>Código</th><th>Nombre</th><th>Contacto</th><th>Productos</th><th></th></tr></thead><tbody id="prov-body"></tbody></table>
+      </div>
+      <div id="modal-nuevo-proveedor" class="modal-overlay" onclick="if(event.target===this)cerrarModal('modal-nuevo-proveedor')">
+        <div class="modal" style="max-width:760px">
+          <div class="modal-title">Nuevo proveedor</div>
+          <div class="form-grid cols-3">
+            <div class="field"><label>Código</label><input type="text" id="prov-codigo" placeholder="PQY"></div>
+            <div class="field"><label>Nombre</label><input type="text" id="prov-nombre" placeholder="Nombre del proveedor"></div>
+            <div class="field"><label>Contacto</label><input type="text" id="prov-contacto" placeholder="Teléfono o email"></div>
+          </div>
+          <div class="modal-actions"><button class="btn btn-primary" onclick="conBotonCargando(this,'Guardando...',agregarProveedor)">Guardar proveedor</button><button class="btn btn-secondary" onclick="cerrarModal('modal-nuevo-proveedor')">Cancelar</button></div>
+        </div>
       </div>
       <div id="modal-editar-proveedor" class="modal-overlay" onclick="if(event.target===this)cerrarModal('modal-editar-proveedor')">
         <div class="modal">
@@ -776,19 +780,21 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
 
     <!-- CATEGORÍAS -->
     <div id="panel-categorias" class="panel">
-      <div class="section-title">Categorías</div>
-      <div class="section-sub">Gestioná las categorías de tus productos</div>
-      <div class="card">
-        <div class="card-title">Nueva categoría</div>
-        <div class="form-grid cols-3">
-          <div class="field"><label>Nombre</label><input type="text" id="cat-nombre" placeholder="Ej: Aromas"></div>
-        </div>
-        <div class="form-actions"><button class="btn btn-primary" onclick="conBotonCargando(this,'Guardando...',agregarCategoria)">Guardar categoría</button></div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:18px">
+        <div><div class="section-title">Categorías</div><div class="section-sub">Gestioná las categorías de tus productos</div></div>
+        <button class="btn btn-primary" onclick="abrirNuevaCategoria()">+ Nueva categoría</button>
       </div>
       <div class="card">
         <div class="card-title">Categorías registradas</div>
         <div id="cat-loading" class="spinner-wrap"><div class="spinner"></div> Cargando...</div>
         <table id="cat-table" style="display:none"><thead><tr><th>Nombre</th><th>Productos asociados</th><th></th></tr></thead><tbody id="cat-body"></tbody></table>
+      </div>
+      <div id="modal-nueva-categoria" class="modal-overlay" onclick="if(event.target===this)cerrarModal('modal-nueva-categoria')">
+        <div class="modal">
+          <div class="modal-title">Nueva categoría</div>
+          <div class="field"><label>Nombre</label><input type="text" id="cat-nombre" placeholder="Ej: Aromas"></div>
+          <div class="modal-actions"><button class="btn btn-primary" onclick="conBotonCargando(this,'Guardando...',agregarCategoria)">Guardar categoría</button><button class="btn btn-secondary" onclick="cerrarModal('modal-nueva-categoria')">Cancelar</button></div>
+        </div>
       </div>
       <div id="modal-editar-categoria" class="modal-overlay" onclick="if(event.target===this)cerrarModal('modal-editar-categoria')">
         <div class="modal">
@@ -1231,10 +1237,12 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
 
     <!-- MOVIMIENTOS -->
     <div id="panel-movimientos" class="panel">
-      <div class="section-title">Movimientos</div>
-      <div class="section-sub">Consultá y registrá ingresos y egresos de todas tus cuentas.</div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:18px">
+        <div><div class="section-title">Movimientos</div><div class="section-sub">Consultá y registrá ingresos y egresos de todas tus cuentas.</div></div>
+        <button class="btn btn-primary" onclick="abrirMovimientoManual()">+ Registrar movimiento</button>
+      </div>
       <div class="card">
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px"><div class="card-title" style="margin:0">Movimientos recientes</div><button class="btn btn-secondary" onclick="abrirMovimientoManual()">+ Registrar movimiento</button></div>
+        <div class="card-title">Movimientos recientes</div>
         <div class="module-filters">
           <select id="mov-filtro-cuenta" onchange="filtrarMovimientos()" style="background:var(--off-white);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:13px;outline:none"><option value="">Todas las cuentas</option></select>
           <select id="mov-filtro-tipo" onchange="filtrarMovimientos()" style="background:var(--off-white);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:13px;outline:none"><option value="">Ingresos y egresos</option><option value="ingreso">Solo ingresos</option><option value="egreso">Solo egresos</option></select>
@@ -2902,14 +2910,14 @@ function descargarListaPrecios(){
 // MÓDULO CUENTAS POR COBRAR
 // ─────────────────────────────────────────
 </script>
-<script src="js/proveedores.js?v=20260824-1"></script>
+<script src="js/proveedores.js?v=20260909-1"></script>
 <script src="js/productos.js?v=20260824-1"></script>
 <script src="js/stock.js?v=20260824-1"></script>
 <script src="js/ingresos.js?v=20260824-1"></script>
 <script src="js/medios-pago.js?v=20260907-8"></script>
 <script src="js/clientes.js?v=20260824-1"></script>
 <script src="js/cuentas-por-cobrar.js?v=20260907-2"></script>
-<script src="js/categorias.js?v=20260823-2"></script>
+<script src="js/categorias.js?v=20260909-1"></script>
 <script src="js/ventas-v2.js?v=20260908-3"></script>
 </body>
 </html>

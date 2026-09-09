@@ -89,6 +89,13 @@ async function agregarCategoria(){
     await apiPost('agregarCategoria',{nombre:n});
     showToast('Categoría guardada');
     document.getElementById('cat-nombre').value='';
+    cerrarModal('modal-nueva-categoria');
     setTimeout(()=>{cargarCategorias();iniciarCategorias();},1500);
   }catch(e){showToast('Error','error');}
+}
+
+function abrirNuevaCategoria(){
+  document.getElementById('cat-nombre').value='';
+  document.getElementById('modal-nueva-categoria').classList.add('open');
+  setTimeout(()=>document.getElementById('cat-nombre').focus(),100);
 }

@@ -1959,13 +1959,14 @@ function renderConciliacion(){
   const cuenta=document.getElementById('conc-filtro-cuenta').value;
   const mes=document.getElementById('conc-filtro-mes').value;
   const estado=document.getElementById('conc-filtro-estado').value;
-  let rows=movimientosConciliables();
-  if(cuenta)rows=rows.filter(m=>String(m[2])===String(cuenta));
-  if(mes)rows=rows.filter(m=>(fechaStr(m[9])||fechaStr(m[1])).startsWith(mes));
+  let movimientosFiltrados=movimientosConciliables();
+  if(cuenta)movimientosFiltrados=movimientosFiltrados.filter(m=>String(m[2])===String(cuenta));
+  if(mes)movimientosFiltrados=movimientosFiltrados.filter(m=>(fechaStr(m[9])||fechaStr(m[1])).startsWith(mes));
+  let rows=movimientosFiltrados;
   if(estado)rows=rows.filter(m=>estadoConciliacion(m)===estado);
   const nombreCuenta=id=>cuentasData.find(c=>String(c[0])===String(id))?.[1]||id||'—';
-  const pendientes=movimientosConciliables().filter(m=>estadoConciliacion(m)==='pendiente');
-  const conciliados=movimientosConciliables().filter(m=>estadoConciliacion(m)==='conciliado');
+  const pendientes=movimientosFiltrados.filter(m=>estadoConciliacion(m)==='pendiente');
+  const conciliados=movimientosFiltrados.filter(m=>estadoConciliacion(m)==='conciliado');
   const diferenciaTotal=conciliados.reduce((s,m)=>s+(Number(m[13])||0),0);
   document.getElementById('conc-kpis').innerHTML=`
     <div style="background:var(--off-white);padding:11px;border-radius:8px"><div style="font-size:10px;text-transform:uppercase;color:var(--text-light)">Pendientes</div><div style="font-size:20px;font-weight:700;color:#E8A838">${pendientes.length}</div></div>

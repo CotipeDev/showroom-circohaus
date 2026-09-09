@@ -50,11 +50,12 @@ html,body{height:100%;font-family:'DM Sans',sans-serif;background:var(--pearl);c
 .modulo-card.instructivos .modulo-arrow{color:var(--rose)}
 
 #app-main{display:none;flex-direction:column;height:100vh}
-.app-header{background:var(--navy);padding:0 24px;height:52px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.app-header{background:var(--navy);padding:0 24px;height:64px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;position:relative}
 .app-header-left{display:flex;align-items:center;gap:16px}
-.app-logo{font-family:'Playfair Display',serif;color:#F7F8FA;font-size:16px;display:flex;align-items:center;gap:8px}
+.app-logo{font-family:'Playfair Display',serif;color:#F7F8FA;font-size:19px;display:flex;align-items:center;gap:9px;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%)}
+.app-logo svg{width:34px;height:37px}
 .app-logo span{color:var(--rose)}
-.app-logo-sub{font-size:8px;color:var(--blue-mist);letter-spacing:.15em;text-transform:uppercase;display:block;margin-top:1px}
+.app-logo-sub{font-size:9px;color:var(--blue-mist);letter-spacing:.17em;text-transform:uppercase;display:block;margin-top:2px}
 .btn-home{background:none;border:1px solid rgba(255,255,255,.25);color:#ccc;font-family:'DM Sans',sans-serif;font-size:12px;padding:5px 12px;border-radius:6px;cursor:pointer;transition:all .2s}
 .btn-home:hover{background:rgba(255,255,255,.1);color:white}
 .btn-menu{width:34px;height:34px;border:1px solid rgba(255,255,255,.25);border-radius:7px;background:none;color:white;cursor:pointer;font-size:17px;display:flex;align-items:center;justify-content:center;transition:background .2s}
@@ -202,6 +203,8 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
   #app-main.sidebar-collapsed .sidebar-user .btn-cerrar-sesion::before{content:none}
   .sidebar-backdrop{position:absolute;inset:0;background:rgba(53,61,85,.32);z-index:110}
   #app-main.sidebar-open .sidebar-backdrop{display:block}
+  .app-logo{font-size:17px}
+  .app-logo svg{width:31px;height:34px}
 }
 
 /* ── MOBILE (iPhone) ── */
@@ -299,6 +302,7 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
   .cuentas-grid{grid-template-columns:1fr}
   .notif-panel{width:calc(100vw - 24px);right:-120px;max-height:60vh;overflow-y:auto}
 }
+@media(min-width:481px) and (max-width:768px){#modulo-topbar-nombre{display:none}}
 
 /* BOTÓN NUEVA VENTA EN HEADER */
 .btn-nueva-venta{background:var(--rose);color:white;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;padding:7px 14px;border-radius:8px;border:none;cursor:pointer;transition:all .2s;letter-spacing:.02em}

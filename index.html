@@ -1875,7 +1875,25 @@ async function registrarMovimiento(){
     showToast('Movimiento guardado');
     cerrarModal('modal-movimiento-manual');
     ['mov-monto','mov-descripcion'].forEach(id=>document.getElementById(id).value='');
-    cacheInvalidar('getCuentas','getMovimientos');setTimeout(()=>iniciarCuentas(),1500);
+    const movimientoLocal=['MOV-'+Date.now(),fecha,id_cuenta,tipo,categoria,monto,descripcion,'','manual',fecha];
+    movimientosData.push(movimientoLocal);
+    const datosMovimientosCache=cache.data.getMovimientos;
+    if(Array.isArray(datosMovimientosCache)&&datosMovimientosCache.length){
+      cache.set('getMovimientos',[datosMovimientosCache[0],...movimientosData]);
+    }
+    renderCuentasCards();
+    renderMovimientos(movimientosData);
+    prepararConciliacion();
+    setTimeout(async()=>{
+      try{
+        const datos=await apiGet('getMovimientos');
+        cache.set('getMovimientos',datos);
+        movimientosData=(datos||[]).slice(1);
+        if(document.getElementById('panel-cuentas')?.classList.contains('active')){
+          renderCuentasCards();renderMovimientos(movimientosData);prepararConciliacion();
+        }
+      }catch(e){console.warn('No se pudo sincronizar movimientos en segundo plano:',e);}
+    },250);
   }catch(e){showToast('Error','error')}
 }
 
@@ -2255,6 +2273,16 @@ async function precargarDatosBase(){
   cargarNotificaciones();
   // Si el módulo se abrió antes de recibir estos datos, actualizarlo sin F5.
   aplicarRuta();
+  // Anticipar el módulo más pesado sin bloquear la pantalla de inicio.
+  Promise.all([
+    cacheGet('getCuentas'),
+    cacheGet('getMovimientos'),
+    cacheGet('getCategoriasMovimientos')
+  ]).then(([dataCuentas,dataMovimientos,dataCategoriasMov])=>{
+    cuentasData=(dataCuentas||[]).slice(1);
+    movimientosData=(dataMovimientos||[]).slice(1);
+    categoriasMovData=(dataCategoriasMov||[]).slice(1);
+  }).catch(e=>console.warn('No se pudo anticipar la carga de cuentas:',e));
 }
 
 async function iniciarAplicacion(){

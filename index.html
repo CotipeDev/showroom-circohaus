@@ -57,6 +57,23 @@ html,body{height:100%;font-family:'DM Sans',sans-serif;background:var(--pearl);c
 .app-logo-sub{font-size:8px;color:var(--blue-mist);letter-spacing:.15em;text-transform:uppercase;display:block;margin-top:1px}
 .btn-home{background:none;border:1px solid rgba(255,255,255,.25);color:#ccc;font-family:'DM Sans',sans-serif;font-size:12px;padding:5px 12px;border-radius:6px;cursor:pointer;transition:all .2s}
 .btn-home:hover{background:rgba(255,255,255,.1);color:white}
+.btn-menu{width:34px;height:34px;border:1px solid rgba(255,255,255,.25);border-radius:7px;background:none;color:white;cursor:pointer;font-size:17px;display:flex;align-items:center;justify-content:center;transition:background .2s}
+.btn-menu:hover{background:rgba(255,255,255,.1)}
+.app-workspace{display:flex;flex:1;min-height:0;position:relative}
+.app-sidebar{width:232px;flex-shrink:0;background:var(--white);border-right:1px solid var(--border);overflow-y:auto;padding:16px 12px;transition:width .22s,transform .22s;z-index:120}
+.app-content{flex:1;min-width:0;overflow-y:auto;padding:24px 20px;background:var(--pearl)}
+.sidebar-group{margin-bottom:18px}
+.sidebar-label{font-size:9px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text-light);padding:0 10px;margin-bottom:6px;white-space:nowrap;overflow:hidden}
+.sidebar-link{width:100%;display:flex;align-items:center;gap:10px;border:0;background:none;color:var(--text-mid);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;text-align:left;padding:9px 10px;border-radius:8px;cursor:pointer;transition:all .18s;white-space:nowrap;overflow:hidden}
+.sidebar-link:hover{background:var(--pearl);color:var(--navy)}
+.sidebar-link.active{background:#EEF7F9;color:var(--teal-dark);font-weight:600}
+.sidebar-icon{width:20px;text-align:center;flex-shrink:0}
+.sidebar-text{overflow:hidden;text-overflow:ellipsis}
+.sidebar-backdrop{display:none}
+.module-filters{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:16px}
+#app-main.sidebar-collapsed .app-sidebar{width:66px}
+#app-main.sidebar-collapsed .sidebar-label,#app-main.sidebar-collapsed .sidebar-text{display:none}
+#app-main.sidebar-collapsed .sidebar-link{justify-content:center;padding-left:8px;padding-right:8px}
 
 .tabs{display:flex;background:var(--pearl);flex-shrink:0;border-bottom:2px solid var(--border)}
 .tab{flex:1;background:none;border:none;border-bottom:3px solid transparent;color:var(--text-mid);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;padding:13px 8px;cursor:pointer;transition:all .2s;text-align:center}
@@ -161,6 +178,13 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
   .launcher-grid{grid-template-columns:repeat(3,1fr);gap:10px}
   .content{padding:20px 16px}
   table{font-size:13px}
+  .app-sidebar{position:absolute;top:0;bottom:0;left:0;width:250px;transform:translateX(-100%);box-shadow:8px 0 28px rgba(53,61,85,.18)}
+  #app-main.sidebar-open .app-sidebar{transform:translateX(0)}
+  #app-main.sidebar-collapsed .app-sidebar{width:250px}
+  #app-main.sidebar-collapsed .sidebar-label,#app-main.sidebar-collapsed .sidebar-text{display:block}
+  #app-main.sidebar-collapsed .sidebar-link{justify-content:flex-start;padding:9px 10px}
+  .sidebar-backdrop{position:absolute;inset:0;background:rgba(53,61,85,.32);z-index:110}
+  #app-main.sidebar-open .sidebar-backdrop{display:block}
 }
 
 /* ── MOBILE (iPhone) ── */
@@ -173,9 +197,14 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
 
   /* App header */
   .app-header{padding:0 12px;height:48px}
-  .btn-home{font-size:11px;padding:4px 10px}
+  .btn-home{display:none}
   .btn-nueva-venta{font-size:11px;padding:6px 10px}
   #modulo-topbar-nombre{font-size:11px}
+  .app-logo{display:none}
+  .app-header-left{gap:9px;min-width:0}
+  .app-header>div:last-child{gap:5px!important}
+  .app-content{padding:16px 12px}
+  .module-filters{grid-template-columns:1fr}
 
   /* KPIs */
   .kpis{grid-template-columns:1fr 1fr;padding:0 12px;gap:10px}
@@ -283,6 +312,7 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
 
 /* Launcher compacto */
 .launcher-seccion{margin-bottom:24px}
+#home .launcher-seccion{display:none!important}
 .launcher-label{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--text-light);margin-bottom:10px;padding-left:2px}
 .launcher-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 .launcher-item{background:var(--white);border:1.5px solid var(--border);border-radius:14px;padding:18px 14px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:10px;transition:all .18s;box-shadow:0 1px 6px rgba(72,84,114,.05)}
@@ -476,6 +506,7 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
 <div id="app-main">
   <div class="app-header">
     <div class="app-header-left">
+      <button class="btn-menu" onclick="toggleSidebar()" aria-label="Abrir o contraer menú">☰</button>
       <div class="app-logo">
         <svg width="26" height="28" viewBox="0 0 40 44" fill="none">
           <path d="M3 20 L20 4 L37 20" stroke="#DAA49A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -498,6 +529,43 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
       </div>
     </div>
   </div>
+
+  <div class="app-workspace">
+    <aside class="app-sidebar" id="app-sidebar" aria-label="Navegación principal">
+      <div class="sidebar-group">
+        <button class="sidebar-link" data-modulo="inicio" onclick="irA('inicio')"><span class="sidebar-icon">⌂</span><span class="sidebar-text">Inicio</span></button>
+      </div>
+      <div class="sidebar-group">
+        <div class="sidebar-label">Operación</div>
+        <button class="sidebar-link" data-modulo="ventas" onclick="irA('ventas')"><span class="sidebar-icon">🛒</span><span class="sidebar-text">Nueva venta</span></button>
+        <button class="sidebar-link" data-modulo="historial-ventas" onclick="irA('historial-ventas')"><span class="sidebar-icon">🧾</span><span class="sidebar-text">Ventas</span></button>
+        <button class="sidebar-link" data-modulo="clientes" onclick="irA('clientes')"><span class="sidebar-icon">👥</span><span class="sidebar-text">Clientes</span></button>
+        <button class="sidebar-link" data-modulo="cxc" onclick="irA('cxc')"><span class="sidebar-icon">📋</span><span class="sidebar-text">Cuentas por cobrar</span></button>
+      </div>
+      <div class="sidebar-group">
+        <div class="sidebar-label">Inventario</div>
+        <button class="sidebar-link" data-modulo="ingresos" onclick="irA('ingresos')"><span class="sidebar-icon">📦</span><span class="sidebar-text">Ingresos</span></button>
+        <button class="sidebar-link" data-modulo="stock" onclick="irA('stock')"><span class="sidebar-icon">📊</span><span class="sidebar-text">Stock e inventario</span></button>
+        <button class="sidebar-link" data-modulo="productos" onclick="irA('productos')"><span class="sidebar-icon">🏷️</span><span class="sidebar-text">Productos</span></button>
+        <button class="sidebar-link" data-modulo="proveedores" onclick="irA('proveedores')"><span class="sidebar-icon">🤝</span><span class="sidebar-text">Proveedores</span></button>
+        <button class="sidebar-link" data-modulo="categorias" onclick="irA('categorias')"><span class="sidebar-icon">🗂️</span><span class="sidebar-text">Categorías</span></button>
+      </div>
+      <div class="sidebar-group">
+        <div class="sidebar-label">Finanzas</div>
+        <button class="sidebar-link" data-modulo="cuentas" onclick="irA('cuentas')"><span class="sidebar-icon">💰</span><span class="sidebar-text">Cuentas</span></button>
+        <button class="sidebar-link" data-modulo="movimientos" onclick="irA('movimientos')"><span class="sidebar-icon">↕</span><span class="sidebar-text">Movimientos</span></button>
+        <button class="sidebar-link" data-modulo="conciliacion" onclick="irA('conciliacion')"><span class="sidebar-icon">✓</span><span class="sidebar-text">Conciliación</span></button>
+        <button class="sidebar-link" data-modulo="facturas" onclick="irA('facturas')"><span class="sidebar-icon">🧾</span><span class="sidebar-text">Facturación</span></button>
+        <button class="sidebar-link" data-modulo="reportes" onclick="irA('reportes')"><span class="sidebar-icon">📈</span><span class="sidebar-text">Análisis y reportes</span></button>
+      </div>
+      <div class="sidebar-group">
+        <div class="sidebar-label">Configuración</div>
+        <button class="sidebar-link" data-modulo="medios-pago" onclick="irA('medios-pago')"><span class="sidebar-icon">💳</span><span class="sidebar-text">Medios y planes de cobro</span></button>
+        <button class="sidebar-link" data-modulo="instructivos" onclick="irA('instructivos')"><span class="sidebar-icon">📚</span><span class="sidebar-text">Manuales de uso</span></button>
+      </div>
+    </aside>
+    <div class="sidebar-backdrop" onclick="cerrarSidebarMovil()"></div>
+    <main class="app-content">
 
     <!-- INGRESOS -->
     <div id="panel-ingresos" class="panel active">
@@ -1127,10 +1195,14 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
       <div style="display:flex;justify-content:space-between;align-items:center;gap:12px"><div><div class="section-title">Cuentas</div><div class="section-sub">Saldo actual y movimientos por cuenta</div></div><button class="btn btn-primary" onclick="abrirNuevaCuenta()">+ Nueva cuenta</button></div>
       <div id="cuentas-cards-loading" class="spinner-wrap"><div class="spinner"></div> Cargando...</div>
       <div id="cuentas-grid" class="cuentas-grid"></div>
+    </div>
+
+    <!-- CONCILIACIÓN -->
+    <div id="panel-conciliacion" class="panel">
+      <div class="section-title">Conciliación</div>
+      <div class="section-sub">Controlá que cada movimiento coincida con el importe realmente acreditado.</div>
       <div class="card">
-        <div class="card-title">Conciliación</div>
-        <div class="section-sub" style="margin-bottom:12px">Confirmá que los movimientos coincidan con lo acreditado en cada cuenta.</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px">
+        <div class="module-filters">
           <select id="conc-filtro-cuenta" onchange="renderConciliacion()" style="background:var(--off-white);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:13px"><option value="">Todas las cuentas</option></select>
           <input type="month" id="conc-filtro-mes" onchange="renderConciliacion()" style="background:var(--off-white);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:13px">
           <select id="conc-filtro-estado" onchange="renderConciliacion()" style="background:var(--off-white);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:13px"><option value="pendiente">Pendientes</option><option value="conciliado">Conciliados</option><option value="">Todos</option></select>
@@ -1138,9 +1210,15 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
         <div id="conc-kpis" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px"></div>
         <div style="overflow-x:auto"><table style="min-width:900px"><thead><tr><th>Acreditación</th><th>Cuenta</th><th>Detalle</th><th style="text-align:right">Esperado</th><th style="text-align:right">Real</th><th style="text-align:right">Diferencia</th><th>Estado</th><th></th></tr></thead><tbody id="conc-body"></tbody></table></div>
       </div>
+    </div>
+
+    <!-- MOVIMIENTOS -->
+    <div id="panel-movimientos" class="panel">
+      <div class="section-title">Movimientos</div>
+      <div class="section-sub">Consultá y registrá ingresos y egresos de todas tus cuentas.</div>
       <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px"><div class="card-title" style="margin:0">Movimientos recientes</div><button class="btn btn-secondary" onclick="abrirMovimientoManual()">+ Registrar movimiento</button></div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px">
+        <div class="module-filters">
           <select id="mov-filtro-cuenta" onchange="filtrarMovimientos()" style="background:var(--off-white);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:13px;outline:none"><option value="">Todas las cuentas</option></select>
           <select id="mov-filtro-tipo" onchange="filtrarMovimientos()" style="background:var(--off-white);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:13px;outline:none"><option value="">Ingresos y egresos</option><option value="ingreso">Solo ingresos</option><option value="egreso">Solo egresos</option></select>
           <input type="month" id="mov-filtro-mes" onchange="filtrarMovimientos()" style="background:var(--off-white);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:13px;outline:none">
@@ -1220,6 +1298,7 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
       </div>
     </div>
 
+    </main>
   </div>
 </div>
 
@@ -1569,14 +1648,15 @@ function formatPeso(n){return'$'+Number(n).toLocaleString('es-AR')}
 function textoSeguro(valor){return String(valor??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
 function setFechaHoy(id){document.getElementById(id).value=new Date().toISOString().split('T')[0]}
 
-const moduloNombres={ingresos:'📦 Ingresos',stock:'📊 Stock e inventario',productos:'🏷️ Productos',clientes:'👥 Clientes',ventas:'🛒 Ventas','historial-ventas':'🧾 Ventas',cuentas:'💰 Cuentas',proveedores:'🤝 Proveedores',categorias:'🗂️ Categorías','medios-pago':'💳 Medios de pago',reportes:'📈 Reportes',cxc:'📋 Cuentas por cobrar',facturas:'🧾 Facturas',instructivos:'📚 Instructivos'};
+const moduloNombres={ingresos:'📦 Ingresos',stock:'📊 Stock e inventario',productos:'🏷️ Productos',clientes:'👥 Clientes',ventas:'🛒 Nueva venta','historial-ventas':'🧾 Ventas',cuentas:'💰 Cuentas',movimientos:'↕ Movimientos',conciliacion:'✓ Conciliación',proveedores:'🤝 Proveedores',categorias:'🗂️ Categorías','medios-pago':'💳 Medios y planes de cobro',reportes:'📈 Análisis y reportes',cxc:'📋 Cuentas por cobrar',facturas:'🧾 Facturación',instructivos:'📚 Manuales de uso'};
 const modulosVendedor=new Set(['ventas','historial-ventas','stock','productos','clientes','cxc']);
 const modulosConRuta=new Set(Object.keys(moduloNombres));
 let abrirAlertasPendiente=false;
 function rutaActual(){try{const ruta=decodeURIComponent(location.hash.replace(/^#\/?/,'')).trim();return ruta||'inicio';}catch(e){return'inicio';}}
 function reemplazarRuta(nombre){history.replaceState(null,'',nombre==='inicio'?'#/inicio':`#/${nombre}`)}
 function irA(nombre){
-  if(esVendedor()&&!modulosVendedor.has(nombre)){showToast('Tu perfil no tiene acceso a este módulo','error');return;}
+  if(nombre!=='inicio'&&esVendedor()&&!modulosVendedor.has(nombre)){showToast('Tu perfil no tiene acceso a este módulo','error');return;}
+  cerrarSidebarMovil();
   const nuevaRuta=`#/${nombre}`;
   if(location.hash===nuevaRuta)aplicarRuta();else location.hash=nuevaRuta;
 }
@@ -1587,6 +1667,15 @@ function abrirAlertasStock(){
   irA('stock');
 }
 function volverHome(){if(location.hash==='#/inicio')aplicarRuta();else location.hash='#/inicio'}
+function toggleSidebar(){
+  const app=document.getElementById('app-main');
+  if(window.innerWidth<=1024)app.classList.toggle('sidebar-open');
+  else{
+    app.classList.toggle('sidebar-collapsed');
+    localStorage.setItem('circohaus_sidebar_collapsed',app.classList.contains('sidebar-collapsed')?'1':'0');
+  }
+}
+function cerrarSidebarMovil(){document.getElementById('app-main')?.classList.remove('sidebar-open')}
 function aplicarRuta(){
   if(!sesionActual()?.token)return;
   let nombre=rutaActual();
@@ -1606,10 +1695,11 @@ function showPanel(name){
   if(esVendedor()&&!modulosVendedor.has(name)){showToast('Tu perfil no tiene acceso a este módulo','error');return;}
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   document.getElementById('panel-'+name).classList.add('active');
+  document.querySelectorAll('.sidebar-link').forEach(link=>link.classList.toggle('active',link.dataset.modulo===name));
   document.getElementById('modulo-topbar-nombre').textContent=moduloNombres[name]||'';
   if(name==='stock')iniciarStock();if(name==='proveedores')iniciarProveedores();
   if(name==='productos')iniciarProductos();if(name==='clientes')iniciarClientes();if(name==='categorias')iniciarCategorias();
-  if(name==='medios-pago')iniciarMediosPago();if(name==='cuentas')iniciarCuentas();
+  if(name==='medios-pago')iniciarMediosPago();if(['cuentas','movimientos','conciliacion'].includes(name))iniciarCuentas();
   if(name==='ventas')iniciarVentas();if(name==='historial-ventas')iniciarHistorialVentas();if(name==='reportes')iniciarReportes();if(name==='cxc')iniciarCxc();if(name==='facturas')iniciarFacturas();
   if(name==='ingresos')cargarHistorialIngresos();
 }
@@ -1889,7 +1979,7 @@ async function registrarMovimiento(){
         const datos=await apiGet('getMovimientos');
         cache.set('getMovimientos',datos);
         movimientosData=(datos||[]).slice(1);
-        if(document.getElementById('panel-cuentas')?.classList.contains('active')){
+        if(['panel-cuentas','panel-movimientos','panel-conciliacion'].some(id=>document.getElementById(id)?.classList.contains('active'))){
           renderCuentasCards();renderMovimientos(movimientosData);prepararConciliacion();
         }
       }catch(e){console.warn('No se pudo sincronizar movimientos en segundo plano:',e);}
@@ -2296,6 +2386,7 @@ async function precargarDatosBase(){
 
 async function iniciarAplicacion(){
   setFechaHoy('ing-fecha');
+  if(window.innerWidth>1024&&localStorage.getItem('circohaus_sidebar_collapsed')==='1')document.getElementById('app-main')?.classList.add('sidebar-collapsed');
   aplicarPermisosUI();
   if(esVendedor()){
     await precargarDatosBase();
@@ -2426,6 +2517,14 @@ function aplicarPermisosUI(){
   ['usuario-home-rol','usuario-app-rol'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=usuario.rol==='administrador'?'Administrador':'Vendedor';});
   document.querySelectorAll('.launcher-item').forEach(el=>{const destino=(el.getAttribute('onclick')||'').match(/irA\('([^']+)'\)/)?.[1];if(destino)el.style.display=vendedor&&!modulosVendedor.has(destino)?'none':'';});
   document.querySelectorAll('.launcher-seccion').forEach(seccion=>{const visibles=[...seccion.querySelectorAll('.launcher-item')].some(el=>el.style.display!=='none');seccion.style.display=visibles?'':'none';});
+  document.querySelectorAll('.sidebar-link[data-modulo]').forEach(link=>{
+    const destino=link.dataset.modulo;
+    link.style.display=destino==='inicio'||!vendedor||modulosVendedor.has(destino)?'':'none';
+  });
+  document.querySelectorAll('.app-sidebar .sidebar-group').forEach(grupo=>{
+    const visibles=[...grupo.querySelectorAll('.sidebar-link')].some(link=>link.style.display!=='none');
+    grupo.style.display=visibles?'':'none';
+  });
   const btnNuevoProducto=document.getElementById('btn-nuevo-producto');if(btnNuevoProducto)btnNuevoProducto.style.display=vendedor?'none':'';
   const filtroProveedorProductos=document.getElementById('prod-filtro-prov');if(filtroProveedorProductos){filtroProveedorProductos.style.display=vendedor?'none':'';if(vendedor)filtroProveedorProductos.value='';}
   const kpiProveedores=document.getElementById('kpi-proveedores-wrap');if(kpiProveedores)kpiProveedores.style.display=vendedor?'none':'';

@@ -1124,7 +1124,7 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
 
     <!-- CUENTAS -->
     <div id="panel-cuentas" class="panel">
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px"><div><div class="section-title">Cuentas</div><div class="section-sub">Saldo actual y movimientos por cuenta</div></div><div style="display:flex;gap:8px"><button class="btn btn-secondary" onclick="abrirMovimientoManual()">+ Registrar movimiento</button><button class="btn btn-primary" onclick="abrirNuevaCuenta()">+ Nueva cuenta</button></div></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px"><div><div class="section-title">Cuentas</div><div class="section-sub">Saldo actual y movimientos por cuenta</div></div><button class="btn btn-primary" onclick="abrirNuevaCuenta()">+ Nueva cuenta</button></div>
       <div id="cuentas-cards-loading" class="spinner-wrap"><div class="spinner"></div> Cargando...</div>
       <div id="cuentas-grid" class="cuentas-grid"></div>
       <div class="card">
@@ -1139,7 +1139,7 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
         <div style="overflow-x:auto"><table style="min-width:900px"><thead><tr><th>Acreditación</th><th>Cuenta</th><th>Detalle</th><th style="text-align:right">Esperado</th><th style="text-align:right">Real</th><th style="text-align:right">Diferencia</th><th>Estado</th><th></th></tr></thead><tbody id="conc-body"></tbody></table></div>
       </div>
       <div class="card">
-        <div class="card-title">Movimientos recientes</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px"><div class="card-title" style="margin:0">Movimientos recientes</div><button class="btn btn-secondary" onclick="abrirMovimientoManual()">+ Registrar movimiento</button></div>
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:16px">
           <select id="mov-filtro-cuenta" onchange="filtrarMovimientos()" style="background:var(--off-white);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:13px;outline:none"><option value="">Todas las cuentas</option></select>
           <select id="mov-filtro-tipo" onchange="filtrarMovimientos()" style="background:var(--off-white);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:13px;outline:none"><option value="">Ingresos y egresos</option><option value="ingreso">Solo ingresos</option><option value="egreso">Solo egresos</option></select>

@@ -1752,16 +1752,17 @@ async function iniciarHome(){
   const graficos=document.getElementById('home-dashboard-graficos');
   if(loading)loading.style.display='flex';
   if(graficos)graficos.style.display='none';
-  try{
-    const pedidos=[];
-    if(!productosData.length)pedidos.push(cacheGet('getProductos').then(x=>{productosData=x.slice(1)}));
-    if(!proveedoresData.length)pedidos.push(cacheGet('getProveedores').then(x=>{proveedoresData=x.slice(1)}));
-    if(!ventasHistData.length)pedidos.push(cacheGet('getVentas').then(x=>{ventasHistData=x.slice(1)}));
-    await Promise.all(pedidos);
-    _renderNotificaciones(productosData);
-    renderDashboardInicio();
-  }catch(e){
-    if(loading)loading.innerHTML='<div class="home-chart-empty">No pudimos preparar el resumen. Volvé a intentar.</div>';
+  const pedidos=[];
+  if(!productosData.length)pedidos.push(cacheGet('getProductos').then(x=>{productosData=Array.isArray(x)?x.slice(1):[]}));
+  if(!ventasHistData.length&&!Array.isArray(cache.data.getVentas))pedidos.push(cacheGet('getVentas').then(x=>{ventasHistData=Array.isArray(x)?x.slice(1):[]}));
+  const resultados=await Promise.allSettled(pedidos);
+  const fallo=resultados.find(x=>x.status==='rejected');
+  if(fallo)console.warn('Inicio: no se pudo cargar una fuente de datos',fallo.reason);
+  try{_renderNotificaciones(productosData);renderDashboardInicio();}
+  catch(e){console.error('Inicio: error al preparar indicadores',e);}
+  if(loading){
+    if(fallo)loading.innerHTML='<span>No se actualizaron todos los datos. <button class="btn btn-secondary" style="padding:5px 10px;margin-left:8px" onclick="iniciarHome()">Reintentar</button></span>';
+    else loading.style.display='none';
   }
 }
 
@@ -1800,8 +1801,8 @@ function renderDashboardInicio(){
   if(kpiWrap)kpiWrap.innerHTML=kpis.map(k=>`<div class="kpi-card kpi-link ${k[4]?'alerta':''}" onclick="${k[3]}"><div class="kpi-label">${k[0]}</div><div class="kpi-value" style="font-size:27px">${k[1]}</div><div class="kpi-sub">${k[2]}</div></div>`).join('');
   renderGraficoVentasInicio(ventas,inicio,hoy,totalDe);
   renderGraficoCanalesInicio(ventas,totalDe,iCanal);
-  const loading=document.getElementById('home-dashboard-loading'),graficos=document.getElementById('home-dashboard-graficos');
-  if(loading)loading.style.display='none';if(graficos)graficos.style.display='grid';
+  const graficos=document.getElementById('home-dashboard-graficos');
+  if(graficos)graficos.style.display='grid';
 }
 
 function renderGraficoVentasInicio(ventas,inicio,hoy,totalDe){

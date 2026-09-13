@@ -564,6 +564,8 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
         <button class="sidebar-link" data-modulo="historial-ventas" onclick="irA('historial-ventas')"><span class="sidebar-icon">🧾</span><span class="sidebar-text">Ventas</span></button>
         <button class="sidebar-link" data-modulo="clientes" onclick="irA('clientes')"><span class="sidebar-icon">👥</span><span class="sidebar-text">Clientes</span></button>
         <button class="sidebar-link" data-modulo="productos" onclick="irA('productos')"><span class="sidebar-icon">🏷️</span><span class="sidebar-text">Productos</span></button>
+        <button class="sidebar-link" data-modulo="stock" onclick="irA('stock')"><span class="sidebar-icon">📊</span><span class="sidebar-text">Stock e inventario</span></button>
+        <button class="sidebar-link" data-modulo="ingresos" onclick="irA('ingresos')"><span class="sidebar-icon">📦</span><span class="sidebar-text">Ingreso de mercadería</span></button>
       </div>
       <div class="sidebar-group">
         <div class="sidebar-label">Finanzas</div>
@@ -572,12 +574,14 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
         <button class="sidebar-link" data-modulo="conciliacion" onclick="irA('conciliacion')"><span class="sidebar-icon">✓</span><span class="sidebar-text">Conciliación</span></button>
         <button class="sidebar-link" data-modulo="cxc" onclick="irA('cxc')"><span class="sidebar-icon">📋</span><span class="sidebar-text">Cuentas por cobrar</span></button>
         <button class="sidebar-link" data-modulo="facturas" onclick="irA('facturas')"><span class="sidebar-icon">🧾</span><span class="sidebar-text">Facturación</span></button>
+        <button class="sidebar-link" data-modulo="reportes" onclick="irA('reportes')"><span class="sidebar-icon">📈</span><span class="sidebar-text">Análisis y reportes</span></button>
       </div>
       <div class="sidebar-group">
         <div class="sidebar-label">Configuración</div>
         <button class="sidebar-link" data-modulo="medios-pago" onclick="irA('medios-pago')"><span class="sidebar-icon">💳</span><span class="sidebar-text">Medios y planes de cobro</span></button>
         <button class="sidebar-link" data-modulo="proveedores" onclick="irA('proveedores')"><span class="sidebar-icon">🤝</span><span class="sidebar-text">Proveedores</span></button>
         <button class="sidebar-link" data-modulo="categorias" onclick="irA('categorias')"><span class="sidebar-icon">🗂️</span><span class="sidebar-text">Categorías</span></button>
+        <button class="sidebar-link" data-modulo="instructivos" onclick="irA('instructivos')"><span class="sidebar-icon">📚</span><span class="sidebar-text">Manuales de uso</span></button>
         <button class="sidebar-link" type="button" disabled title="Módulo pendiente" style="opacity:.5;cursor:not-allowed"><span class="sidebar-icon">👤</span><span class="sidebar-text">Usuarios · próximamente</span></button>
       </div>
       <div class="sidebar-user">
@@ -689,9 +693,10 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
         <button id="stock-tab-analisis" class="btn btn-secondary" onclick="cambiarVistaStock('analisis')">Análisis de inventario</button>
       </div>
       <div class="card" id="stock-vista-listado">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin-bottom:16px">
           <div class="search-wrap" style="margin:0"><input type="text" id="stock-buscar" placeholder="🔍 Buscar..." oninput="filtrarStockD()"></div>
           <select id="stock-filtro-cat" onchange="filtrarStock()" style="background:var(--off-white);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none;color:var(--text-main)"><option value="">Todas las categorías</option></select>
+          <select id="stock-filtro-prov" onchange="filtrarStock()" style="background:var(--off-white);border:1.5px solid var(--border);border-radius:8px;padding:9px 12px;font-family:'DM Sans',sans-serif;font-size:14px;outline:none;color:var(--text-main)"><option value="">Todos los proveedores</option><option value="__sin_proveedor__">Sin proveedor</option></select>
         </div>
         <div id="stock-loading" class="spinner-wrap"><div class="spinner"></div> Cargando...</div>
         <table id="stock-table" style="display:none"><thead><tr><th>Código</th><th>Descripción</th><th>Categoría</th><th>Estado comercial</th><th>P. Costo</th><th>Recargo</th><th>Margen bruto</th><th>P. Venta</th><th>Stock</th><th>Mínimo</th></tr></thead><tbody id="stock-body"></tbody></table>
@@ -1870,37 +1875,31 @@ let cuentaMovimientosPendiente='';
 
 // ── CUENTAS ──
 async function iniciarCuentas(){
-  if(cuentasData.length&&movimientosData.length){
-    renderCuentasCards();
-    llenarSelectCuentas(['mov-cuenta','mov-filtro-cuenta','conc-filtro-cuenta']);
-    cargarCategoriasMovimiento();
-    renderMovimientos(movimientosData);
-    aplicarCuentaMovimientosPendiente();
-    prepararConciliacion();
-    setFechaHoy('mov-fecha');
-    document.getElementById('cuentas-cards-loading').style.display='none';
-    document.getElementById('mov-loading').style.display='none';
-    document.getElementById('mov-table').style.display='table';
-    return;
-  }
-  document.getElementById('cuentas-cards-loading').style.display='flex';
-  document.getElementById('mov-loading').style.display='flex';
-  document.getElementById('mov-table').style.display='none';
+  const modulo=rutaActual();
+  const esCuenta=modulo==='cuentas',esMovimiento=modulo==='movimientos',esConciliacion=modulo==='conciliacion';
+  if(esCuenta)document.getElementById('cuentas-cards-loading').style.display='flex';
+  if(esMovimiento){document.getElementById('mov-loading').style.display='flex';document.getElementById('mov-table').style.display='none';}
   try{
-    const[dataCuentas,dataMov,dataCatMov]=await Promise.all([cacheGet('getCuentas'),cacheGet('getMovimientos'),cacheGet('getCategoriasMovimientos')]);
-    cuentasData=dataCuentas.slice(1);
-    movimientosData=dataMov.slice(1);
-    categoriasMovData=dataCatMov.slice(1);
-    renderCuentasCards();
-    llenarSelectCuentas(['mov-cuenta','mov-filtro-cuenta','conc-filtro-cuenta']);
-    cargarCategoriasMovimiento();
-    renderMovimientos(movimientosData);
-    aplicarCuentaMovimientosPendiente();
-    prepararConciliacion();
-    setFechaHoy('mov-fecha');
-    document.getElementById('cuentas-cards-loading').style.display='none';
-    document.getElementById('mov-loading').style.display='none';
-    document.getElementById('mov-table').style.display='table';
+    const pedidos=[];
+    if(!cuentasData.length)pedidos.push(cacheGet('getCuentas').then(d=>{cuentasData=d.slice(1)}));
+    if(!movimientosData.length)pedidos.push(cacheGet('getMovimientos').then(d=>{movimientosData=d.slice(1)}));
+    if(esMovimiento&&!categoriasMovData.length)pedidos.push(cacheGet('getCategoriasMovimientos').then(d=>{categoriasMovData=d.slice(1)}));
+    await Promise.all(pedidos);
+    if(rutaActual()!==modulo)return;
+    if(esCuenta){
+      renderCuentasCards();
+      document.getElementById('cuentas-cards-loading').style.display='none';
+    }
+    if(esMovimiento){
+      llenarSelectCuentas(['mov-cuenta','mov-filtro-cuenta']);
+      cargarCategoriasMovimiento();
+      renderMovimientos(movimientosData);
+      aplicarCuentaMovimientosPendiente();
+      setFechaHoy('mov-fecha');
+      document.getElementById('mov-loading').style.display='none';
+      document.getElementById('mov-table').style.display='table';
+    }
+    if(esConciliacion){llenarSelectCuentas(['conc-filtro-cuenta']);prepararConciliacion();}
   }catch(e){showToast('Error al cargar cuentas','error')}
 }
 
@@ -2493,20 +2492,9 @@ async function precargarDatosBase(){
   stockData=productosData;
   prodTablaData=productosData;
   await Promise.all([cargarProveedores(),cargarCategorias()]);
-  iniciarHome();
-  cargarNotificaciones();
   // Si el módulo se abrió antes de recibir estos datos, actualizarlo sin F5.
   aplicarRuta();
-  // Anticipar el módulo más pesado sin bloquear la pantalla de inicio.
-  Promise.all([
-    cacheGet('getCuentas'),
-    cacheGet('getMovimientos'),
-    cacheGet('getCategoriasMovimientos')
-  ]).then(([dataCuentas,dataMovimientos,dataCategoriasMov])=>{
-    cuentasData=(dataCuentas||[]).slice(1);
-    movimientosData=(dataMovimientos||[]).slice(1);
-    categoriasMovData=(dataCategoriasMov||[]).slice(1);
-  }).catch(e=>console.warn('No se pudo anticipar la carga de cuentas:',e));
+  cargarNotificaciones();
 }
 
 async function iniciarAplicacion(){
@@ -2985,9 +2973,9 @@ function descargarListaPrecios(){
 // MÓDULO CUENTAS POR COBRAR
 // ─────────────────────────────────────────
 </script>
-<script src="js/proveedores.js?v=20260909-2"></script>
+<script src="js/proveedores.js?v=20260913-1"></script>
 <script src="js/productos.js?v=20260909-2"></script>
-<script src="js/stock.js?v=20260824-1"></script>
+<script src="js/stock.js?v=20260913-1"></script>
 <script src="js/ingresos.js?v=20260824-1"></script>
 <script src="js/medios-pago.js?v=20260907-8"></script>
 <script src="js/clientes.js?v=20260824-1"></script>

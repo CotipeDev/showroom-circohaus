@@ -35,12 +35,13 @@ function completarSelectProveedores(){
     proveedoresData.forEach(p=>sel.innerHTML+=`<option value="${textoSeguro(p[0])}">${textoSeguro(p[1])}</option>`);
     if(proveedoresData.some(p=>String(p[0])===String(valorAnterior)))sel.value=valorAnterior;
   });
-  const filtro=document.getElementById('prod-filtro-prov');
-  if(filtro){
+  ['prod-filtro-prov','stock-filtro-prov'].forEach(id=>{
+    const filtro=document.getElementById(id);
+    if(!filtro)return;
     const valorAnterior=filtro.value;
     filtro.innerHTML='<option value="">Todos los proveedores</option><option value="__sin_proveedor__">Sin proveedor</option>'+proveedoresData.map(p=>`<option value="${textoSeguro(p[0])}">${textoSeguro(p[1])}</option>`).join('');
     if([...filtro.options].some(o=>o.value===valorAnterior))filtro.value=valorAnterior;
-  }
+  });
 }
 
 async function cargarProveedores(){

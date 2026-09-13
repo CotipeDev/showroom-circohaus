@@ -4,11 +4,10 @@
 // ============================================================
 
 async function iniciarStock(){
-  const analisis=document.getElementById('stock-analisis-admin');
+  reporteInventarioCargado=false;
   const tabAnalisis=document.getElementById('stock-tab-analisis');
   if(tabAnalisis)tabAnalisis.style.display=esVendedor()?'none':'';
   cambiarVistaStock('listado');
-  if(!esVendedor())prepararReporteInventario();
   if(productosData.length){
     stockData=productosData;
     renderStock(stockData);
@@ -35,6 +34,9 @@ function cambiarVistaStock(vista){
   if(analisis)analisis.style.display=mostrarAnalisis?'':'none';
   if(tabListado)tabListado.className=`btn ${mostrarAnalisis?'btn-secondary':'btn-primary'}`;
   if(tabAnalisis)tabAnalisis.className=`btn ${mostrarAnalisis?'btn-primary':'btn-secondary'}`;
+  if(mostrarAnalisis&&!reporteInventarioCargado&&!reporteInventarioPendiente){
+    reporteInventarioPendiente=prepararReporteInventario().finally(()=>{reporteInventarioPendiente=null});
+  }
 }
 function renderStock(rows){
   const vendedor=esVendedor(),encabezado=document.querySelector('#stock-table thead tr');
@@ -46,9 +48,18 @@ function renderStock(rows){
     return`<tr><td><code style="color:var(--teal);font-size:12px">${p[0]}</code></td><td>${p[1]}</td><td>${p[7]||'—'}</td><td>${badgeEstadoComercial(p)}</td><td>${formatPeso(p[4])}</td><td><span class="badge badge-margen">${margen}%</span></td><td>${margenBruto}%</td><td>${formatPeso(p[3])}</td><td>${badge}</td><td style="color:var(--text-mid);font-size:12px">${m>0?'Mín: '+m:'—'}</td></tr>`;
   }).join('');
 }
-function filtrarStock(){const q=document.getElementById('stock-buscar').value.toLowerCase(),cat=document.getElementById('stock-filtro-cat').value;renderStock(stockData.filter(p=>(p[0].toString().toLowerCase().includes(q)||p[1].toString().toLowerCase().includes(q))&&(!cat||p[7]===cat)))}
+function filtrarStock(){
+  const q=document.getElementById('stock-buscar').value.toLowerCase(),cat=document.getElementById('stock-filtro-cat').value,prov=document.getElementById('stock-filtro-prov').value;
+  renderStock(stockData.filter(p=>{
+    const proveedor=String(p[2]||'').trim().toLowerCase();
+    const seleccionado=buscarProveedor(prov);
+    const coincideProveedor=!prov||(prov==='__sin_proveedor__'?!proveedor:proveedor===String(prov).trim().toLowerCase()||proveedor===String(seleccionado?.[1]||'').trim().toLowerCase());
+    return(p[0].toString().toLowerCase().includes(q)||p[1].toString().toLowerCase().includes(q))&&(!cat||p[7]===cat)&&coincideProveedor;
+  }));
+}
 
 let reporteInventarioData=[];
+let reporteInventarioCargado=false,reporteInventarioPendiente=null;
 
 function iniciarReportes(){
   prepararAnalisisIngresos();
@@ -97,6 +108,7 @@ async function prepararReporteInventario(){
     selCat.innerHTML='<option value="">Todas</option>'+valoresCat.map(x=>`<option value="${textoSeguro(x)}">${textoSeguro(x)}</option>`).join('');
     if(valoresProv.includes(provAnterior))selProv.value=provAnterior;if(valoresCat.includes(catAnterior))selCat.value=catAnterior;
     renderReporteInventario();
+    reporteInventarioCargado=true;
   }catch(e){document.getElementById('rep-inv-body').innerHTML='<tr><td colspan="9" style="text-align:center;color:#C44F4F;padding:22px">No se pudo cargar el inventario.</td></tr>';}
 }
 

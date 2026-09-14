@@ -1084,8 +1084,8 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
     </div>
 
     <div id="panel-facturas" class="panel">
-      <div class="section-title">Facturas emitidas</div>
-      <div class="section-sub">Registro de comprobantes emitidos en AFIP</div>
+      <div class="section-title">Facturación</div>
+      <div class="section-sub">Facturá ventas pendientes y consultá los comprobantes registrados en ARCA</div>
 
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px">
         <div class="card" style="text-align:center;padding:18px 12px">
@@ -1100,6 +1100,13 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
           <div style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-light);margin-bottom:6px">Último mes</div>
           <div id="fact-kpi-mes" style="font-size:26px;font-weight:700;color:var(--navy)">—</div>
         </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Ventas pendientes de facturar</div>
+        <div class="section-sub" style="margin-bottom:12px">La factura se emite en ARCA; después registrá acá su número.</div>
+        <div id="fact-pendientes-loading" class="spinner-wrap"><div class="spinner"></div> Cargando ventas pendientes...</div>
+        <div style="overflow-x:auto"><table id="fact-pendientes-table" style="display:none;min-width:650px"><thead><tr><th>Fecha</th><th>Venta</th><th>Cliente</th><th>Total venta</th><th>Situación</th><th></th></tr></thead><tbody id="fact-pendientes-body"></tbody></table></div>
       </div>
 
       <div class="card">
@@ -1601,7 +1608,8 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
 <div id="modal-nro-factura" class="modal-overlay" onclick="if(event.target===this)cerrarModal('modal-nro-factura')">
   <div class="modal" style="max-width:380px">
     <div class="modal-title">Registrar número de factura</div>
-    <p style="font-size:13px;color:var(--text-mid);margin-bottom:16px">Ingresá el número de factura que te generó AFIP para esta venta.</p>
+    <p style="font-size:13px;color:var(--text-mid);margin-bottom:16px">Emití la factura en ARCA e ingresá aquí el número del comprobante para esta venta.</p>
+    <p id="fact-resumen-venta" style="font-size:12px;color:var(--navy);margin-bottom:12px"></p>
     <input type="hidden" id="fact-id-venta">
     <input type="hidden" id="fact-monto">
     <div class="field">
@@ -2328,7 +2336,7 @@ function renderHistorialVentas(rows){
       const estadoLabel=estado==='cobrada'?'Cobrada':estado==='pendiente'?'Fiado pendiente':'Cancelada';
       const factBadge=esVendedor()?'—':estado==='cancelada'?'—':facturada
         ?`<span style="color:var(--teal);font-size:11px;font-weight:600">✅ Facturada</span>`
-        :`<button class="btn-warning" style="font-size:11px;padding:3px 8px" onclick="emitirFactura('${v[0]}',${v[5]})">🧾 Facturar</button>`;
+        :`<button class="btn-warning" style="font-size:11px;padding:3px 8px" onclick="emitirFactura('${v[0]}',${totalVenta})">🧾 Facturar</button>`;
       return`<tr>
         <td><code style="color:var(--teal);font-size:11px">${v[0]}</code></td>
         <td>${fechaStr(v[1])||'—'}</td>
@@ -2465,7 +2473,7 @@ async function verDetalleVenta(idVenta){
     const facturada=venta&&(venta[9]===true||venta[9]==='TRUE');
     const btnFact=document.getElementById('btn-facturar-vta');
     if(facturada||estadoVenta==='cancelada'||esVendedor()){btnFact.style.display='none';}
-    else{btnFact.style.display='';btnFact.onclick=()=>emitirFactura(idVenta,venta?Number(venta[5]):0);}
+    else{btnFact.style.display='';btnFact.onclick=()=>emitirFactura(idVenta,totalFinal);}
     document.getElementById('modal-detalle-venta').classList.add('open');
   }catch(e){showToast(e?.message?`Error al cargar detalle: ${e.message}`:'Error al cargar detalle','error')}
 }
@@ -2586,14 +2594,16 @@ document.addEventListener('DOMContentLoaded',()=>{
 // ── FACTURACIÓN ──
 let facturasData=[];
 
-function emitirFactura(idVenta, monto){
-  // Abrir el Facturador de ARCA
-  window.open('https://facturador.afip.gob.ar','_blank');
+function emitirFactura(idVenta, monto, facturaExistente, abrirArca=true){
+  // El comprobante fiscal se emite en ARCA, no en esta aplicación.
+  if(abrirArca&&!facturaExistente)window.open('https://facturador.afip.gob.ar','_blank');
   // Abrir modal para ingresar número de factura
   document.getElementById('fact-id-venta').value=idVenta;
   document.getElementById('fact-monto').value=monto;
-  document.getElementById('fact-nro').value='';
-  setFechaHoy('fact-fecha');
+  document.getElementById('fact-resumen-venta').textContent=`Venta ${idVenta} · Total ${formatPeso(monto)}`;
+  document.getElementById('fact-nro').value=facturaExistente?String(facturaExistente[1]||''):'';
+  if(facturaExistente)document.getElementById('fact-fecha').value=fechaStr(facturaExistente[2]);
+  else setFechaHoy('fact-fecha');
   cerrarModal('modal-detalle-venta');
   setTimeout(()=>document.getElementById('modal-nro-factura').classList.add('open'),300);
 }
@@ -2602,21 +2612,19 @@ async function confirmarFactura(){
   const idVenta=document.getElementById('fact-id-venta').value;
   const nro=document.getElementById('fact-nro').value.trim();
   const fecha=document.getElementById('fact-fecha').value;
-  const monto=Number(document.getElementById('fact-monto').value)||0;
   if(!nro){showToast('Ingresá el número de factura','error');return;}
+  if(!fecha){showToast('Ingresá la fecha de emisión','error');return;}
   try{
-    await Promise.all([
-      apiPost('marcarFacturada',{id_venta:idVenta}),
-      apiPost('registrarFactura',{nro_factura:nro,fecha,id_venta:idVenta,monto})
-    ]);
+    await apiPost('registrarFacturaVenta',{nro_factura:nro,fecha,id_venta:idVenta});
     // Actualizar en memoria
     const idx=ventasHistData.findIndex(v=>String(v[0])===String(idVenta));
     if(idx>=0)ventasHistData[idx][9]=true;
     cacheInvalidar('getVentas','getFacturas');
     showToast('✅ Factura registrada correctamente');
     cerrarModal('modal-nro-factura');
-    renderHistorialVentas(ventasHistData);
-  }catch(e){showToast('Error al registrar la factura','error');}
+    if(document.getElementById('panel-facturas').classList.contains('active'))iniciarFacturas();
+    if(document.getElementById('panel-historial-ventas').classList.contains('active'))renderHistorialVentas(ventasHistData);
+  }catch(e){showToast(e?.message||'No pudimos confirmar el registro. Reintentá con el mismo número de factura.','error');}
 }
 
 let facturasDataGlobal=[];
@@ -2624,11 +2632,44 @@ let facturasDataGlobal=[];
 async function iniciarFacturas(){
   document.getElementById('fact-loading').style.display='flex';
   document.getElementById('fact-table').style.display='none';
+  document.getElementById('fact-pendientes-loading').style.display='flex';
+  document.getElementById('fact-pendientes-table').style.display='none';
   try{
-    const data=await cacheGet('getFacturas');
+    const [data,ventas,clientes]=await Promise.all([cacheGet('getFacturas'),cacheGet('getVentas'),cacheGet('getClientes').catch(()=>[])]);
     facturasDataGlobal=Array.isArray(data)?data.slice(1):[];
+    ventasHistData=Array.isArray(ventas)?ventas.slice(1):[];
+    clientesData=Array.isArray(clientes)?clientes.slice(1):[];
+    renderFacturasPendientes();
     renderFacturas(facturasDataGlobal);
-  }catch(e){showToast('Error al cargar facturas','error');}
+  }catch(e){
+    document.getElementById('fact-pendientes-loading').textContent='No pudimos cargar las ventas pendientes. Volvé a intentar.';
+    document.getElementById('fact-loading').textContent='No pudimos cargar las facturas. Volvé a intentar.';
+    showToast('Error al cargar facturación','error');
+  }
+}
+
+function renderFacturasPendientes(){
+  document.getElementById('fact-pendientes-loading').style.display='none';
+  document.getElementById('fact-pendientes-table').style.display='table';
+  const porVenta=new Map(facturasDataGlobal.map(f=>[String(f[3]),f]));
+  const clientes=new Map(clientesData.map(c=>[String(c[0]),String(c[1]||'')]));
+  const pendientes=ventasHistData.filter(v=>String(v[7]||'').toLowerCase()!=='cancelada'&&(!(v[9]===true||String(v[9]).toUpperCase()==='TRUE')||!porVenta.has(String(v[0])))).reverse();
+  document.getElementById('fact-pendientes-body').innerHTML=pendientes.length?pendientes.map(v=>{
+    const id=String(v[0]),factura=porVenta.get(id),facturada=v[9]===true||String(v[9]).toUpperCase()==='TRUE';
+    const total=String(v[25]||'').trim()==='V2'?Number(v[16])||0:Number(v[5])||0;
+    const situacion=factura?'Comprobante registrado; falta sincronizar':facturada?'Marcada facturada sin comprobante':'Pendiente';
+    const nombre=clientes.get(String(v[3]))||'Consumidor final';
+    return `<tr><td>${fechaStr(v[1])||'—'}</td><td><code>${textoSeguro(id)}</code></td><td>${textoSeguro(nombre)}</td><td>${formatPeso(total)}</td><td>${situacion}</td><td><button class="btn-warning" data-id="${textoSeguro(id)}" onclick="abrirFacturaPendiente(this.dataset.id)">${factura?'Completar':'Facturar'}</button></td></tr>`;
+  }).join(''):'<tr><td colspan="6" style="text-align:center;color:var(--text-mid);padding:22px">No hay ventas pendientes de facturar</td></tr>';
+}
+
+function abrirFacturaPendiente(idVenta){
+  const venta=ventasHistData.find(v=>String(v[0])===String(idVenta));
+  if(!venta)return showToast('No encontramos esa venta','error');
+  const factura=facturasDataGlobal.find(f=>String(f[3])===String(idVenta));
+  const total=String(venta[25]||'').trim()==='V2'?Number(venta[16])||0:Number(venta[5])||0;
+  const facturada=venta[9]===true||String(venta[9]).toUpperCase()==='TRUE';
+  emitirFactura(idVenta,total,factura,!facturada);
 }
 
 function renderFacturas(rows){

@@ -1,3 +1,6 @@
+/**
+ * @OnlyCurrentDoc
+ */
 function doGet(e) { return handleRequest(e); }
 function doPost(e) { return handleRequest(e); }
  
@@ -2479,5 +2482,4 @@ function actualizarConfiguracionCobroV2_(ss, config) {
     lock.releaseLock();
   }
 }
-
 

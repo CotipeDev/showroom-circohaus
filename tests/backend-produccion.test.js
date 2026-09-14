@@ -8,6 +8,7 @@ const codigo = fs.readFileSync(
 );
 
 assert.doesNotThrow(() => new Function(codigo));
+assert.ok(codigo.includes('@OnlyCurrentDoc'), 'Falta limitar el permiso a la planilla vinculada');
 
 for (const accion of [
   'login',

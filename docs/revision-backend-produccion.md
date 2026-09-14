@@ -8,6 +8,7 @@
 - Se conservó `registrarFacturaVenta`, la ruta usada por la pantalla actual de facturación.
 - Se quitaron `marcarFacturada` y `registrarFactura`, rutas antiguas que permitían modificar sólo una parte del registro de factura y dejar datos inconsistentes.
 - Se quitaron las funciones `TEST_` y `SETUP_` del código candidato. Algunas conciliaban movimientos, cambiaban tarifas o modificaban catálogos. No eran pruebas de sólo lectura.
+- `Codigo-produccion.gs` declara `@OnlyCurrentDoc` para pedir acceso a la planilla vinculada, no a todas las planillas de la cuenta. Se debe confirmar el alcance real en la pantalla de autorización antes de aceptar.
 - En `VentasV2-produccion.gs` se quitaron `TEST_registrarVentaV2`, `TEST_cancelarVentaV2` y `PREPARAR_COLUMNAS_COBRO_PAGOS_V2`; las funciones operativas siguen presentes.
 - En `CobrosVentaV2-produccion.gs` se quitaron `TEST_resolverCobroVentaV2`, `TEST_validarCrearPlanCuotasV2` y `SETUP_separarLinkPagoPorTipo`; las funciones operativas siguen presentes.
 

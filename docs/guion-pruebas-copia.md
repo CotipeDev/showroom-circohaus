@@ -8,6 +8,7 @@
 2. Elegir una cuenta activa y anotar su saldo inicial. Verificar que haya un medio de cobro configurado.
 3. Crear o identificar una cuenta de administrador y otra de vendedor en la copia.
 4. Usar IDs y descripciones que indiquen claramente `PRUEBA`; no usar números de factura reales ni registrar nada en ARCA.
+5. Ejecutar `tests/VerificarEntornoPruebas.gs` en el proyecto copiado. Es de sólo lectura y debe registrar `OK: planilla de pruebas, hojas y módulos presentes.` antes de implementar la API de pruebas.
 
 ## Casos y resultados esperados
 

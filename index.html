@@ -582,7 +582,7 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
         <button class="sidebar-link" data-modulo="proveedores" onclick="irA('proveedores')"><span class="sidebar-icon">🤝</span><span class="sidebar-text">Proveedores</span></button>
         <button class="sidebar-link" data-modulo="categorias" onclick="irA('categorias')"><span class="sidebar-icon">🗂️</span><span class="sidebar-text">Categorías</span></button>
         <button class="sidebar-link" data-modulo="instructivos" onclick="irA('instructivos')"><span class="sidebar-icon">📚</span><span class="sidebar-text">Manuales de uso</span></button>
-        <button class="sidebar-link" type="button" disabled title="Módulo pendiente" style="opacity:.5;cursor:not-allowed"><span class="sidebar-icon">👤</span><span class="sidebar-text">Usuarios · próximamente</span></button>
+        <button class="sidebar-link" data-modulo="usuarios" onclick="irA('usuarios')"><span class="sidebar-icon">👤</span><span class="sidebar-text">Usuarios</span></button>
       </div>
       <div class="sidebar-user">
         <div class="usuario-sesion">
@@ -1339,7 +1339,45 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
       </div>
     </div>
 
+    <!-- USUARIOS: la API devuelve únicamente datos públicos del perfil. -->
+    <div id="panel-usuarios" class="panel">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:18px">
+        <div><div class="section-title">Usuarios</div><div class="section-sub">Administrá quién puede ingresar y qué rol tiene</div></div>
+        <button class="btn btn-primary" onclick="abrirNuevoUsuario()">+ Nuevo usuario</button>
+      </div>
+      <div class="card">
+        <div class="card-title">Accesos registrados</div>
+        <div id="usuarios-loading" class="spinner-wrap"><div class="spinner"></div> Cargando usuarios...</div>
+        <div style="overflow-x:auto"><table id="usuarios-table" style="display:none;min-width:650px"><thead><tr><th>Usuario</th><th>Nombre</th><th>Rol</th><th>Estado</th><th>Último acceso</th><th></th></tr></thead><tbody id="usuarios-body"></tbody></table></div>
+      </div>
+    </div>
+
     </main>
+  </div>
+</div>
+
+<div id="modal-nuevo-usuario" class="modal-overlay" onclick="if(event.target===this)cerrarModal('modal-nuevo-usuario')">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-title">Nuevo usuario</div>
+    <div class="form-grid">
+      <div class="field"><label>Usuario para ingresar</label><input id="usuario-nuevo-login" autocomplete="off" placeholder="Ej: maria"></div>
+      <div class="field"><label>Nombre visible</label><input id="usuario-nuevo-nombre" placeholder="Ej: María López"></div>
+      <div class="field"><label>Rol</label><select id="usuario-nuevo-rol"><option value="vendedor">Vendedor</option><option value="administrador">Administrador</option></select></div>
+      <div class="field"><label>Contraseña inicial</label><input type="password" id="usuario-nuevo-clave" autocomplete="new-password" minlength="10" placeholder="Mínimo 10 caracteres"></div>
+    </div>
+    <p style="font-size:12px;color:var(--text-mid);margin-top:12px">Compartí la contraseña por un canal privado. No aparecerá en la lista ni se podrá consultar después.</p>
+    <div class="modal-actions"><button class="btn btn-primary" onclick="conBotonCargando(this,'Creando...',guardarNuevoUsuario)">Crear usuario</button><button class="btn btn-secondary" onclick="cerrarModal('modal-nuevo-usuario')">Cancelar</button></div>
+  </div>
+</div>
+
+<div id="modal-clave-usuario" class="modal-overlay" onclick="if(event.target===this)cerrarModal('modal-clave-usuario')">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-title">Restablecer contraseña</div>
+    <p id="usuario-clave-destino" style="font-size:13px;color:var(--text-mid);margin-bottom:14px"></p>
+    <input type="hidden" id="usuario-clave-id">
+    <div class="field"><label>Nueva contraseña</label><input type="password" id="usuario-clave-nueva" autocomplete="new-password" minlength="10" placeholder="Mínimo 10 caracteres"></div>
+    <p style="font-size:12px;color:var(--text-mid);margin-top:12px">Al guardarla, se cerrarán las sesiones abiertas de ese usuario.</p>
+    <div class="modal-actions"><button class="btn btn-primary" onclick="conBotonCargando(this,'Guardando...',guardarClaveUsuario)">Guardar contraseña</button><button class="btn btn-secondary" onclick="cerrarModal('modal-clave-usuario')">Cancelar</button></div>
   </div>
 </div>
 
@@ -1689,7 +1727,7 @@ function formatPeso(n){return'$'+Number(n).toLocaleString('es-AR')}
 function textoSeguro(valor){return String(valor??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
 function setFechaHoy(id){document.getElementById(id).value=new Date().toISOString().split('T')[0]}
 
-const moduloNombres={inicio:'🏠 Inicio',ingresos:'📦 Ingresos',stock:'📊 Stock e inventario',productos:'🏷️ Productos',clientes:'👥 Clientes',ventas:'🛒 Nueva venta','historial-ventas':'🧾 Ventas',cuentas:'💰 Cuentas',movimientos:'↕ Movimientos',conciliacion:'✓ Conciliación',proveedores:'🤝 Proveedores',categorias:'🗂️ Categorías','medios-pago':'💳 Medios y planes de cobro',reportes:'📈 Análisis y reportes',cxc:'📋 Cuentas por cobrar',facturas:'🧾 Facturación',instructivos:'📚 Manuales de uso'};
+const moduloNombres={inicio:'🏠 Inicio',ingresos:'📦 Ingresos',stock:'📊 Stock e inventario',productos:'🏷️ Productos',clientes:'👥 Clientes',ventas:'🛒 Nueva venta','historial-ventas':'🧾 Ventas',cuentas:'💰 Cuentas',movimientos:'↕ Movimientos',conciliacion:'✓ Conciliación',proveedores:'🤝 Proveedores',categorias:'🗂️ Categorías','medios-pago':'💳 Medios y planes de cobro',reportes:'📈 Análisis y reportes',cxc:'📋 Cuentas por cobrar',facturas:'🧾 Facturación',instructivos:'📚 Manuales de uso',usuarios:'👤 Usuarios'};
 const modulosVendedor=new Set(['ventas','historial-ventas','stock','productos','clientes','cxc']);
 const modulosConRuta=new Set(Object.keys(moduloNombres));
 let abrirAlertasPendiente=false;
@@ -1747,7 +1785,7 @@ function showPanel(name){
   if(name==='stock')iniciarStock();if(name==='proveedores')iniciarProveedores();
   if(name==='productos')iniciarProductos();if(name==='clientes')iniciarClientes();if(name==='categorias')iniciarCategorias();
   if(name==='medios-pago')iniciarMediosPago();if(['cuentas','movimientos','conciliacion'].includes(name))iniciarCuentas();
-  if(name==='ventas')iniciarVentas();if(name==='historial-ventas')iniciarHistorialVentas();if(name==='reportes')iniciarReportes();if(name==='cxc')iniciarCxc();if(name==='facturas')iniciarFacturas();
+  if(name==='ventas')iniciarVentas();if(name==='historial-ventas')iniciarHistorialVentas();if(name==='reportes')iniciarReportes();if(name==='cxc')iniciarCxc();if(name==='facturas')iniciarFacturas();if(name==='usuarios')iniciarUsuarios();
   if(name==='ingresos')cargarHistorialIngresos();
 }
 function cerrarModal(id){document.getElementById(id).classList.remove('open')}
@@ -2607,6 +2645,7 @@ function abrirConsultaPrecios(){
 async function cerrarSesion(notificarBackend=true){
   const token=tokenSesion();if(notificarBackend&&token)fetch(`${API_URL}?action=logout&token=${encodeURIComponent(token)}`).catch(()=>{});
   sessionStorage.removeItem(LOGIN_KEY);cache.data={};cache.ts={};cache.cargaCompleta=false;
+  usuariosGestionData=[];
   document.getElementById('login-screen').style.display='flex';
   document.getElementById('login-usuario').value='';
   document.getElementById('login-pass').value='';
@@ -2976,6 +3015,7 @@ function descargarListaPrecios(){
 <script src="js/proveedores.js?v=20260913-1"></script>
 <script src="js/productos.js?v=20260909-2"></script>
 <script src="js/stock.js?v=20260913-1"></script>
+<script src="js/usuarios.js?v=20260913-1"></script>
 <script src="js/ingresos.js?v=20260824-1"></script>
 <script src="js/medios-pago.js?v=20260907-8"></script>
 <script src="js/clientes.js?v=20260824-1"></script>

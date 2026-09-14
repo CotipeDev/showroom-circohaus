@@ -1151,16 +1151,31 @@ if (action === 'eliminarPlanCuotas') {
  
     if (action === 'cancelarVenta') {
       const b = JSON.parse(e.postData.contents);
+      const idVenta = String(b.id_venta || '').trim();
+      if (!idVenta) throw new Error('Falta indicar el ID de la venta.');
+      const lock = LockService.getScriptLock();
+      lock.waitLock(30000);
+      try {
       const sheetVentas = ss.getSheetByName('Ventas');
       const sheetDetalle = ss.getSheetByName('Detalle_Ventas');
       const sheetProductos = ss.getSheetByName('Productos');
       const sheetMovs = ss.getSheetByName('Movimientos');
+      if (!sheetVentas || !sheetDetalle || !sheetProductos || !sheetMovs) {
+        throw new Error('Falta una hoja necesaria para cancelar la venta.');
+      }
       const datosVentas = sheetVentas.getDataRange().getValues();
+      let filaVenta = -1;
       for (let i = 1; i < datosVentas.length; i++) {
-        if (String(datosVentas[i][0]).trim() === String(b.id_venta).trim()) {
-          sheetVentas.getRange(i + 1, 8).setValue('cancelada'); break;
+        if (String(datosVentas[i][0]).trim() === idVenta) {
+          filaVenta = i + 1;
+          if (String(datosVentas[i][7] || '').trim().toLowerCase() === 'cancelada') {
+            throw new Error('La venta ya se encuentra cancelada.');
+          }
+          asegurarVentaSinFactura_(ss, idVenta, datosVentas[i][9]);
+          break;
         }
       }
+      if (filaVenta < 0) throw new Error('No se encontró la venta.');
       const datosDetalle = sheetDetalle.getDataRange().getValues();
       const datosProductos = sheetProductos.getDataRange().getValues();
       for (let i = 1; i < datosDetalle.length; i++) {
@@ -1180,7 +1195,11 @@ if (action === 'eliminarPlanCuotas') {
           sheetMovs.getRange(i + 1, 7).setValue('[CANCELADA] ' + datosMovs[i][6]);
         }
       }
+      sheetVentas.getRange(filaVenta, 8).setValue('cancelada');
       return jsonResponse({ ok: true });
+      } finally {
+        lock.releaseLock();
+      }
     }
  
     if (action === 'registrarFacturaVenta') {
@@ -1422,6 +1441,21 @@ if (action === 'crearPlanCuotas') {
  
 function jsonResponse(data) {
   return ContentService.createTextOutput(JSON.stringify(data)).setMimeType(ContentService.MimeType.JSON);
+}
+
+// La app sólo registra facturas emitidas fuera de ella; no las anula.
+function asegurarVentaSinFactura_(ss, idVenta, facturada) {
+  if (facturada === true || String(facturada).trim().toUpperCase() === 'TRUE') {
+    throw new Error('La venta ya está facturada y no se puede cancelar desde la app.');
+  }
+  const hojaFacturas = ss.getSheetByName('Facturas');
+  if (!hojaFacturas) throw new Error('Falta la hoja Facturas; no se puede verificar la venta.');
+  const facturas = hojaFacturas.getDataRange().getValues();
+  for (let i = 1; i < facturas.length; i++) {
+    if (String(facturas[i][3] || '').trim() === idVenta) {
+      throw new Error('La venta tiene una factura registrada y no se puede cancelar desde la app.');
+    }
+  }
 }
 
 function hashPassword_(
@@ -2482,4 +2516,3 @@ function actualizarConfiguracionCobroV2_(ss, config) {
     lock.releaseLock();
   }
 }
-

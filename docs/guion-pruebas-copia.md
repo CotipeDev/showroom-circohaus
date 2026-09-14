@@ -12,6 +12,7 @@
 6. Ejecutar `tests/PruebaLogicaSinEscritura.gs` en el proyecto copiado. Debe registrar `OK: venta válida y falta de stock verificadas sin modificar hojas.` antes de probar escrituras reales.
 7. Ejecutar `tests/PruebaVentaYCancelacionEnCopia.gs` en el proyecto copiado. Esta prueba **sí escribe** una venta a cuenta y la cancela; sólo se permite en la copia y debe confirmar stock restaurado y rechazo de doble cancelación.
 8. Ejecutar `tests/PruebaCobroYMovimientoEnCopia.gs` en el proyecto copiado. Esta prueba **sí escribe** una venta en efectivo y la cancela; verifica pago, cuenta, movimiento, reversión y stock.
+9. Antes de facturación, actualizar `Código.gs` y `VentasV2.gs` del proyecto copiado con los candidatos más recientes. Ejecutar `tests/PruebaFacturacionEnCopia.gs`: registra sólo un número ficticio en la copia; **no emite en ARCA**. Comprueba el reintento sin duplicados y que una venta facturada no pueda cancelarse. Deja una venta activa, una factura ficticia y una unidad menos de stock sólo en la copia.
 
 ## Casos y resultados esperados
 
@@ -24,7 +25,7 @@
 | Cancelación | Cancelar la venta de prueba | Estado cancelado, stock restaurado una sola vez y movimientos revertidos conforme a la regla de la app. Repetir la cancelación debe rechazarse. |
 | Cuentas por cobrar | Registrar una venta fiada y un cobro parcial | Saldo pendiente y movimiento coinciden con el importe cobrado; no hay sobrecobro accidental. |
 | Conciliación | Conciliar un movimiento pendiente con importe igual y luego distinto | Se muestra estado procesando; el primero tiene diferencia cero y el segundo la diferencia esperada. No se permite conciliar dos veces. |
-| Facturación registrada | Asociar a una venta no cancelada un número ficticio sólo en la copia | Venta y factura quedan vinculadas; repetir el mismo número no duplica, otro número para la misma venta se rechaza. No se emite comprobante ante ARCA. |
+| Facturación registrada | Asociar a una venta no cancelada un número ficticio sólo en la copia | Venta y factura quedan vinculadas; repetir el mismo número no duplica, otro número para la misma venta se rechaza y la venta facturada no se puede cancelar. No se emite comprobante ante ARCA. |
 | Importación | Importar un CSV pequeño con producto nuevo y código ya existente | Crea sólo el nuevo, informa el omitido, conserva los existentes y registra el costo inicial. Una fila inválida no debe dejar una importación parcial. |
 | Vista y rendimiento | Abrir inicio, ventas, cuentas, movimientos y facturación en computadora y celular | No hay errores; la carga y las actualizaciones son aceptables. Anotar tiempos aproximados y cualquier pantalla que quede en espera. |
 

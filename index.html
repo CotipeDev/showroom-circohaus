@@ -2360,7 +2360,7 @@ function renderHistorialVentas(rows){
         <td>${indiceUsuario>=0&&v[indiceUsuario]?textoSeguro(v[indiceUsuario]):'—'}</td>
         <td><span class="badge ${badgeCls}">${estadoLabel}</span></td>
         <td>${factBadge}</td>
-        <td><button class="btn-warning" onclick="verDetalleVenta('${v[0]}')">👁</button>${!esVendedor()&&estado!=='cancelada'?`<button class="btn-danger" style="margin-left:6px" onclick="cancelarVenta('${v[0]}')">✕</button>`:''}</td>
+        <td><button class="btn-warning" onclick="verDetalleVenta('${v[0]}')">👁</button>${!esVendedor()&&estado!=='cancelada'&&!facturada?`<button class="btn-danger" style="margin-left:6px" onclick="cancelarVenta('${v[0]}')">✕</button>`:''}</td>
       </tr>`;
     }).join('');
 }
@@ -2480,9 +2480,9 @@ async function verDetalleVenta(idVenta){
         ${!pagos.length&&!cobrosPosteriores.length?'<tr><td colspan="4" style="text-align:center;color:var(--text-light)">Sin pagos registrados</td></tr>':''}
       </tbody></table>`;
     const btnCancelar=document.getElementById('btn-cancelar-vta');
-    btnCancelar.style.display=estadoVenta==='cancelada'||esVendedor()?'none':'';
-    btnCancelar.onclick=()=>{cerrarModal('modal-detalle-venta');cancelarVenta(idVenta)};
     const facturada=venta&&(venta[9]===true||venta[9]==='TRUE');
+    btnCancelar.style.display=estadoVenta==='cancelada'||facturada||esVendedor()?'none':'';
+    btnCancelar.onclick=()=>{cerrarModal('modal-detalle-venta');cancelarVenta(idVenta)};
     const btnFact=document.getElementById('btn-facturar-vta');
     if(facturada||estadoVenta==='cancelada'||esVendedor()){btnFact.style.display='none';}
     else{btnFact.style.display='';btnFact.onclick=()=>emitirFactura(idVenta,totalFinal);}
@@ -3115,6 +3115,6 @@ function descargarListaPrecios(){
 <script src="js/clientes.js?v=20260824-1"></script>
 <script src="js/cuentas-por-cobrar.js?v=20260907-2"></script>
 <script src="js/categorias.js?v=20260909-2"></script>
-<script src="js/ventas-v2.js?v=20260913-2"></script>
+<script src="js/ventas-v2.js?v=20260914-1"></script>
 </body>
 </html>

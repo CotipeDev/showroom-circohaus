@@ -1621,6 +1621,13 @@ function cancelarVentaV2_(ss, b) {
       );
     }
 
+    const idxFacturada = venta.headers.mapa['Facturada'];
+    asegurarVentaSinFactura_(
+      ss,
+      idVenta,
+      idxFacturada !== undefined ? venta.datos[idxFacturada] : ''
+    );
+
     // --------------------------------------------------------
     // 2. DEVOLVER STOCK
     // --------------------------------------------------------

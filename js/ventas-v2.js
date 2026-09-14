@@ -355,6 +355,7 @@
     try {
       let venta=ventasHistData.find(v=>String(v[0])===String(idVenta));
       if(!venta){const data=await cacheGet('getVentas');venta=data.slice(1).find(v=>String(v[0])===String(idVenta));}
+      if(venta&&(venta[9]===true||String(venta[9]).toUpperCase()==='TRUE'))throw new Error('La venta ya está facturada y no se puede cancelar desde la app.');
       const action=String(venta?.[25]||'').trim()==='V2'?'cancelarVentaV2':'cancelarVenta';
       await apiPost(action,{id_venta:idVenta,fecha:fechaLocal(),motivo:'Cancelación desde showroom'});
       if(venta){

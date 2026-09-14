@@ -1087,6 +1087,22 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
       <div class="section-title">Facturación</div>
       <div class="section-sub">Facturá ventas pendientes y consultá los comprobantes registrados en ARCA</div>
 
+      <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap" role="tablist" aria-label="Vistas de facturación">
+        <button id="fact-tab-pendientes" class="btn btn-primary" role="tab" aria-selected="true" aria-controls="fact-vista-pendientes" onclick="cambiarVistaFacturas('pendientes')">Ventas pendientes</button>
+        <button id="fact-tab-historial" class="btn btn-secondary" role="tab" aria-selected="false" aria-controls="fact-vista-historial" onclick="cambiarVistaFacturas('historial')">Historial de facturas</button>
+      </div>
+
+      <div id="fact-vista-pendientes" role="tabpanel">
+      <div class="card">
+        <div class="card-title">Ventas pendientes de facturar</div>
+        <div class="section-sub" style="margin-bottom:12px">La factura se emite en ARCA; después registrá acá su número.</div>
+        <div id="fact-pendientes-loading" class="spinner-wrap"><div class="spinner"></div> Cargando ventas pendientes...</div>
+        <div style="overflow-x:auto"><table id="fact-pendientes-table" style="display:none;min-width:650px"><thead><tr><th>Fecha</th><th>Venta</th><th>Cliente</th><th>Total venta</th><th>Situación</th><th></th></tr></thead><tbody id="fact-pendientes-body"></tbody></table></div>
+      </div>
+      </div>
+
+      <div id="fact-vista-historial" role="tabpanel" style="display:none">
+
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px">
         <div class="card" style="text-align:center;padding:18px 12px">
           <div style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-light);margin-bottom:6px">Facturas emitidas</div>
@@ -1100,13 +1116,6 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
           <div style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-light);margin-bottom:6px">Último mes</div>
           <div id="fact-kpi-mes" style="font-size:26px;font-weight:700;color:var(--navy)">—</div>
         </div>
-      </div>
-
-      <div class="card">
-        <div class="card-title">Ventas pendientes de facturar</div>
-        <div class="section-sub" style="margin-bottom:12px">La factura se emite en ARCA; después registrá acá su número.</div>
-        <div id="fact-pendientes-loading" class="spinner-wrap"><div class="spinner"></div> Cargando ventas pendientes...</div>
-        <div style="overflow-x:auto"><table id="fact-pendientes-table" style="display:none;min-width:650px"><thead><tr><th>Fecha</th><th>Venta</th><th>Cliente</th><th>Total venta</th><th>Situación</th><th></th></tr></thead><tbody id="fact-pendientes-body"></tbody></table></div>
       </div>
 
       <div class="card">
@@ -1128,6 +1137,7 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
           </tr></thead>
           <tbody id="fact-body"></tbody>
         </table>
+      </div>
       </div>
     </div>
 
@@ -2593,6 +2603,18 @@ document.addEventListener('DOMContentLoaded',()=>{
 
 // ── FACTURACIÓN ──
 let facturasData=[];
+
+function cambiarVistaFacturas(vista){
+  const historial=vista==='historial';
+  document.getElementById('fact-vista-pendientes').style.display=historial?'none':'';
+  document.getElementById('fact-vista-historial').style.display=historial?'':'none';
+  for(const [nombre,activa] of [['pendientes',!historial],['historial',historial]]){
+    const boton=document.getElementById('fact-tab-'+nombre);
+    boton.classList.toggle('btn-primary',activa);
+    boton.classList.toggle('btn-secondary',!activa);
+    boton.setAttribute('aria-selected',String(activa));
+  }
+}
 
 function emitirFactura(idVenta, monto, facturaExistente, abrirArca=true){
   // El comprobante fiscal se emite en ARCA, no en esta aplicación.

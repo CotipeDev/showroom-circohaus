@@ -1,6 +1,6 @@
 # Revisión del backend para producción
 
-`apps-script/Codigo.gs` es la copia recibida del código publicado. `apps-script/Codigo-produccion.gs` es un **reemplazo del contenido de `Código.gs`**, no un archivo adicional para pegar en el mismo proyecto de Apps Script. Ambos contienen `doGet` y `doPost`.
+`apps-script/Codigo.gs` y `apps-script/VentasV2.gs` son copias recibidas del código publicado. Los archivos con sufijo `-produccion.gs` son **reemplazos del contenido de sus respectivos archivos en Apps Script**, no archivos adicionales para pegar en el mismo proyecto. Las dos versiones de `Codigo` contienen `doGet` y `doPost`.
 
 ## Cambios de la propuesta
 
@@ -8,8 +8,9 @@
 - Se conservó `registrarFacturaVenta`, la ruta usada por la pantalla actual de facturación.
 - Se quitaron `marcarFacturada` y `registrarFactura`, rutas antiguas que permitían modificar sólo una parte del registro de factura y dejar datos inconsistentes.
 - Se quitaron las funciones `TEST_` y `SETUP_` del código candidato. Algunas conciliaban movimientos, cambiaban tarifas o modificaban catálogos. No eran pruebas de sólo lectura.
+- En `VentasV2-produccion.gs` se quitaron `TEST_registrarVentaV2`, `TEST_cancelarVentaV2` y `PREPARAR_COLUMNAS_COBRO_PAGOS_V2`; las funciones operativas siguen presentes.
 
-La propuesta no está desplegada. Antes de sustituir el código publicado, probarla en una **copia de Apps Script vinculada a una copia de la planilla**, manteniendo también los módulos `VentasV2.gs`, `CobrosVentaV2.gs`, `UsuariosAPI.gs`, `FacturacionAPI.gs` e `ImportarProductosAPI.gs` que usa la instalación. Sólo cuatro de esos módulos auxiliares están versionados en este repositorio; para una publicación reproducible falta incorporar las copias vigentes de `VentasV2.gs` y `CobrosVentaV2.gs`.
+La propuesta no está desplegada. Antes de sustituir el código publicado, probarla en una **copia de Apps Script vinculada a una copia de la planilla**, manteniendo también los módulos `CobrosVentaV2.gs`, `UsuariosAPI.gs`, `FacturacionAPI.gs` e `ImportarProductosAPI.gs` que usa la instalación. Falta recibir y revisar la copia vigente de `CobrosVentaV2.gs` para una publicación reproducible.
 
 ## Verificación previa al reemplazo
 

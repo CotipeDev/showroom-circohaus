@@ -1,6 +1,6 @@
 # Revisión del backend para producción
 
-`apps-script/Codigo.gs` y `apps-script/VentasV2.gs` son copias recibidas del código publicado. Los archivos con sufijo `-produccion.gs` son **reemplazos del contenido de sus respectivos archivos en Apps Script**, no archivos adicionales para pegar en el mismo proyecto. Las dos versiones de `Codigo` contienen `doGet` y `doPost`.
+`apps-script/Codigo.gs`, `apps-script/VentasV2.gs` y `apps-script/CobrosVentaV2.gs` son copias recibidas del código publicado. Los archivos con sufijo `-produccion.gs` son **reemplazos del contenido de sus respectivos archivos en Apps Script**, no archivos adicionales para pegar en el mismo proyecto. Las dos versiones de `Codigo` contienen `doGet` y `doPost`.
 
 ## Cambios de la propuesta
 
@@ -9,8 +9,9 @@
 - Se quitaron `marcarFacturada` y `registrarFactura`, rutas antiguas que permitían modificar sólo una parte del registro de factura y dejar datos inconsistentes.
 - Se quitaron las funciones `TEST_` y `SETUP_` del código candidato. Algunas conciliaban movimientos, cambiaban tarifas o modificaban catálogos. No eran pruebas de sólo lectura.
 - En `VentasV2-produccion.gs` se quitaron `TEST_registrarVentaV2`, `TEST_cancelarVentaV2` y `PREPARAR_COLUMNAS_COBRO_PAGOS_V2`; las funciones operativas siguen presentes.
+- En `CobrosVentaV2-produccion.gs` se quitaron `TEST_resolverCobroVentaV2`, `TEST_validarCrearPlanCuotasV2` y `SETUP_separarLinkPagoPorTipo`; las funciones operativas siguen presentes.
 
-La propuesta no está desplegada. Antes de sustituir el código publicado, probarla en una **copia de Apps Script vinculada a una copia de la planilla**, manteniendo también los módulos `CobrosVentaV2.gs`, `UsuariosAPI.gs`, `FacturacionAPI.gs` e `ImportarProductosAPI.gs` que usa la instalación. Falta recibir y revisar la copia vigente de `CobrosVentaV2.gs` para una publicación reproducible.
+La propuesta no está desplegada. Antes de sustituir el código publicado, probarla en una **copia de Apps Script vinculada a una copia de la planilla**, manteniendo también los módulos `UsuariosAPI.gs`, `FacturacionAPI.gs` e `ImportarProductosAPI.gs` que usa la instalación. Las seis piezas principales ya están versionadas; hay que confirmar que coincidan con las versiones desplegadas y ejecutar pruebas integrales en la copia.
 
 ## Verificación previa al reemplazo
 

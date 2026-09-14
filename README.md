@@ -5,7 +5,7 @@ Aplicación web interna para ventas, clientes, catálogo, stock, ingresos de mer
 ## Arquitectura actual
 
 - **Interfaz:** `index.html` y módulos activos en `js/`. La página incluye también parte de la lógica y los estilos; se está separando de forma gradual.
-- **API:** Google Apps Script conectado a Google Sheets. `apps-script/Codigo.gs` y `apps-script/VentasV2.gs` conservan las copias recibidas del código publicado. Los archivos con sufijo `-produccion.gs` son candidatos depurados que reemplazarían sus originales. Ninguno se publica automáticamente en Apps Script; **no agregar original y candidato juntos**.
+- **API:** Google Apps Script conectado a Google Sheets. `apps-script/Codigo.gs`, `apps-script/VentasV2.gs` y `apps-script/CobrosVentaV2.gs` conservan las copias recibidas del código publicado. Los archivos con sufijo `-produccion.gs` son candidatos depurados que reemplazarían sus originales. Ninguno se publica automáticamente en Apps Script; **no agregar original y candidato juntos**.
 - **Hosting de la interfaz:** Netlify, conectado al repositorio Git.
 - **Manuales:** guías dentro de la aplicación, visibles según el rol. `manual.html` redirige a esas guías para enlaces antiguos.
 
@@ -33,6 +33,6 @@ La facturación fiscal se hace en ARCA. La aplicación muestra ventas pendientes
 ## Estado antes de producción
 
 - La carga masiva de productos está implementada como CSV UTF-8 exportado desde Excel; falta su prueba de extremo a extremo en la implementación publicada. Consultar `docs/carga-masiva-productos-apps-script.md`.
-- `Código.gs` y `VentasV2.gs` ya están versionados como referencia, con propuestas depuradas. Falta recibir `CobrosVentaV2.gs`, probar todo junto en una copia de Apps Script y actualizar manualmente la implementación web si supera las pruebas.
+- Las tres piezas principales del backend ya están versionadas como referencia, con propuestas depuradas. Falta probar todo junto en una copia de Apps Script y actualizar manualmente la implementación web si supera las pruebas.
 - Falta el guion de pruebas de punta a punta y el procedimiento aprobado de puesta en cero de datos.
 - La carga inicial y el volumen de respuestas de Apps Script requieren medición y optimización, sin sacrificar los controles de acceso del vendedor.

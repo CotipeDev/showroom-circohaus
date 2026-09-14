@@ -39,4 +39,20 @@ for (const funcion of ['registrarVentaV2_', 'cancelarVentaV2_', 'crearTarifaCobr
 }
 assert.ok(!/^function (TEST_|PREPARAR_)/m.test(ventasV2));
 
+const cobrosV2 = fs.readFileSync(
+  path.join(__dirname, '../apps-script/CobrosVentaV2-produccion.gs'),
+  'utf8'
+);
+
+assert.doesNotThrow(() => new Function(cobrosV2));
+for (const funcion of ['resolverCobroVentaV2_', 'crearPlanCuotasV2_']) {
+  assert.ok(cobrosV2.includes(`function ${funcion}(`), `Falta ${funcion}`);
+}
+assert.ok(!/^function (TEST_|SETUP_)/m.test(cobrosV2));
+
+const funciones = [codigo, ventasV2, cobrosV2].flatMap((texto) =>
+  [...texto.matchAll(/^function ([\w]+)\(/gm)].map((coincidencia) => coincidencia[1])
+);
+assert.equal(new Set(funciones).size, funciones.length, 'Hay funciones duplicadas');
+
 console.log('Backend candidato: sintaxis y rutas OK');

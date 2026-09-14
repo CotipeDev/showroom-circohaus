@@ -26,7 +26,7 @@ function renderUsuarios(){
   document.getElementById('usuarios-body').innerHTML=rows.length?rows.map(u=>{
     const propio=String(u.id_usuario)===actual;
     const ultimo=u.ultimo_acceso?fechaStr(u.ultimo_acceso):'—';
-    return`<tr><td><strong>${textoSeguro(u.usuario)}</strong>${propio?' <span style="font-size:10px;color:var(--text-light)">(tu cuenta)</span>':''}</td><td>${textoSeguro(u.nombre||'—')}</td><td>${u.rol==='administrador'?'Administrador':'Vendedor'}</td><td><span class="badge ${u.activo?'badge-ok':'badge-zero'}">${u.activo?'Activo':'Inactivo'}</span></td><td>${textoSeguro(ultimo)}</td><td style="text-align:right;white-space:nowrap"><button class="btn btn-secondary" style="padding:6px 9px;font-size:11px" data-id="${textoSeguro(u.id_usuario)}" onclick="abrirClaveUsuario(this.dataset.id)" ${propio?'disabled title="Tu contraseña se cambia desde otra cuenta administradora"':''}>Contraseña</button> <button class="btn ${u.activo?'btn-danger':'btn-secondary'}" style="padding:6px 9px;font-size:11px" data-id="${textoSeguro(u.id_usuario)}" onclick="cambiarEstadoUsuario(this.dataset.id)" ${propio?'disabled title="No podés desactivar tu propia cuenta"':''}>${u.activo?'Desactivar':'Activar'}</button></td></tr>`;
+    return`<tr><td><strong>${textoSeguro(u.usuario)}</strong>${propio?' <span style="font-size:10px;color:var(--text-light)">(tu cuenta)</span>':''}</td><td>${textoSeguro(u.nombre||'—')}</td><td>${u.rol==='administrador'?'Administrador':'Vendedor'}</td><td><span class="badge ${u.activo?'badge-ok':'badge-zero'}">${u.activo?'Activo':'Inactivo'}</span></td><td>${textoSeguro(ultimo)}</td><td style="text-align:right;white-space:nowrap"><button class="btn btn-secondary" style="padding:6px 9px;font-size:11px" data-id="${textoSeguro(u.id_usuario)}" onclick="abrirEditarUsuario(this.dataset.id)">Editar</button> <button class="btn btn-secondary" style="padding:6px 9px;font-size:11px" data-id="${textoSeguro(u.id_usuario)}" onclick="abrirClaveUsuario(this.dataset.id)" ${propio?'disabled title="Tu contraseña se cambia desde otra cuenta administradora"':''}>Contraseña</button> <button class="btn ${u.activo?'btn-danger':'btn-secondary'}" style="padding:6px 9px;font-size:11px" data-id="${textoSeguro(u.id_usuario)}" onclick="cambiarEstadoUsuario(this.dataset.id)" ${propio?'disabled title="No podés desactivar tu propia cuenta"':''}>${u.activo?'Desactivar':'Activar'}</button></td></tr>`;
   }).join(''):'<tr><td colspan="6" style="text-align:center;padding:20px;color:var(--text-mid)">No hay usuarios registrados.</td></tr>';
 }
 
@@ -35,6 +35,37 @@ function abrirNuevoUsuario(){
   document.getElementById('usuario-nuevo-rol').value='vendedor';
   document.getElementById('modal-nuevo-usuario').classList.add('open');
   setTimeout(()=>document.getElementById('usuario-nuevo-login').focus(),50);
+}
+
+function abrirEditarUsuario(id){
+  const u=usuariosGestionData.find(x=>String(x.id_usuario)===String(id));
+  if(!u)return;
+  const propio=String(id)===String(sesionActual()?.usuario?.id_usuario||'');
+  document.getElementById('usuario-editar-id').value=u.id_usuario;
+  document.getElementById('usuario-editar-login').value=u.usuario;
+  document.getElementById('usuario-editar-nombre').value=u.nombre||'';
+  document.getElementById('usuario-editar-rol').value=u.rol;
+  document.getElementById('usuario-editar-rol').disabled=propio;
+  document.getElementById('modal-editar-usuario').classList.add('open');
+}
+
+async function guardarEdicionUsuario(){
+  const id_usuario=document.getElementById('usuario-editar-id').value;
+  const nombre=document.getElementById('usuario-editar-nombre').value.trim();
+  const rol=document.getElementById('usuario-editar-rol').value;
+  if(!nombre){showToast('Ingresá el nombre visible.','error');return}
+  try{
+    await apiPost('editarUsuario',{id_usuario,nombre,rol});
+    const sesion=sesionActual();
+    if(sesion?.usuario?.id_usuario===id_usuario){
+      sesion.usuario.nombre=nombre;
+      sessionStorage.setItem(LOGIN_KEY,JSON.stringify(sesion));
+      aplicarPermisosUI();
+    }
+    cerrarModal('modal-editar-usuario');
+    await iniciarUsuarios();
+    showToast('Usuario actualizado');
+  }catch(e){showToast(e.message||'No se pudo editar el usuario.','error')}
 }
 
 async function guardarNuevoUsuario(){
@@ -84,4 +115,26 @@ async function cambiarEstadoUsuario(id){
     await iniciarUsuarios();
     showToast(activo?'Usuario activado':'Usuario desactivado');
   }catch(e){showToast(e.message||'No se pudo actualizar el usuario.','error')}
+}
+
+function abrirCambioClavePropia(){
+  ['usuario-clave-actual','usuario-clave-propia-nueva','usuario-clave-propia-repetida'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('modal-clave-propia').classList.add('open');
+  setTimeout(()=>document.getElementById('usuario-clave-actual').focus(),50);
+}
+
+async function guardarClavePropia(){
+  const password_actual=document.getElementById('usuario-clave-actual').value;
+  const password_nuevo=document.getElementById('usuario-clave-propia-nueva').value;
+  const repetida=document.getElementById('usuario-clave-propia-repetida').value;
+  if(password_nuevo.length<10){showToast('La nueva contraseña debe tener al menos 10 caracteres.','error');return}
+  if(password_nuevo!==repetida){showToast('Las contraseñas nuevas no coinciden.','error');return}
+  if(!password_actual){showToast('Ingresá tu contraseña actual.','error');return}
+  try{
+    await apiPost('cambiarClavePropia',{password_actual,password_nuevo});
+    ['usuario-clave-actual','usuario-clave-propia-nueva','usuario-clave-propia-repetida'].forEach(id=>document.getElementById(id).value='');
+    cerrarModal('modal-clave-propia');
+    await cerrarSesion(false);
+    showToast('Contraseña cambiada. Ingresá nuevamente.');
+  }catch(e){showToast(e.message||'No se pudo cambiar la contraseña.','error')}
 }

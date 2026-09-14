@@ -581,12 +581,13 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
         <button class="sidebar-link" data-modulo="medios-pago" onclick="irA('medios-pago')"><span class="sidebar-icon">💳</span><span class="sidebar-text">Medios y planes de cobro</span></button>
         <button class="sidebar-link" data-modulo="proveedores" onclick="irA('proveedores')"><span class="sidebar-icon">🤝</span><span class="sidebar-text">Proveedores</span></button>
         <button class="sidebar-link" data-modulo="categorias" onclick="irA('categorias')"><span class="sidebar-icon">🗂️</span><span class="sidebar-text">Categorías</span></button>
-        <button class="sidebar-link" data-modulo="instructivos" onclick="irA('instructivos')"><span class="sidebar-icon">📚</span><span class="sidebar-text">Manuales de uso</span></button>
         <button class="sidebar-link" data-modulo="usuarios" onclick="irA('usuarios')"><span class="sidebar-icon">👤</span><span class="sidebar-text">Usuarios</span></button>
+        <button class="sidebar-link" data-modulo="instructivos" onclick="irA('instructivos')"><span class="sidebar-icon">📚</span><span class="sidebar-text">Manuales de uso</span></button>
       </div>
       <div class="sidebar-user">
         <div class="usuario-sesion">
           <div class="usuario-sesion-datos"><span class="usuario-sesion-nombre" id="usuario-app-nombre"></span><span class="usuario-sesion-rol" id="usuario-app-rol"></span></div>
+          <button class="btn-cerrar-sesion" onclick="abrirCambioClavePropia()">Cambiar contraseña</button>
           <button class="btn-cerrar-sesion" onclick="cerrarSesion()">Cerrar sesión</button>
         </div>
       </div>
@@ -1378,6 +1379,31 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
     <div class="field"><label>Nueva contraseña</label><input type="password" id="usuario-clave-nueva" autocomplete="new-password" minlength="10" placeholder="Mínimo 10 caracteres"></div>
     <p style="font-size:12px;color:var(--text-mid);margin-top:12px">Al guardarla, se cerrarán las sesiones abiertas de ese usuario.</p>
     <div class="modal-actions"><button class="btn btn-primary" onclick="conBotonCargando(this,'Guardando...',guardarClaveUsuario)">Guardar contraseña</button><button class="btn btn-secondary" onclick="cerrarModal('modal-clave-usuario')">Cancelar</button></div>
+  </div>
+</div>
+
+<div id="modal-editar-usuario" class="modal-overlay" onclick="if(event.target===this)cerrarModal('modal-editar-usuario')">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-title">Editar usuario</div>
+    <input type="hidden" id="usuario-editar-id">
+    <div class="form-grid">
+      <div class="field"><label>Usuario para ingresar</label><input id="usuario-editar-login" readonly class="readonly"></div>
+      <div class="field"><label>Nombre visible</label><input id="usuario-editar-nombre"></div>
+      <div class="field"><label>Rol</label><select id="usuario-editar-rol"><option value="vendedor">Vendedor</option><option value="administrador">Administrador</option></select></div>
+    </div>
+    <p style="font-size:12px;color:var(--text-mid);margin-top:12px">El usuario de ingreso no se modifica para conservar el historial de ventas. Si cambiás el rol, se cerrarán sus sesiones abiertas.</p>
+    <div class="modal-actions"><button class="btn btn-primary" onclick="conBotonCargando(this,'Guardando...',guardarEdicionUsuario)">Guardar cambios</button><button class="btn btn-secondary" onclick="cerrarModal('modal-editar-usuario')">Cancelar</button></div>
+  </div>
+</div>
+
+<div id="modal-clave-propia" class="modal-overlay" onclick="if(event.target===this)cerrarModal('modal-clave-propia')">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-title">Cambiar mi contraseña</div>
+    <div class="field"><label>Contraseña actual</label><input type="password" id="usuario-clave-actual" autocomplete="current-password"></div>
+    <div class="field" style="margin-top:12px"><label>Nueva contraseña</label><input type="password" id="usuario-clave-propia-nueva" autocomplete="new-password" minlength="10" placeholder="Mínimo 10 caracteres"></div>
+    <div class="field" style="margin-top:12px"><label>Repetí la nueva contraseña</label><input type="password" id="usuario-clave-propia-repetida" autocomplete="new-password"></div>
+    <p style="font-size:12px;color:var(--text-mid);margin-top:12px">Al cambiarla, se cerrarán todas tus sesiones. Volvé a ingresar con la nueva contraseña.</p>
+    <div class="modal-actions"><button class="btn btn-primary" onclick="conBotonCargando(this,'Guardando...',guardarClavePropia)">Cambiar contraseña</button><button class="btn btn-secondary" onclick="cerrarModal('modal-clave-propia')">Cancelar</button></div>
   </div>
 </div>
 
@@ -3015,7 +3041,7 @@ function descargarListaPrecios(){
 <script src="js/proveedores.js?v=20260913-1"></script>
 <script src="js/productos.js?v=20260909-2"></script>
 <script src="js/stock.js?v=20260913-1"></script>
-<script src="js/usuarios.js?v=20260913-1"></script>
+<script src="js/usuarios.js?v=20260913-2"></script>
 <script src="js/ingresos.js?v=20260824-1"></script>
 <script src="js/medios-pago.js?v=20260907-8"></script>
 <script src="js/clientes.js?v=20260824-1"></script>

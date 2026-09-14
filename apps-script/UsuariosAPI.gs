@@ -86,6 +86,40 @@ function usuariosCrearSeguro_(ss, sesion, body) {
   }
 }
 
+function usuariosEditarSeguro_(ss, sesion, body) {
+  usuariosValidarAdmin_(sesion);
+  const id = String(body.id_usuario || '').trim();
+  const nombre = String(body.nombre || '').trim();
+  const rol = String(body.rol || '').trim().toLowerCase();
+  if (!nombre || nombre.length > 100) throw new Error('Ingresá un nombre de hasta 100 caracteres.');
+  if (rol !== 'administrador' && rol !== 'vendedor') throw new Error('Rol inválido.');
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const hoja = usuariosHoja_(ss);
+    const datos = hoja.getDataRange().getValues();
+    const i = usuariosFilaPorId_(datos, id);
+    const rolAnterior = String(datos[i][5] || '').trim().toLowerCase();
+    const cambioRol = rol !== rolAnterior;
+    if (cambioRol && id === String(sesion.id_usuario || '')) {
+      throw new Error('No podés cambiar tu propio rol.');
+    }
+    if (cambioRol && rolAnterior === 'administrador' && rol !== 'administrador' && usuariosActivo_(datos[i][6])) {
+      const otrasAdmin = datos.slice(1).filter(function(fila) {
+        return String(fila[0]) !== id && String(fila[5] || '').trim().toLowerCase() === 'administrador' && usuariosActivo_(fila[6]);
+      });
+      if (!otrasAdmin.length) throw new Error('Debe quedar al menos una administradora activa.');
+    }
+    hoja.getRange(i + 1, 3).setValue(nombre);
+    if (cambioRol) hoja.getRange(i + 1, 6).setValue(rol);
+    SpreadsheetApp.flush();
+    if (cambioRol) usuariosRevocarSesiones_(id);
+    return {ok: true};
+  } finally {
+    lock.releaseLock();
+  }
+}
+
 function usuariosCambiarEstadoSeguro_(ss, sesion, body) {
   usuariosValidarAdmin_(sesion);
   if (typeof body.activo !== 'boolean') throw new Error('Estado inválido.');
@@ -127,6 +161,33 @@ function usuariosRestablecerClaveSeguro_(ss, sesion, body) {
     const i = usuariosFilaPorId_(datos, id);
     const salt = Utilities.getUuid();
     hoja.getRange(i + 1, 4, 1, 2).setValues([[hashPassword_(password, salt), salt]]);
+    SpreadsheetApp.flush();
+    usuariosRevocarSesiones_(id);
+    return {ok: true};
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function usuariosCambiarClavePropiaSeguro_(ss, sesion, body) {
+  const id = String(sesion && sesion.id_usuario || '').trim();
+  if (!id) throw new Error('Sesión requerida.');
+  const actual = String(body.password_actual || '');
+  const nueva = String(body.password_nuevo || '');
+  if (!actual) throw new Error('Ingresá tu contraseña actual.');
+  if (nueva.length < 10) throw new Error('La nueva contraseña debe tener al menos 10 caracteres.');
+  if (nueva === actual) throw new Error('La nueva contraseña debe ser diferente de la actual.');
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+  try {
+    const hoja = usuariosHoja_(ss);
+    const datos = hoja.getDataRange().getValues();
+    const i = usuariosFilaPorId_(datos, id);
+    if (!usuariosActivo_(datos[i][6])) throw new Error('El usuario está desactivado.');
+    const hashActual = hashPassword_(actual, String(datos[i][4] || ''));
+    if (hashActual !== String(datos[i][3] || '')) throw new Error('La contraseña actual es incorrecta.');
+    const salt = Utilities.getUuid();
+    hoja.getRange(i + 1, 4, 1, 2).setValues([[hashPassword_(nueva, salt), salt]]);
     SpreadsheetApp.flush();
     usuariosRevocarSesiones_(id);
     return {ok: true};

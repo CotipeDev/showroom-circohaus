@@ -1,0 +1,27 @@
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const vm=require('node:vm');
+const path=require('node:path');
+const frontend=fs.readFileSync(path.join(__dirname,'..','js','importar-productos.js'),'utf8');
+const backend=fs.readFileSync(path.join(__dirname,'..','apps-script','ImportarProductosAPI.gs'),'utf8');
+const ui={document:{},URL:{},Blob,showToast(){},esVendedor(){return false}};
+vm.createContext(ui);vm.runInContext(frontend,ui);
+assert.deepEqual(Array.from(ui.parsearCsvProductos('codigo;descripcion;precio_costo\r\nA;"Copa; azul";1.234\r\n').map(x=>Array.from(x))),[['codigo','descripcion','precio_costo'],['A','Copa; azul','1.234']]);
+assert.equal(ui.numeroImportado('1.234,50'),1234.5);
+assert.equal(ui.numeroImportado('1234,50'),1234.5);
+const rows={Productos:[['Codigo','Descripcion','Proveedor','Precio_Venta','Precio_Costo','Stock','Stock_Minimo','Categoria','Recargo','Estado'],['OLD','Anterior','',100,50,2,0,'',100,'activo']],Historial_Costos:[['Fecha']],Proveedores:[['Codigo'],['P1']],Categorias:[['Categoria'],['Mesa']]};
+function sheet(name){return {getDataRange(){return {getValues(){return rows[name].map(r=>[...r]);}}},getLastRow(){return rows[name].length},getRange(start,col,count,width){assert.equal(col,1);return {setValues(vals){assert.equal(vals.length,count);assert.equal(vals[0].length,width);rows[name].push(...vals);}}}}}
+const server={LockService:{getScriptLock(){return {waitLock(){},releaseLock(){}}}},SpreadsheetApp:{flush(){}}};
+vm.createContext(server);vm.runInContext(backend,server);
+const ss={getSheetByName(name){return rows[name]?sheet(name):null}};
+const nuevo={codigo:'NEW',descripcion:'Copa azul',proveedor:'P1',categoria:'Mesa',precio_costo:500,precio_venta:1000,stock:4,stock_minimo:1,estado_comercial:'activo'};
+const call=productos=>server.importarProductosSeguros_(ss,{productos},{rol:'administrador'});
+assert.throws(()=>call([nuevo,{...nuevo,codigo:'BAD',proveedor:'NO'}]),/proveedor/);
+assert.equal(rows.Productos.length,2);
+assert.equal(call([nuevo]).creados,1);
+assert.equal(rows.Productos[2][5],4);
+assert.equal(rows.Historial_Costos[1][11],'alta_masiva');
+assert.equal(call([nuevo]).omitidos,1);
+assert.equal(rows.Productos.length,3);
+assert.throws(()=>server.importarProductosSeguros_(ss,{productos:[nuevo]},{rol:'vendedor'}),/administradora/);
+console.log('Carga masiva OK');

@@ -11,6 +11,7 @@
 5. Ejecutar `tests/VerificarEntornoPruebas.gs` en el proyecto copiado. Es de sólo lectura y debe registrar `OK: planilla de pruebas, hojas y módulos presentes.` antes de implementar la API de pruebas.
 6. Ejecutar `tests/PruebaLogicaSinEscritura.gs` en el proyecto copiado. Debe registrar `OK: venta válida y falta de stock verificadas sin modificar hojas.` antes de probar escrituras reales.
 7. Ejecutar `tests/PruebaVentaYCancelacionEnCopia.gs` en el proyecto copiado. Esta prueba **sí escribe** una venta a cuenta y la cancela; sólo se permite en la copia y debe confirmar stock restaurado y rechazo de doble cancelación.
+8. Ejecutar `tests/PruebaCobroYMovimientoEnCopia.gs` en el proyecto copiado. Esta prueba **sí escribe** una venta en efectivo y la cancela; verifica pago, cuenta, movimiento, reversión y stock.
 
 ## Casos y resultados esperados
 

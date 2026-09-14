@@ -33,6 +33,6 @@ La facturación fiscal se hace en ARCA. La aplicación muestra ventas pendientes
 ## Estado antes de producción
 
 - La carga masiva de productos está implementada como CSV UTF-8 exportado desde Excel; falta su prueba de extremo a extremo en la implementación publicada. Consultar `docs/carga-masiva-productos-apps-script.md`.
-- Las tres piezas principales del backend ya están versionadas como referencia, con propuestas depuradas. Falta probar todo junto en una copia de Apps Script y actualizar manualmente la implementación web si supera las pruebas.
+- Las seis piezas del backend ya están versionadas; las tres principales tienen propuestas depuradas. Falta ejecutar el guion de `docs/guion-pruebas-copia.md` sobre una copia y actualizar manualmente la implementación web sólo si supera las pruebas.
 - Falta el guion de pruebas de punta a punta y el procedimiento aprobado de puesta en cero de datos.
 - La carga inicial y el volumen de respuestas de Apps Script requieren medición y optimización, sin sacrificar los controles de acceso del vendedor.

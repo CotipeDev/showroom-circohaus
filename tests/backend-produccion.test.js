@@ -50,7 +50,14 @@ for (const funcion of ['resolverCobroVentaV2_', 'crearPlanCuotasV2_']) {
 }
 assert.ok(!/^function (TEST_|SETUP_)/m.test(cobrosV2));
 
-const funciones = [codigo, ventasV2, cobrosV2].flatMap((texto) =>
+const auxiliares = ['UsuariosAPI.gs', 'FacturacionAPI.gs', 'ImportarProductosAPI.gs'].map((archivo) =>
+  fs.readFileSync(path.join(__dirname, '../apps-script', archivo), 'utf8')
+);
+for (const auxiliar of auxiliares) {
+  assert.doesNotThrow(() => new Function(auxiliar));
+}
+
+const funciones = [codigo, ventasV2, cobrosV2, ...auxiliares].flatMap((texto) =>
   [...texto.matchAll(/^function ([\w]+)\(/gm)].map((coincidencia) => coincidencia[1])
 );
 assert.equal(new Set(funciones).size, funciones.length, 'Hay funciones duplicadas');

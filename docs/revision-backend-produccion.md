@@ -11,7 +11,7 @@
 - En `VentasV2-produccion.gs` se quitaron `TEST_registrarVentaV2`, `TEST_cancelarVentaV2` y `PREPARAR_COLUMNAS_COBRO_PAGOS_V2`; las funciones operativas siguen presentes.
 - En `CobrosVentaV2-produccion.gs` se quitaron `TEST_resolverCobroVentaV2`, `TEST_validarCrearPlanCuotasV2` y `SETUP_separarLinkPagoPorTipo`; las funciones operativas siguen presentes.
 
-La propuesta no está desplegada. Antes de sustituir el código publicado, probarla en una **copia de Apps Script vinculada a una copia de la planilla**, manteniendo también los módulos `UsuariosAPI.gs`, `FacturacionAPI.gs` e `ImportarProductosAPI.gs` que usa la instalación. Las seis piezas principales ya están versionadas; hay que confirmar que coincidan con las versiones desplegadas y ejecutar pruebas integrales en la copia.
+La propuesta no está desplegada. `UsuariosAPI.gs` coincidió exactamente con la copia facilitada por la usuaria; `FacturacionAPI.gs` e `ImportarProductosAPI.gs` coincidieron en contenido tras retirar el escape de formato agregado por el mensaje. Las seis piezas principales ya están versionadas. Antes de sustituir código publicado, probar las seis juntas en una **copia de Apps Script vinculada a una copia de la planilla**.
 
 ## Verificación previa al reemplazo
 

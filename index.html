@@ -1666,10 +1666,8 @@ const cache={
   ts:{},
   pendientes:{},
   ttl:5*60*1000, // 5 minutos
-  cargaCompleta:false,
   async get(key){
     // Si ya cargamos todo, devolver del cache directamente
-    if(this.cargaCompleta&&this.data[key])return this.data[key];
     if(this.data[key]&&(Date.now()-this.ts[key])<this.ttl)return this.data[key];
     if(this.pendientes[key])return this.pendientes[key];
     const solicitud=apiGet(key).then(d=>{
@@ -1693,11 +1691,9 @@ const cache={
     Object.entries(mapeo).forEach(([hoja,key])=>{
       if(datosCompletos[hoja]){this.data[key]=datosCompletos[hoja];this.ts[key]=Date.now();}
     });
-    this.cargaCompleta=true;
   },
   invalidar(...keys){
     keys.forEach(k=>{delete this.data[k];delete this.ts[k];delete this.pendientes[k];});
-    this.cargaCompleta=false;
   },
   set(key,data){this.data[key]=data;this.ts[key]=Date.now();}
 };
@@ -1718,16 +1714,17 @@ async function conBotonCargando(selectorOBtn,texto,fn){
 }
 
 async function refrescarDatos(...keys){
-  try{
-    const datos=await apiGet('getDatosCompletos');
-    cache.setDesdeCompleto(datos);
-    // Actualizar variables globales relevantes
-    if(keys.some(k=>k==='getProductos'))productosData=(datos.Productos||[]).slice(1);
-    if(keys.some(k=>k==='getVentas')){ventasHistData=(datos.Ventas||[]).slice(1);}
-    if(keys.some(k=>k==='getMovimientos'))movimientosData=(datos.Movimientos||[]).slice(1);
-    if(keys.some(k=>k==='getCuentas'))cuentasData=(datos.Cuentas||[]).slice(1);
-    if(keys.some(k=>k==='getCuentasPorCobrar')){/* actualizado en cache */}
-  }catch(e){console.warn('Error al refrescar:',e);}
+  const resultados=await Promise.allSettled([...new Set(keys)].map(async key=>({key,datos:await cacheGet(key)})));
+  resultados.forEach(resultado=>{
+    if(resultado.status==='rejected'){console.warn('Error al refrescar una hoja:',resultado.reason);return;}
+    const {key,datos}=resultado.value;
+    const filas=Array.isArray(datos)?datos.slice(1):[];
+    if(key==='getProductos'){productosData=filas;stockData=filas;prodTablaData=filas;}
+    if(key==='getVentas'){ventasHistData=filas;ventasData=filas;}
+    if(key==='getMovimientos')movimientosData=filas;
+    if(key==='getCuentas')cuentasData=filas;
+    if(key==='getCuentasPorCobrar')cuentasPorCobrarData=filas;
+  });
 }
 
 // ── DEBOUNCE ──
@@ -2028,7 +2025,7 @@ function abrirEditarCuenta(idCuenta){
 }
 
 async function recargarCuentas(){
-  cacheInvalidar('getCuentas','getDatosCompletos');
+  cacheInvalidar('getCuentas');
   cuentasData=[];
   await iniciarCuentas();
 }
@@ -2326,7 +2323,7 @@ function filtrarProductosVenta(){
   if(!f.length){lista.style.display='none';return}
   lista.innerHTML=f.map(p=>{
     const stock=Math.max(0,Number(p[5])||0),sinStock=stock===0;
-    return`<div class="autocomplete-item" ${sinStock?'':'onclick="selProductoVenta(\''+p[0]+'\')"'} style="${sinStock?'opacity:.55;cursor:not-allowed;background:#fafafa':''}"><code>${p[0]}</code> — ${p[1]} <span style="float:right;display:flex;align-items:center;gap:12px"><span style="font-size:11px;font-weight:600;color:${sinStock?'var(--error)':'var(--success)'}">${sinStock?'Sin stock':`Stock: ${stock}`}</span><span style="color:var(--teal)">${formatPeso(p[3])}</span></span></div>`;
+    return`<div class="autocomplete-item" ${sinStock?'':'data-codigo="'+textoSeguro(p[0])+'" onclick="selProductoVenta(this.dataset.codigo)"'} style="${sinStock?'opacity:.55;cursor:not-allowed;background:#fafafa':''}"><code>${textoSeguro(p[0])}</code> — ${textoSeguro(p[1])} <span style="float:right;display:flex;align-items:center;gap:12px"><span style="font-size:11px;font-weight:600;color:${sinStock?'var(--error)':'var(--success)'}">${sinStock?'Sin stock':`Stock: ${stock}`}</span><span style="color:var(--teal)">${formatPeso(p[3])}</span></span></div>`;
   }).join('');
   lista.style.display='block';
 }
@@ -2738,7 +2735,7 @@ function abrirConsultaPrecios(){
 
 async function cerrarSesion(notificarBackend=true){
   const token=tokenSesion();if(notificarBackend&&token)fetch(`${API_URL}?action=logout&token=${encodeURIComponent(token)}`).catch(()=>{});
-  sessionStorage.removeItem(LOGIN_KEY);cache.data={};cache.ts={};cache.cargaCompleta=false;
+  sessionStorage.removeItem(LOGIN_KEY);cache.data={};cache.ts={};cache.pendientes={};
   usuariosGestionData=[];
   document.getElementById('login-screen').style.display='flex';
   document.getElementById('login-usuario').value='';
@@ -3108,16 +3105,16 @@ function descargarListaPrecios(){
 // ─────────────────────────────────────────
 </script>
 <script src="js/proveedores.js?v=20260913-1"></script>
-<script src="js/productos.js?v=20260913-3"></script>
+<script src="js/productos.js?v=20260913-4"></script>
 <script src="js/importar-productos.js?v=20260913-1"></script>
 <script src="js/manuales.js?v=20260913-1"></script>
-<script src="js/stock.js?v=20260913-1"></script>
+<script src="js/stock.js?v=20260913-2"></script>
 <script src="js/usuarios.js?v=20260913-2"></script>
 <script src="js/ingresos.js?v=20260824-1"></script>
 <script src="js/medios-pago.js?v=20260907-8"></script>
 <script src="js/clientes.js?v=20260824-1"></script>
 <script src="js/cuentas-por-cobrar.js?v=20260907-2"></script>
 <script src="js/categorias.js?v=20260909-2"></script>
-<script src="js/ventas-v2.js?v=20260909-1"></script>
+<script src="js/ventas-v2.js?v=20260913-2"></script>
 </body>
 </html>

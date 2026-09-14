@@ -1,0 +1,25 @@
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const vm=require('node:vm');
+const path=require('node:path');
+const html=fs.readFileSync(path.join(__dirname,'..','index.html'),'utf8');
+const start=html.indexOf('const cache={');
+const end=html.indexOf('async function cacheGet',start);
+assert.ok(start>0&&end>start);
+let now=1000,calls=0;
+const context={Date:{now(){return now}},apiGet:async()=>{calls++;return [['codigo'],['nuevo']];},setTimeout(){}};
+vm.createContext(context);
+vm.runInContext(html.slice(start,end),context);
+const cache=vm.runInContext('cache',context);
+(async()=>{
+  cache.setDesdeCompleto({Productos:[['codigo'],['viejo']]});
+  assert.equal((await cache.get('getProductos'))[1][0],'viejo');
+  assert.equal(calls,0);
+  now+=cache.ttl+1;
+  assert.equal((await cache.get('getProductos'))[1][0],'nuevo');
+  assert.equal(calls,1);
+  cache.invalidar('getProductos');
+  await cache.get('getProductos');
+  assert.equal(calls,2);
+  console.log('Caché y vencimiento OK');
+})().catch(e=>{console.error(e);process.exitCode=1});

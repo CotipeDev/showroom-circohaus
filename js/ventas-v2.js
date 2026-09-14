@@ -146,7 +146,7 @@
     document.getElementById('vta-autocomplete').style.display = 'none';
     document.getElementById('vta-precio-lista').textContent = formatPeso(p[3]);
     const stock = n(p[5]);
-    document.getElementById('vta-prod-nombre').innerHTML = `${p[0]} — ${p[1]} <span style="margin-left:8px;font-size:11px;font-weight:400;color:${stock===0?'var(--error)':'var(--text-light)'}">${stock===0?'⚠️ Sin stock':`Stock: ${stock} unid.`}</span>`;
+    document.getElementById('vta-prod-nombre').innerHTML = `${textoSeguro(p[0])} — ${textoSeguro(p[1])} <span style="margin-left:8px;font-size:11px;font-weight:400;color:${stock===0?'var(--error)':'var(--text-light)'}">${stock===0?'⚠️ Sin stock':`Stock: ${stock} unid.`}</span>`;
     document.getElementById('vta-producto-preview').style.display = 'block';
   };
 
@@ -172,7 +172,7 @@
       document.getElementById('vta-totales').style.display = 'none'; document.getElementById('vta-card-pagos').style.display = 'none'; return;
     }
     lista.innerHTML = vtaItemsCarrito.map((item,i) => `<div class="item-row" style="grid-template-columns:2fr .7fr 1fr auto">
-      <span><code style="color:var(--teal);font-size:11px">${item.codigo}</code> ${item.desc}</span><span>${item.cantidad} unid.</span><span>${formatPeso(item.precio_unitario)}</span>
+      <span><code style="color:var(--teal);font-size:11px">${textoSeguro(item.codigo)}</code> ${textoSeguro(item.desc)}</span><span>${item.cantidad} unid.</span><span>${formatPeso(item.precio_unitario)}</span>
       <button class="btn-danger" onclick="quitarItemVenta(${i})">✕</button></div>`).join('');
     document.getElementById('vta-totales').style.display = 'block'; document.getElementById('vta-card-pagos').style.display = 'block'; actualizarTotalesVenta();
   };

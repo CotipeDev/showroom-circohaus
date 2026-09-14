@@ -1,141 +1,38 @@
-# showroom-circohaus - 27/04/26
-# CircoHaus — Sistema de Gestión de Showroom
+# Circo Haus — gestión del showroom
 
-Sistema web de gestión interna para **CircoHaus Casa Atelier**, showroom de vajilla y decoración.
+Aplicación web interna para ventas, clientes, catálogo, stock, ingresos de mercadería, cuentas por cobrar, movimientos, conciliación, facturación registrada, reportes y usuarios.
 
----
+## Arquitectura actual
 
-## Stack tecnológico
+- **Interfaz:** `index.html` y módulos activos en `js/`. La página incluye también parte de la lógica y los estilos; se está separando de forma gradual.
+- **API:** Google Apps Script conectado a Google Sheets. `apps-script/Codigo.gs` conserva la copia del `Código.gs` principal que facilitó la usuaria el 13/09/2026. `apps-script/Codigo-produccion.gs` es una propuesta de reemplazo sin funciones `TEST_`/`SETUP_` ni las dos rutas antiguas de facturación. Los demás archivos de `apps-script/` son módulos auxiliares. Ninguno de estos archivos se publica automáticamente en Apps Script; **no agregar los dos archivos `Codigo*.gs` juntos** porque ambos definen `doGet` y `doPost`.
+- **Hosting de la interfaz:** Netlify, conectado al repositorio Git.
+- **Manuales:** guías dentro de la aplicación, visibles según el rol. `manual.html` redirige a esas guías para enlaces antiguos.
 
-| Capa | Tecnología |
-|---|---|
-| Frontend | HTML + CSS + JavaScript (un solo archivo `index.html`) |
-| Backend / API | Google Apps Script |
-| Base de datos | Google Sheets |
-| Hosting | Netlify (conectado a GitHub) |
-| Control de versiones | GitHub |
+La facturación fiscal se hace en ARCA. La aplicación muestra ventas pendientes y registra después el número y fecha del comprobante; no emite facturas fiscales.
 
----
+## Estructura
 
-## URLs importantes
+| Ruta | Uso |
+| --- | --- |
+| `index.html` | Pantallas, navegación y lógica compartida que todavía no se ha extraído |
+| `js/` | Módulos cargados por `index.html` |
+| `apps-script/` | Funciones auxiliares que deben coincidir con el proyecto publicado |
+| `tests/` | Pruebas locales, sin escritura en la planilla real |
+| `docs/` | Pasos de activación y notas de operación |
 
-- **Sistema publicado:** https://showroomcircohaus.netlify.app
-- **Apps Script (API actual):** `https://script.google.com/macros/s/AKfycbyoO1Ox8yjZK78W4UFAf9vB0U_9DpbtCSZHjB_mru3TNDlO041ZFs1kYKAEWnAe1pOo/exec`
+## Actualización segura
 
----
+1. Trabajar en una rama y revisar los cambios antes de publicarlos.
+2. Probar la sintaxis y las pruebas locales; después verificar los flujos reales en una copia de prueba.
+3. Para cambios en Apps Script, guardar una versión nueva de la implementación web que usa la aplicación y comprobar sus rutas. No ejecutar funciones `TEST_` o `SETUP_` sobre producción sin revisar sus efectos: algunas modifican hojas.
+4. Para cambios en la interfaz, subir la rama usada por Netlify y verificar la implementación publicada en computadora, tableta y celular.
 
-## Estructura del repositorio
+**No limpiar datos de prueba por el solo hecho de publicar código.** La puesta en cero de Circo Haus es una operación aparte: primero se hace una copia de la planilla, se define qué datos maestros y qué stock inicial conservar, se simula la limpieza y recién entonces se ejecuta con aprobación expresa.
 
-```
-showroom-circohauss/
-├── index.html                          ← Sistema completo (HTML + CSS + JS en un solo archivo)
-├── manual.html                         ← Página del manual con visor inline
-├── docs/
-│   └── manual_gestion_ingresos_stock.pdf
-└── apps-script.js                      ← Código del backend (referencia — se pega en Google Apps Script)
-```
+## Estado antes de producción
 
-> **Importante:** Todo el sistema vive en `index.html`. CSS, JS y HTML están en un solo archivo para evitar problemas de carga en Netlify.
-
----
-
-## Base de datos — Google Sheets
-
-El archivo se llama **"Sistema Showroom"** y tiene estas pestañas:
-
-| Pestaña | Columnas |
-|---|---|
-| `Productos` | Codigo, Descripcion, Proveedor, Precio_Venta, Precio_Costo, Stock, Stock_Minimo, Categoria |
-| `Proveedores` | Codigo_Proveedor, Nombre, Contacto |
-| `Ingresos` | ID_Ingreso, Fecha, Proveedor, Nro_Remito |
-| `Detalle_Ingresos` | ID_Ingreso, Codigo_Producto, Cantidad, Precio_Costo |
-| `Categorias` | Nombre |
-| `Historial_Costos` | Fecha, Codigo_Producto, Descripcion, Costo_Anterior, Costo_Nuevo, Margen_Anterior, Margen_Nuevo |
-
----
-
-## Módulos implementados
-
-- **Home** — KPIs (alertas de stock, total productos, proveedores) + tarjetas de acceso a módulos
-- **Ingresos** — Registro de mercadería con buscador autocomplete + popup de actualización de costos
-- **Stock** — Inventario en tiempo real con badges de estado, buscador y filtro por categoría
-- **Productos** — Catálogo con cálculo automático de precio por margen, edición y eliminación
-- **Proveedores** — ABM de proveedores
-- **Categorías** — ABM de categorías
-- **Instructivos** — Visor de manuales con descarga en PDF
-- **Notificaciones** — Campana con alertas automáticas de stock bajo o agotado
-
----
-
-## Paleta de colores
-
-```css
---navy:      #485472   /* Header, textos importantes */
---teal:      #58A4B0   /* Acento principal, botones, tabs activos */
---rose:      #DAA49A   /* Acento cálido, logo, hover */
---pearl:     #D8DBE2   /* Fondo principal */
---blue-mist: #A9BCD0   /* Textos secundarios sobre fondo oscuro */
-```
-
----
-
-## Cómo actualizar el sistema
-
-### Cambios en el frontend (index.html)
-1. Modificar `index.html`
-2. Subir a GitHub
-3. En Netlify → Deploys → Trigger deploy → Deploy site
-
-### Cambios en el backend (Apps Script)
-1. Abrir Google Apps Script del sheet
-2. Reemplazar el código con el contenido de `apps-script.js`
-3. Guardar
-4. Implementar → Nueva implementación → Aplicación web
-   - Ejecutar como: Yo
-   - Quién tiene acceso: Cualquier usuario
-5. Copiar la nueva URL
-6. Actualizar la variable `API_URL` en `index.html`
-7. Subir a GitHub y redesplegar en Netlify
-
-> **Importante:** Cada vez que se modifica el Apps Script hay que hacer una **nueva implementación** (no actualizar la existente). La URL cambia con cada nueva implementación.
-
----
-
-## Funcionalidad clave — Popup de actualización de costos
-
-Cuando en un ingreso el precio de costo de un producto difiere del registrado, aparece un popup con estas opciones:
-
-1. **Mantener margen %** → el precio de venta sube o baja según el nuevo costo
-2. **Mantener precio de venta** → el margen se recalcula automáticamente
-3. **Definir nuevo margen** → el usuario ingresa el % y se calcula el nuevo precio
-4. **No actualizar** → saltea sin hacer cambios
-
-Todos los cambios quedan registrados en la pestaña `Historial_Costos` del Sheet.
-
----
-
-## Convenciones de código
-
-- **Códigos de producto:** prefijo del proveedor + número secuencial. Ej: `PQY-0001`
-- **Cada variante es un SKU independiente** (color/talle distinto = código distinto)
-- **Precios:** siempre en pesos argentinos
-- **Ventas:** solo minorista
-
----
-
-## Próximos módulos a desarrollar
-
-- [ ] Módulo de Ventas
-- [ ] Módulo de Reportes (rentabilidad, evolución de costos, ventas por período)
-- [ ] Manual de Ventas (PDF + página HTML)
-- [ ] Mejoras de responsive para mobile/tablet
-
----
-
-## Manuales disponibles
-
-| Manual | Cubre |
-|---|---|
-| Manual de Gestión: Ingresos y Stock | Categorías, Proveedores, Productos, Ingresos, Stock, Notificaciones |
-| Manual de Ventas | *Próximamente* |
-| Manual de Reportes | *Próximamente* |
+- La carga masiva de productos está implementada como CSV UTF-8 exportado desde Excel; falta su prueba de extremo a extremo en la implementación publicada. Consultar `docs/carga-masiva-productos-apps-script.md`.
+- El `Código.gs` ya está versionado como referencia y existe una propuesta depurada. Falta probar la propuesta junto a los módulos auxiliares en una copia de Apps Script y actualizar manualmente la implementación web si supera las pruebas.
+- Falta el guion de pruebas de punta a punta y el procedimiento aprobado de puesta en cero de datos.
+- La carga inicial y el volumen de respuestas de Apps Script requieren medición y optimización, sin sacrificar los controles de acceso del vendedor.

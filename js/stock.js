@@ -44,8 +44,8 @@ function renderStock(rows){
   document.getElementById('stock-body').innerHTML=rows.length===0?`<tr><td colspan="${vendedor?7:10}" style="text-align:center;color:var(--text-mid);padding:20px">No hay productos</td></tr>`:rows.map(p=>{
     const s=Number(p[5])||0,m=Number(p[6])||0,margen=getMargen(p),margenBruto=calcMargenBruto(Number(p[4]),Number(p[3]));
     const badge=s===0?`<span class="badge badge-zero">Sin stock</span>`:(m>0&&s<=m)?`<span class="badge badge-low">${s} ⚠️</span>`:`<span class="badge badge-ok">${s}</span>`;
-    if(vendedor)return`<tr><td><code style="color:var(--teal);font-size:12px">${p[0]}</code></td><td>${p[1]}</td><td>${p[7]||'—'}</td><td>${badgeEstadoComercial(p)}</td><td>${formatPeso(p[3])}</td><td>${badge}</td><td style="color:var(--text-mid);font-size:12px">${m>0?'Mín: '+m:'—'}</td></tr>`;
-    return`<tr><td><code style="color:var(--teal);font-size:12px">${p[0]}</code></td><td>${p[1]}</td><td>${p[7]||'—'}</td><td>${badgeEstadoComercial(p)}</td><td>${formatPeso(p[4])}</td><td><span class="badge badge-margen">${margen}%</span></td><td>${margenBruto}%</td><td>${formatPeso(p[3])}</td><td>${badge}</td><td style="color:var(--text-mid);font-size:12px">${m>0?'Mín: '+m:'—'}</td></tr>`;
+    if(vendedor)return`<tr><td><code style="color:var(--teal);font-size:12px">${textoSeguro(p[0])}</code></td><td>${textoSeguro(p[1])}</td><td>${textoSeguro(p[7]||'—')}</td><td>${badgeEstadoComercial(p)}</td><td>${formatPeso(p[3])}</td><td>${badge}</td><td style="color:var(--text-mid);font-size:12px">${m>0?'Mín: '+m:'—'}</td></tr>`;
+    return`<tr><td><code style="color:var(--teal);font-size:12px">${textoSeguro(p[0])}</code></td><td>${textoSeguro(p[1])}</td><td>${textoSeguro(p[7]||'—')}</td><td>${badgeEstadoComercial(p)}</td><td>${formatPeso(p[4])}</td><td><span class="badge badge-margen">${margen}%</span></td><td>${margenBruto}%</td><td>${formatPeso(p[3])}</td><td>${badge}</td><td style="color:var(--text-mid);font-size:12px">${m>0?'Mín: '+m:'—'}</td></tr>`;
   }).join('');
 }
 function filtrarStock(){

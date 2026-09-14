@@ -1,6 +1,8 @@
 # Alta de otro comercio: catálogo y stock inicial
 
-Pendiente de implementar después de cerrar Usuarios y revisar Facturación.
+Para Circo Haus ya se implementó una primera carga desde CSV UTF-8 exportado por Excel, con vista previa, validación, creación de códigos nuevos y omisión de los existentes. La activación requiere publicar la función de Apps Script documentada en `carga-masiva-productos-apps-script.md`.
+
+Lo siguiente corresponde a una posible oferta para otros comercios y todavía no está implementado.
 
 ## Datos para pedirle al comercio
 

@@ -1152,14 +1152,9 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
     </div>
 
     <div id="panel-instructivos" class="panel">
-      <div class="section-title">Instructivos</div>
-      <div class="section-sub">Descargá los manuales de uso del sistema</div>
-      <div class="instructivos-grid" style="grid-template-columns:1fr">
-        <a href="manual.html" class="manual-card">
-          <span style="font-size:36px;flex-shrink:0">📋</span>
-          <div><div class="manual-nombre">Manual de Gestión del Sistema</div><div class="manual-desc">Guía completa de todos los módulos: ventas, cuentas, stock, productos, reportes y más.</div><span class="manual-download">→ Ver manual</span></div>
-        </a>
-      </div>
+      <div class="section-title">Manuales de uso</div>
+      <div class="section-sub" id="manuales-subtitulo">Guías de los módulos disponibles para tu perfil</div>
+      <div id="manuales-contenido"></div>
     </div>
 
     <!-- VENTAS -->
@@ -1782,7 +1777,7 @@ function textoSeguro(valor){return String(valor??'').replace(/[&<>'"]/g,c=>({'&'
 function setFechaHoy(id){document.getElementById(id).value=new Date().toISOString().split('T')[0]}
 
 const moduloNombres={inicio:'🏠 Inicio',ingresos:'📦 Ingresos',stock:'📊 Stock e inventario',productos:'🏷️ Productos',clientes:'👥 Clientes',ventas:'🛒 Nueva venta','historial-ventas':'🧾 Ventas',cuentas:'💰 Cuentas',movimientos:'↕ Movimientos',conciliacion:'✓ Conciliación',proveedores:'🤝 Proveedores',categorias:'🗂️ Categorías','medios-pago':'💳 Medios y planes de cobro',reportes:'📈 Análisis y reportes',cxc:'📋 Cuentas por cobrar',facturas:'🧾 Facturación',instructivos:'📚 Manuales de uso',usuarios:'👤 Usuarios'};
-const modulosVendedor=new Set(['ventas','historial-ventas','stock','productos','clientes','cxc']);
+const modulosVendedor=new Set(['ventas','historial-ventas','stock','productos','clientes','cxc','instructivos']);
 const modulosConRuta=new Set(Object.keys(moduloNombres));
 let abrirAlertasPendiente=false;
 function rutaActual(){try{const ruta=decodeURIComponent(location.hash.replace(/^#\/?/,'')).trim();return ruta||'inicio';}catch(e){return'inicio';}}
@@ -1839,7 +1834,7 @@ function showPanel(name){
   if(name==='stock')iniciarStock();if(name==='proveedores')iniciarProveedores();
   if(name==='productos')iniciarProductos();if(name==='clientes')iniciarClientes();if(name==='categorias')iniciarCategorias();
   if(name==='medios-pago')iniciarMediosPago();if(['cuentas','movimientos','conciliacion'].includes(name))iniciarCuentas();
-  if(name==='ventas')iniciarVentas();if(name==='historial-ventas')iniciarHistorialVentas();if(name==='reportes')iniciarReportes();if(name==='cxc')iniciarCxc();if(name==='facturas')iniciarFacturas();if(name==='usuarios')iniciarUsuarios();
+  if(name==='ventas')iniciarVentas();if(name==='historial-ventas')iniciarHistorialVentas();if(name==='reportes')iniciarReportes();if(name==='cxc')iniciarCxc();if(name==='facturas')iniciarFacturas();if(name==='usuarios')iniciarUsuarios();if(name==='instructivos')iniciarManuales();
   if(name==='ingresos')cargarHistorialIngresos();
 }
 function cerrarModal(id){document.getElementById(id).classList.remove('open')}
@@ -3115,6 +3110,7 @@ function descargarListaPrecios(){
 <script src="js/proveedores.js?v=20260913-1"></script>
 <script src="js/productos.js?v=20260913-3"></script>
 <script src="js/importar-productos.js?v=20260913-1"></script>
+<script src="js/manuales.js?v=20260913-1"></script>
 <script src="js/stock.js?v=20260913-1"></script>
 <script src="js/usuarios.js?v=20260913-2"></script>
 <script src="js/ingresos.js?v=20260824-1"></script>

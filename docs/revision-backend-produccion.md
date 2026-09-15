@@ -12,9 +12,9 @@
 - En `VentasV2-produccion.gs` se quitaron `TEST_registrarVentaV2`, `TEST_cancelarVentaV2` y `PREPARAR_COLUMNAS_COBRO_PAGOS_V2`; las funciones operativas siguen presentes.
 - En `CobrosVentaV2-produccion.gs` se quitaron `TEST_resolverCobroVentaV2`, `TEST_validarCrearPlanCuotasV2` y `SETUP_separarLinkPagoPorTipo`; las funciones operativas siguen presentes.
 
-La propuesta no está desplegada. `UsuariosAPI.gs` coincidió exactamente con la copia facilitada por la usuaria; `FacturacionAPI.gs` e `ImportarProductosAPI.gs` coincidieron en contenido tras retirar el escape de formato agregado por el mensaje. Las seis piezas principales ya están versionadas. Antes de sustituir código publicado, probar las seis juntas en una **copia de Apps Script vinculada a una copia de la planilla**.
+La propuesta está desplegada **sólo en la copia de pruebas**, no en el proyecto real. `UsuariosAPI.gs` coincidió exactamente con la copia facilitada por la usuaria; `FacturacionAPI.gs` e `ImportarProductosAPI.gs` coincidieron en contenido tras retirar el escape de formato agregado por el mensaje. Las seis piezas principales ya están versionadas y los flujos críticos se verificaron en una copia de Apps Script vinculada a una copia de la planilla.
 
-## Verificación previa al reemplazo
+## Verificación previa al reemplazo: resultado en la copia
 
 1. Comprobar que el proyecto de prueba inicia sesión con administrador y vendedor.
 2. Cargar inicio, ventas, productos, cuentas y facturación sin errores.
@@ -22,5 +22,7 @@ La propuesta no está desplegada. `UsuariosAPI.gs` coincidió exactamente con la
 4. Registrar un comprobante de prueba y confirmar que ventas y facturas quedan vinculadas.
 5. Confirmar que no se pueden invocar `marcarFacturada` ni `registrarFactura` como rutas activas.
 6. Repetir con la implementación web de prueba. No cambiar la URL de producción antes de completar la verificación.
+
+El 14 y 15 de septiembre de 2026 la usuaria informó resultados `OK` de los guiones de entorno, lógica sin escritura, venta y cancelación, cobro y movimiento, facturación ficticia, importación, conciliación y usuarios. La interfaz local separada cargó Inicio, Cuentas por cobrar, Facturación, Stock, Usuarios y Manuales. Esto habilita preparar el reemplazo de código, pero no autoriza aún la puesta en cero ni asegura que se haya medido el rendimiento en todos los dispositivos.
 
 La limpieza de datos de prueba y la definición de stock/saldos de apertura son operaciones distintas: ver `docs/puesta-cero-produccion.md`.

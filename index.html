@@ -1095,7 +1095,7 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
 
     <div id="panel-facturas" class="panel">
       <div class="section-title">Facturación</div>
-      <div class="section-sub">Facturá ventas pendientes y consultá los comprobantes registrados en ARCA</div>
+      <div class="section-sub">Gestioná ventas pendientes y consultá los números de factura cargados en esta app. La app no emite ni verifica comprobantes en ARCA.</div>
 
       <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap" role="tablist" aria-label="Vistas de facturación">
         <button id="fact-tab-pendientes" class="btn btn-primary" role="tab" aria-selected="true" aria-controls="fact-vista-pendientes" onclick="cambiarVistaFacturas('pendientes')">Ventas pendientes</button>
@@ -1115,15 +1115,15 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
 
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px">
         <div class="card" style="text-align:center;padding:18px 12px">
-          <div style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-light);margin-bottom:6px">Facturas emitidas</div>
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-light);margin-bottom:6px">Facturas registradas</div>
           <div id="fact-kpi-total" style="font-size:26px;font-weight:700;color:var(--navy)">—</div>
         </div>
         <div class="card" style="text-align:center;padding:18px 12px">
-          <div style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-light);margin-bottom:6px">Total facturado</div>
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-light);margin-bottom:6px">Monto registrado</div>
           <div id="fact-kpi-monto" style="font-size:26px;font-weight:700;color:var(--teal)">—</div>
         </div>
         <div class="card" style="text-align:center;padding:18px 12px">
-          <div style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-light);margin-bottom:6px">Último mes</div>
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-light);margin-bottom:6px">Este mes</div>
           <div id="fact-kpi-mes" style="font-size:26px;font-weight:700;color:var(--navy)">—</div>
         </div>
       </div>
@@ -2724,11 +2724,11 @@ function renderFacturas(rows){
   document.getElementById('fact-body').innerHTML=rows.length===0
     ?'<tr><td colspan="5" style="text-align:center;color:var(--text-light);padding:24px">No hay facturas registradas</td></tr>'
     :[...rows].reverse().map(f=>`<tr style="border-bottom:1px solid var(--border)">
-      <td style="padding:8px 0;font-weight:600;color:var(--navy)">${f[1]}</td>
+      <td style="padding:8px 0;font-weight:600;color:var(--navy)">${textoSeguro(f[1])}</td>
       <td style="padding:8px 0;color:var(--text-light)">${fechaStr(f[2])}</td>
-      <td style="padding:8px 0"><span style="color:var(--teal);cursor:pointer;font-size:11px;text-decoration:underline" onclick="verDetalleVenta('${f[3]}')">${String(f[3]).replace('VTA-','…').slice(-10)}</span></td>
+      <td style="padding:8px 0"><span style="color:var(--teal);cursor:pointer;font-size:11px;text-decoration:underline" data-id="${textoSeguro(f[3])}" onclick="verDetalleVenta(this.dataset.id)">${textoSeguro(String(f[3]).replace('VTA-','…').slice(-10))}</span></td>
       <td style="text-align:right;padding:8px 0;font-weight:600">${formatPeso(f[4])}</td>
-      <td style="text-align:center;padding:8px 0"><span class="badge badge-ok">Emitida</span></td>
+      <td style="text-align:center;padding:8px 0"><span class="badge badge-ok">Registrada</span></td>
     </tr>`).join('');
 }
 

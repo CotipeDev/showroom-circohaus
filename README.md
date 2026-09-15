@@ -32,7 +32,7 @@ La facturación fiscal se hace en ARCA. La aplicación muestra ventas pendientes
 
 ## Estado antes de producción
 
-- La carga masiva de productos está implementada como CSV UTF-8 exportado desde Excel; falta su prueba de extremo a extremo en la implementación publicada. Consultar `docs/carga-masiva-productos-apps-script.md`.
-- Las seis piezas del backend ya están versionadas; las tres principales tienen propuestas depuradas. Falta ejecutar el guion de `docs/guion-pruebas-copia.md` sobre una copia y actualizar manualmente la implementación web sólo si supera las pruebas.
-- Falta el guion de pruebas de punta a punta y el procedimiento aprobado de puesta en cero de datos.
-- La carga inicial y el volumen de respuestas de Apps Script requieren medición y optimización, sin sacrificar los controles de acceso del vendedor.
+- Las seis piezas del backend están versionadas. En una copia vinculada a un Apps Script separado se aprobaron ventas, cobros, cancelación, facturación registrada, importación, conciliación y usuarios; consultar `docs/guion-pruebas-copia.md`.
+- La interfaz local conectada a esa copia abrió Inicio, Cuentas por cobrar, Facturación, Stock, Usuarios y Manuales sin errores visibles. La URL alternativa sólo funciona en `localhost`; en Netlify se conserva la API habitual.
+- **Todavía no se sustituyó la implementación real de Apps Script ni se limpiaron sus datos de prueba.** Para salir a producción faltan el reemplazo controlado, el respaldo y la definición aprobada de stock/saldos de apertura (`docs/puesta-cero-produccion.md`).
+- La demora de Cuentas por cobrar y el volumen de respuestas de Apps Script siguen como mejora de rendimiento posterior, sin debilitar los controles de acceso.

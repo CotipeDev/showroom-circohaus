@@ -1655,7 +1655,19 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
 </div>
 
 <script>
-const API_URL='https://script.google.com/macros/s/AKfycbzUs7BN54n-1snXDYlxUimolaZw3FQSMe5FS_lOF7X1B3NBAyKCzui6DuRIVo3NhtrgrA/exec';
+const API_PRODUCCION_URL='https://script.google.com/macros/s/AKfycbzUs7BN54n-1snXDYlxUimolaZw3FQSMe5FS_lOF7X1B3NBAyKCzui6DuRIVo3NhtrgrA/exec';
+const API_ES_LOCAL=['localhost','127.0.0.1'].includes(location.hostname);
+const API_URL=(function(){
+  if(!API_ES_LOCAL)return API_PRODUCCION_URL;
+  const candidata=new URLSearchParams(location.search).get('api_url');
+  if(!candidata)return null;
+  try{
+    const url=new URL(candidata);
+    if(url.origin==='https://script.google.com'&&!url.username&&!url.password&&!url.search&&!url.hash&&url.href!==API_PRODUCCION_URL&&/^\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(url.pathname))return url.href;
+  }catch(error){}
+  return null;
+})();
+function exigirApiConfigurada(){if(!API_URL)throw new Error('Falta configurar la API de pruebas en la dirección local.');}
 
 let productosData=[],proveedoresData=[],categoriasData=[],itemsIngreso=[],ingProductoSel=null,stockData=[],prodTablaData=[];
 let cuentasPorCobrarData=[],ventasData=[],detalleVentasData=[],pagosVentaData=[];
@@ -1745,6 +1757,7 @@ function manejarSesionVencida(data){
   if(/sesi[oó]n|token|autentic/i.test(mensaje)){cerrarSesion(false);throw new Error('La sesión venció. Ingresá nuevamente.');}
 }
 async function apiGet(a){
+  exigirApiConfigurada();
   const r=await fetch(`${API_URL}?action=${encodeURIComponent(a)}&token=${encodeURIComponent(tokenSesion())}&_=${Date.now()}`,{cache:'no-store'});
   const texto=await r.text();let data;
   try{data=texto?JSON.parse(texto):null}catch(e){throw new Error(`Respuesta inválida del backend (${r.status}).`)}
@@ -1752,6 +1765,7 @@ async function apiGet(a){
   return data;
 }
 async function apiPost(a,b){
+  exigirApiConfigurada();
   const payload={...(b||{}),token:tokenSesion()};
   const controller=new AbortController();
   const timeout=setTimeout(()=>controller.abort(),40000);
@@ -2745,13 +2759,13 @@ async function cerrarSesion(notificarBackend=true){
 }
 
 // ── LOGIN ──
-const LOGIN_KEY='circohaus_auth';
+const LOGIN_KEY=API_ES_LOCAL?'circohaus_auth_local_'+(API_URL||'sin_api'):'circohaus_auth';
 async function verificarLogin(){
   const usuario=document.getElementById('login-usuario').value.trim(),password=document.getElementById('login-pass').value;
   const error=document.getElementById('login-error'),btn=document.getElementById('login-btn');
   if(!usuario||!password){error.textContent='Completá usuario y contraseña';error.style.display='block';return;}
   btn.disabled=true;btn.textContent='Ingresando...';error.style.display='none';
-  try{const r=await fetch(`${API_URL}?action=login`,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({usuario,password})});const data=await r.json();if(!data?.ok||!data?.token)throw new Error(data?.error||'Usuario o contraseña incorrectos');sessionStorage.setItem(LOGIN_KEY,JSON.stringify(data));mostrarCargaAplicacion(true);document.getElementById('login-screen').style.display='none';await iniciarAplicacion();}
+  try{exigirApiConfigurada();const r=await fetch(`${API_URL}?action=login`,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({usuario,password})});const data=await r.json();if(!data?.ok||!data?.token)throw new Error(data?.error||'Usuario o contraseña incorrectos');sessionStorage.setItem(LOGIN_KEY,JSON.stringify(data));mostrarCargaAplicacion(true);document.getElementById('login-screen').style.display='none';await iniciarAplicacion();}
   catch(e){error.textContent=e.message||'No se pudo iniciar sesión';error.style.display='block';document.getElementById('login-pass').value='';document.getElementById('login-pass').focus();}
   finally{mostrarCargaAplicacion(false);btn.disabled=false;btn.textContent='Ingresar';}
 }

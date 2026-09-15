@@ -14,6 +14,7 @@
 8. Ejecutar `tests/PruebaCobroYMovimientoEnCopia.gs` en el proyecto copiado. Esta prueba **sí escribe** una venta en efectivo y la cancela; verifica pago, cuenta, movimiento, reversión y stock.
 9. Antes de facturación, actualizar `Código.gs` y `VentasV2.gs` del proyecto copiado con los candidatos más recientes. Ejecutar `tests/PruebaFacturacionEnCopia.gs`: registra sólo un número ficticio en la copia; **no emite en ARCA**. Comprueba el reintento sin duplicados y que una venta facturada no pueda cancelarse. Deja una venta activa, una factura ficticia y una unidad menos de stock sólo en la copia.
 10. Ejecutar `tests/PruebaImportacionEnCopia.gs`. Rechaza un lote inválido sin escribir; crea un producto de prueba, omite su código al repetirlo y rechaza a un vendedor. Deja ese producto con stock 2 sólo en la copia.
+11. Ejecutar `tests/PruebaConciliacionEnCopia.gs`. Crea y concilia dos movimientos de prueba: uno con diferencia cero y otro con diferencia `-50`; también comprueba que un movimiento no pueda conciliarse dos veces. Deja ambos movimientos sólo en la copia.
 
 ## Casos y resultados esperados
 

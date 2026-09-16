@@ -242,16 +242,8 @@ function resolverCobroVentaV2_(ss, pago) {
       Number(plan ? plan.Cuotas : 1) || 1
     );
 
-  if (
-    cuotas > 1 &&
-    quienAbsorbe === 'cliente' &&
-    recargoClientePct <= 0
-  ) {
-    throw new Error(
-      'El recargo al cliente de este plan todavía no está configurado.'
-    );
-  }
-
+  // Con recargo 0, el procesador puede financiar al cliente por fuera
+  // de la venta: sólo estimamos el importe ingresado por el comercio.
   const montoCliente =
     Math.round(
       baseAsignada *

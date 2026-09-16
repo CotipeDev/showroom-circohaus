@@ -139,6 +139,9 @@ html,body{height:100%;font-family:'DM Sans',sans-serif;background:var(--pearl);c
 table{width:100%;border-collapse:collapse;font-size:14px}
 th{text-align:left;padding:9px 12px;font-size:11px;font-weight:500;letter-spacing:.07em;text-transform:uppercase;color:var(--text-mid);border-bottom:1.5px solid var(--border)}
 td{padding:11px 12px;border-bottom:1px solid var(--border)}
+.vta-hist-scroll{max-width:100%;overflow-x:auto}
+#vta-hist-table{min-width:1100px}
+#vta-hist-table th:last-child,#vta-hist-table td:last-child{position:sticky;right:0;min-width:76px;text-align:center;background:var(--white);box-shadow:-5px 0 10px rgba(72,84,114,.12)}
 tr:last-child td{border-bottom:none}
 tr:hover td{background:var(--pearl)}
 .badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:500}
@@ -1248,7 +1251,7 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
           </select>
         </div>
         <div id="vta-hist-loading" class="spinner-wrap"><div class="spinner"></div> Cargando...</div>
-        <table id="vta-hist-table" style="display:none"><thead><tr><th>ID</th><th>Fecha</th><th>Canal</th><th>Total venta</th><th>Pagado</th><th>Saldo</th><th>Neto esperado</th><th>Registrada por</th><th>Estado</th><th>Factura</th><th></th></tr></thead><tbody id="vta-hist-body"></tbody></table>
+        <div class="vta-hist-scroll"><table id="vta-hist-table" style="display:none"><thead><tr><th>ID</th><th>Fecha</th><th>Canal</th><th>Total venta</th><th>Pagado</th><th>Saldo</th><th>Neto esperado</th><th>Registrada por</th><th>Estado</th><th>Factura</th><th>Acciones</th></tr></thead><tbody id="vta-hist-body"></tbody></table></div>
       </div>
     </div>
 
@@ -2374,7 +2377,7 @@ function renderHistorialVentas(rows){
         <td>${indiceUsuario>=0&&v[indiceUsuario]?textoSeguro(v[indiceUsuario]):'—'}</td>
         <td><span class="badge ${badgeCls}">${estadoLabel}</span></td>
         <td>${factBadge}</td>
-        <td><button class="btn-warning" onclick="verDetalleVenta('${v[0]}')">👁</button>${!esVendedor()&&estado!=='cancelada'&&!facturada?`<button class="btn-danger" style="margin-left:6px" onclick="cancelarVenta('${v[0]}')">✕</button>`:''}</td>
+        <td><button class="btn-warning" title="Ver detalle" aria-label="Ver detalle de la venta ${v[0]}" onclick="verDetalleVenta('${v[0]}')">👁</button>${!esVendedor()&&estado!=='cancelada'&&!facturada?`<button class="btn-danger" title="Cancelar venta" aria-label="Cancelar venta ${v[0]}" style="margin-left:6px" onclick="cancelarVenta('${v[0]}')">✕</button>`:''}</td>
       </tr>`;
     }).join('');
 }

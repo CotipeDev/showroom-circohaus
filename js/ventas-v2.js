@@ -17,7 +17,7 @@
   const planesParaTarifa = (tarifa,base) => {
     if(!tarifa||!tarifaAdmiteCuotas(tarifa))return [];
     const vistos=new Set();
-    return planesCuotasData.filter(p=>activoCobro(p[13])&&String(p[1])===String(tarifa[2])&&(p[2]==='*'||normalizarCobro(p[2])===normalizarCobro(tarifa[3]))&&base>=n(p[8])&&(!n(p[9])||base<=n(p[9]))&&!(normalizarCobro(p[7])==='cliente'&&n(p[6])<=0)).sort((a,b)=>n(a[4])-n(b[4])).filter(p=>{const cuotas=n(p[4])||1;if(vistos.has(cuotas))return false;vistos.add(cuotas);return true;});
+    return planesCuotasData.filter(p=>activoCobro(p[13])&&String(p[1])===String(tarifa[2])&&(p[2]==='*'||normalizarCobro(p[2])===normalizarCobro(tarifa[3]))&&base>=n(p[8])&&(!n(p[9])||base<=n(p[9]))).sort((a,b)=>n(a[4])-n(b[4])).filter(p=>{const cuotas=n(p[4])||1;if(vistos.has(cuotas))return false;vistos.add(cuotas);return true;});
   };
   const fechaLocal = () => {
     const d = new Date(), pad = value => String(value).padStart(2, '0');
@@ -120,7 +120,7 @@
 
   function tarjetaResumen(label, valor, fuerte, alerta) {
     const contenido=valor===null?'—':formatPeso(valor);
-    if(label==='Total a pagar por el cliente')return `<div style="background:var(--teal);padding:10px 12px;border-radius:8px;box-shadow:0 2px 8px rgba(55,157,171,.22)"><div style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:white;font-weight:600">${label}</div><div style="font-size:24px;line-height:1.2;font-weight:800;color:white;margin-top:2px">${contenido}</div></div>`;
+    if(label==='Total a pagar por el cliente'||label==='Importe de la venta (sin interés del Point)')return `<div style="background:var(--teal);padding:10px 12px;border-radius:8px;box-shadow:0 2px 8px rgba(55,157,171,.22)"><div style="font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:white;font-weight:600">${label}</div><div style="font-size:24px;line-height:1.2;font-weight:800;color:white;margin-top:2px">${contenido}</div></div>`;
     return `<div><div style="font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-light)">${label}</div><div style="font-size:${fuerte?'18':'14'}px;font-weight:${fuerte?'700':'600'};color:${alerta?'var(--error)':fuerte?'var(--teal)':'var(--navy)'}">${contenido}</div></div>`;
   }
 
@@ -240,7 +240,7 @@
         const planes=planesParaTarifa(tarifa,base);
         if(fila.id_plan&&!planes.some(p=>String(p[0])===String(fila.id_plan)))fila.id_plan='';
         const etiqueta=t=>`${cuentaNombre(t[1])} · ${t[3]} · ${t[4]} · ${n(t[5])?`${t[5]} días`:'inmediata'}`;
-        const planLabel=p=>`${n(p[4])||1} cuota${n(p[4])===1?'':'s'}${String(p[7]).toLowerCase()==='negocio'?' sin interés':''}${!esVendedor()&&n(p[5])?` · costo ${p[5]}%`:''}`;
+        const planLabel=p=>`${n(p[4])||1} cuota${n(p[4])===1?'':'s'}${String(p[7]).toLowerCase()==='negocio'?' sin interés':normalizarCobro(p[7])==='cliente'&&n(p[6])===0?' · interés calculado por Point':''}${!esVendedor()&&n(p[5])?` · costo ${p[5]}%`:''}`;
         return `<div style="display:grid;grid-template-columns:1.35fr .8fr .8fr 1.15fr auto;gap:10px;align-items:end;margin-bottom:12px;padding:10px;background:var(--off-white);border-radius:8px">
           <div class="field" style="margin:0"><label>Forma de cobro</label><select onchange="cambiarTarifaPago(${i},this.value)"><option value="">Seleccioná...</option>${tarifas.map(t=>`<option value="${t[0]}" ${String(t[0])===String(fila.id_tarifa)?'selected':''}>${etiqueta(t)}</option>`).join('')}</select></div>
           <div class="field" style="margin:0"><label>Plan</label><select onchange="cambiarPlanPago(${i},this.value)" ${!tarifa?'disabled':''}><option value="">1 cuota</option>${planes.filter(p=>n(p[4])>1).map(p=>`<option value="${p[0]}" ${String(p[0])===String(fila.id_plan)?'selected':''}>${planLabel(p)}</option>`).join('')}</select></div>
@@ -269,9 +269,10 @@
       estadoDistribucion.style.color=exacta?'var(--success)':'#9a6515';
       estadoDistribucion.textContent=exacta?`✓ Total distribuido: ${formatPeso(c.totalBase)}`:`Falta asignar ${formatPeso(diferencia)} del total de ${formatPeso(c.baseComercial)}.`;
     }
+    const interesDelPoint=c.pagos.some(p=>normalizarCobro(p.plan?.[7])==='cliente'&&n(p.plan?.[6])===0);
     document.getElementById('vta-resumen').innerHTML = [
       ['Precio Lista',c.precioLista],['Descuento General',c.descuentoGeneral],['Subtotal después del descuento',c.baseComercial],
-      ['Total a pagar por el cliente',c.totalFinal,true],
+      [interesDelPoint?'Importe de la venta (sin interés del Point)':'Total a pagar por el cliente',c.totalFinal,true],
       ...(!esVendedor()?[['Costo Cobranza',cobroListo?c.costoCobranza:null],['Neto Esperado',cobroListo?c.netoEsperado:null,true],['Costo Mercadería',c.costoMercaderia],['Margen antes de cobranza',c.margenComercial,false,c.margenComercial<0],['Margen final estimado',cobroListo?c.margenEstimado:null,true,cobroListo&&c.margenEstimado<0]]:[]),
       ...(c.esCuenta?[['Saldo pendiente',c.saldoPendiente]]:[])
     ].map(x=>tarjetaResumen(...x)).join('');
@@ -291,7 +292,8 @@
       const fila=vtaPagosFila[i], recibido=n(fila?.entregado), diferencia=recibido-p.montoCliente;
       const pagoEfectivo=esEfectivoTarifa(p.tarifa);
       const efectivoInfo=pagoEfectivo?(recibido<=0?'':diferencia>=0?` · Vuelto ${formatPeso(diferencia)}`:` · Falta recibir ${formatPeso(Math.abs(diferencia))}`):'';
-      el.textContent=esVendedor()?`Cliente paga ${formatPeso(p.montoCliente)}${efectivoInfo}`:`Cliente paga ${formatPeso(p.montoCliente)} · Comisión ${formatPeso(p.comision)} · Costo financiero ${formatPeso(p.costoFinanciero)} · Neto ${formatPeso(p.neto)}${efectivoInfo}`;
+      const interesExterno=normalizarCobro(p.plan?.[7])==='cliente'&&n(p.plan?.[6])===0;
+      el.textContent=interesExterno?(esVendedor()?`Ingresá ${formatPeso(p.montoCliente)} en Point · el interés del cliente lo calcula Point`:`Ingresá ${formatPeso(p.montoCliente)} en Point · el interés del cliente lo calcula Point · Comisión estimada ${formatPeso(p.comision)} · Neto esperado ${formatPeso(p.neto)}`):esVendedor()?`Cliente paga ${formatPeso(p.montoCliente)}${efectivoInfo}`:`Cliente paga ${formatPeso(p.montoCliente)} · Comisión ${formatPeso(p.comision)} · Costo financiero ${formatPeso(p.costoFinanciero)} · Neto ${formatPeso(p.neto)}${efectivoInfo}`;
     });
     return c;
   };

@@ -168,9 +168,6 @@ function registrarVentaV2_(ss, b) {
     const shProductos =
       hojaV2_(ss, 'Productos');
 
-    const shMedios =
-      hojaV2_(ss, 'Medios_Pago');
-
     const shMovimientos =
       hojaV2_(ss, 'Movimientos');
 
@@ -485,29 +482,6 @@ function registrarVentaV2_(ss, b) {
     // 6. MEDIOS DE PAGO
     // ----------------------------------------------------------
 
-    const mediosData =
-      shMedios
-        .getDataRange()
-        .getValues();
-
-    const mediosMap = {};
-
-    for (
-      let i = 1;
-      i < mediosData.length;
-      i++
-    ) {
-      const id =
-        String(
-          mediosData[i][0] || ''
-        ).trim();
-
-      if (id) {
-        mediosMap[id] =
-          mediosData[i];
-      }
-    }
-
     const pagosEntrada =
       Array.isArray(b.pagos)
         ? b.pagos
@@ -516,7 +490,6 @@ function registrarVentaV2_(ss, b) {
     const pagosCalculados = [];
 
     let totalBaseAsignada = 0;
-    let descuentoMedios = 0;
     let montoPagado = 0;
     let costoCobranza = 0;
     let netoPagos = 0;
@@ -525,11 +498,6 @@ function registrarVentaV2_(ss, b) {
 
     pagosEntrada.forEach(
       function(pago) {
-        const idMedio =
-          String(
-            pago.id_medio || ''
-          ).trim();
-
         const idTarifa =
           String(
             pago.id_tarifa || ''
@@ -542,16 +510,18 @@ function registrarVentaV2_(ss, b) {
             ) || 0
           );
 
-        // Filas vacías se ignoran.
-        if (
-          !idMedio &&
-          !idTarifa &&
-          baseAsignada === 0
-        ) {
-        return;
+        if (String(pago.id_medio || '').trim()) {
+          throw new Error(
+            'El medio de pago anterior ya no está disponible. Seleccioná una tarifa de cobro.'
+          );
         }
 
-        if (!idMedio && !idTarifa) {
+        // Filas vacías se ignoran.
+        if (!idTarifa && baseAsignada === 0) {
+          return;
+        }
+
+        if (!idTarifa) {
           throw new Error(
             'Hay un pago sin forma de cobro.'
           );
@@ -563,7 +533,6 @@ function registrarVentaV2_(ss, b) {
           );
         }
 
-if (idTarifa) {
   const cobro =
     resolverCobroVentaV2_(
       ss,
@@ -692,172 +661,6 @@ if (idTarifa) {
       cobro.costo_cobranza_total
   });
 
-  return;
-}
-
-
-        const medio =
-          mediosMap[idMedio];
-
-        if (!medio) {
-          throw new Error(
-            'No existe el medio de pago ' +
-            idMedio
-          );
-        }
-
-        if (
-          !verdaderoV2_(
-            medio[7]
-          )
-        ) {
-          throw new Error(
-            'El medio de pago está inactivo: ' +
-            String(
-              medio[2] ||
-              idMedio
-            )
-          );
-        }
-
-        // Medios_Pago:
-        // 1 ID_Cuenta
-        // 3 Descuento_Cliente_Pct
-        // 4 Comision_Pct
-        // 5 Costo_Financiero_Pct
-        // 6 Dias_Acreditacion
-
-        const idCuenta =
-          String(
-            medio[1] || ''
-          );
-
-        const descuentoPct = 0;
-
-        const comisionPct =
-          Math.max(
-            0,
-            Number(
-              medio[4]
-            ) || 0
-          );
-
-        const cfPct =
-          Math.max(
-            0,
-            Number(
-              medio[5]
-            ) || 0
-          );
-
-        const diasAcreditacion =
-          Math.max(
-            0,
-            Number(
-              medio[6]
-            ) || 0
-          );
-
-        // Descuento del medio al cliente.
-        // Se aplica a CUALQUIER medio configurado,
-        // no solamente efectivo.
-
-        const descuentoImporte =
-          Math.round(
-            baseAsignada *
-            descuentoPct /
-            100
-          );
-
-        const montoCobrado =
-          baseAsignada -
-          descuentoImporte;
-
-        // Comisión y costo financiero:
-        // calculados sobre lo que
-        // efectivamente paga el cliente.
-
-        const comisionImporte =
-          Math.round(
-            montoCobrado *
-            comisionPct /
-            100
-          );
-
-        const cfImporte =
-          Math.round(
-            montoCobrado *
-            cfPct /
-            100
-          );
-
-        const netoEsperado =
-          montoCobrado -
-          comisionImporte -
-          cfImporte;
-
-        const fechaAcreditacion =
-          fechaMasDiasV2_(
-            fecha,
-            diasAcreditacion
-          );
-
-        totalBaseAsignada +=
-          baseAsignada;
-
-        descuentoMedios +=
-          descuentoImporte;
-
-        montoPagado +=
-          montoCobrado;
-
-        costoCobranza +=
-          comisionImporte +
-          cfImporte;
-
-        netoPagos +=
-          netoEsperado;
-
-        pagosCalculados.push({
-          idMedio:
-            idMedio,
-
-          idCuenta:
-            idCuenta,
-
-          baseAsignada:
-            baseAsignada,
-
-          descuentoPct:
-            descuentoPct,
-
-          descuentoImporte:
-            descuentoImporte,
-
-          montoCobrado:
-            montoCobrado,
-
-          comisionPct:
-            comisionPct,
-
-          comisionImporte:
-            comisionImporte,
-
-          cfPct:
-            cfPct,
-
-          cfImporte:
-            cfImporte,
-
-          netoEsperado:
-            netoEsperado,
-
-          diasAcreditacion:
-            diasAcreditacion,
-
-          fechaAcreditacion:
-            fechaAcreditacion
-        });
       }
     );
 
@@ -894,8 +697,7 @@ if (idTarifa) {
     // ----------------------------------------------------------
 
     const totalFinal =
-      baseComercial -
-      descuentoMedios +
+      baseComercial +
       recargoClienteTotal;
 
     const saldoPendiente =
@@ -1064,7 +866,7 @@ if (
           baseComercial,
 
         Descuento_Medios:
-          descuentoMedios,
+          0,
 
         Total_Final:
           totalFinal,
@@ -1423,7 +1225,7 @@ if (
         baseComercial,
 
       descuento_medios:
-        descuentoMedios,
+        0,
 
       total_final:
         totalFinal,

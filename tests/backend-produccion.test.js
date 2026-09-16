@@ -39,6 +39,10 @@ for (const funcion of ['registrarVentaV2_', 'cancelarVentaV2_', 'crearTarifaCobr
   assert.ok(ventasV2.includes(`function ${funcion}(`), `Falta ${funcion}`);
 }
 assert.ok(!/^function (TEST_|PREPARAR_)/m.test(ventasV2));
+assert.ok(!ventasV2.includes("'Medios_Pago'"), 'Registrar ventas no debe exigir la hoja MPG');
+assert.ok(!ventasV2.includes('mediosMap'), 'Quedó activa la configuración MPG anterior');
+assert.ok(!ventasV2.includes('descuentoMedios'), 'Quedó un descuento calculado con MPG');
+assert.ok(ventasV2.includes('pago.id_medio'), 'La API debe rechazar pagos del esquema anterior');
 
 const cobrosV2 = fs.readFileSync(
   path.join(__dirname, '../apps-script/CobrosVentaV2-produccion.gs'),
@@ -57,6 +61,11 @@ const auxiliares = ['UsuariosAPI.gs', 'FacturacionAPI.gs', 'ImportarProductosAPI
 for (const auxiliar of auxiliares) {
   assert.doesNotThrow(() => new Function(auxiliar));
 }
+
+assert.ok(
+  ![codigo, ventasV2, cobrosV2, ...auxiliares].some((texto) => texto.includes('Historial_Medios_Pago')),
+  'El backend candidato no debe depender del historial MPG'
+);
 
 const funciones = [codigo, ventasV2, cobrosV2, ...auxiliares].flatMap((texto) =>
   [...texto.matchAll(/^function ([\w]+)\(/gm)].map((coincidencia) => coincidencia[1])

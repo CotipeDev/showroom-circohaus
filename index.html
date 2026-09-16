@@ -1659,9 +1659,11 @@ hr{border:none;border-top:1px solid var(--border);margin:16px 0}
 
 <script>
 const API_PRODUCCION_URL='https://script.google.com/macros/s/AKfycbzUs7BN54n-1snXDYlxUimolaZw3FQSMe5FS_lOF7X1B3NBAyKCzui6DuRIVo3NhtrgrA/exec';
+const API_PRUEBAS_URL='https://script.google.com/macros/s/AKfycbyO3hwM4xPLdzLgqdUkhcwOhVH9wX8X0sZIItMHZPnUi7AcHgBqc92mip5tATBK0blw/exec';
 const API_ES_LOCAL=['localhost','127.0.0.1'].includes(location.hostname);
+const API_ES_FUTURE=location.hostname==='feature-ventas-v2--showroomcircohaus.netlify.app';
 const API_URL=(function(){
-  if(!API_ES_LOCAL)return API_PRODUCCION_URL;
+  if(!API_ES_LOCAL)return API_ES_FUTURE?API_PRUEBAS_URL:API_PRODUCCION_URL;
   const candidata=new URLSearchParams(location.search).get('api_url');
   if(!candidata)return null;
   try{

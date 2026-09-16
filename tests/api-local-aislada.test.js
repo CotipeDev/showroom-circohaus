@@ -9,7 +9,7 @@ const end = html.indexOf('let productosData=', start);
 assert.ok(start > 0 && end > start);
 const source = html.slice(start, end);
 const production = 'https://script.google.com/macros/s/AKfycbzUs7BN54n-1snXDYlxUimolaZw3FQSMe5FS_lOF7X1B3NBAyKCzui6DuRIVo3NhtrgrA/exec';
-const test = 'https://script.google.com/macros/s/AKfycbTEST123/exec';
+const test = 'https://script.google.com/macros/s/AKfycbyO3hwM4xPLdzLgqdUkhcwOhVH9wX8X0sZIItMHZPnUi7AcHgBqc92mip5tATBK0blw/exec';
 
 function selected(hostname, search) {
   const context = {URL, URLSearchParams, location: {hostname, search}};
@@ -18,6 +18,9 @@ function selected(hostname, search) {
 }
 
 assert.equal(selected('circohaus.netlify.app', '?api_url=' + encodeURIComponent(test)).API_URL, production);
+assert.equal(selected('showroomcircohaus.netlify.app', '').API_URL, production);
+assert.equal(selected('feature-ventas-v2--showroomcircohaus.netlify.app', '').API_URL, test);
+assert.equal(selected('feature-ventas-v2--showroomcircohaus.netlify.app', '?api_url=' + encodeURIComponent(production)).API_URL, test);
 assert.equal(selected('127.0.0.1', '?api_url=' + encodeURIComponent(test)).API_URL, test);
 assert.equal(selected('localhost', '').API_URL, null);
 assert.equal(selected('localhost', '?api_url=' + encodeURIComponent('https://evil.example/exec')).API_URL, null);

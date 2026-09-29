@@ -77,3 +77,5 @@ Las ventas, los ingresos, el stock y los demás datos existentes se conservaron 
 ## Alcance actual
 
 Esta instalación está configurada para Circo Haus. Cambiar logo y colores o utilizarla para otros comercios es una evolución prevista, pero todavía no hay aislamiento automático de múltiples comercios ni una plataforma SaaS lista para activar nuevos clientes. La carga de Cuentas por cobrar y el tamaño de algunas respuestas de Apps Script siguen como mejoras de rendimiento posteriores.
+
+El seguimiento ordenado de las próximas mejoras está en [`docs/pendientes.md`](docs/pendientes.md).

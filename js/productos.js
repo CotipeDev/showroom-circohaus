@@ -61,11 +61,11 @@ function renderTablaProductos(rows){
   tabla.classList.toggle('vista-vendedor',vendedor);
   tabla.style.minWidth=vendedor?'760px':'1200px';
   const encabezado=document.querySelector('#prod-table thead tr');
-  if(encabezado)encabezado.innerHTML=vendedor?'<th>Código</th><th>Descripción</th><th>Categoría</th><th>Estado</th><th>P. Venta</th><th>Stock</th>':'<th>Código</th><th>Descripción</th><th>Proveedor</th><th>Categoría</th><th>Estado</th><th>P. Costo</th><th>Recargo</th><th>Margen bruto</th><th>P. Venta</th><th>Stock</th><th></th>';
-  document.getElementById('prod-body').innerHTML=rows.length===0?`<tr><td colspan="${vendedor?6:11}" style="text-align:center;color:var(--text-mid);padding:20px">No hay productos</td></tr>`:rows.map(p=>{
+  if(encabezado)encabezado.innerHTML=vendedor?'<th>Código</th><th>Descripción</th><th>Categoría</th><th>Estado</th><th>P. Venta</th><th>Stock</th>':'<th>Código</th><th>Descripción</th><th>Proveedor</th><th>Categoría</th><th>Estado</th><th>P. Costo</th><th>Recargo</th><th>Margen bruto</th><th>P. Venta</th><th>Stock</th><th>Catálogo</th><th></th>';
+  document.getElementById('prod-body').innerHTML=rows.length===0?`<tr><td colspan="${vendedor?6:12}" style="text-align:center;color:var(--text-mid);padding:20px">No hay productos</td></tr>`:rows.map(p=>{
     if(vendedor)return`<tr><td><code style="color:var(--teal);font-size:12px">${textoSeguro(p[0])}</code></td><td>${textoSeguro(p[1])}</td><td>${textoSeguro(p[7]||'—')}</td><td>${badgeEstadoComercial(p)}</td><td>${formatPeso(p[3])}</td><td>${Number(p[5])||0}</td></tr>`;
     const margen=getMargen(p),margenBruto=calcMargenBruto(Number(p[4]),Number(p[3]));
-    return`<tr><td><code style="color:var(--teal);font-size:12px">${textoSeguro(p[0])}</code></td><td>${textoSeguro(p[1])}</td><td>${textoSeguro(nombreProveedor(p[2])||'Sin proveedor')}</td><td>${textoSeguro(p[7]||'—')}</td><td>${badgeEstadoComercial(p)}</td><td>${formatPeso(p[4])}</td><td><span class="badge badge-margen">${margen}%</span></td><td>${margenBruto}%</td><td>${formatPeso(p[3])}</td><td>${Number(p[5])||0}</td><td style="display:flex;gap:6px"><button class="btn-warning" data-codigo="${textoSeguro(p[0])}" onclick="abrirEditar(this.dataset.codigo)">✏️</button><button class="btn-danger" data-codigo="${textoSeguro(p[0])}" onclick="eliminarProducto(this.dataset.codigo,this)">🗑️</button></td></tr>`;
+    return`<tr><td><code style="color:var(--teal);font-size:12px">${textoSeguro(p[0])}</code></td><td>${textoSeguro(p[1])}</td><td>${textoSeguro(nombreProveedor(p[2])||'Sin proveedor')}</td><td>${textoSeguro(p[7]||'—')}</td><td>${badgeEstadoComercial(p)}</td><td>${formatPeso(p[4])}</td><td><span class="badge badge-margen">${margen}%</span></td><td>${margenBruto}%</td><td>${formatPeso(p[3])}</td><td>${Number(p[5])||0}</td><td>${badgeCatalogoProducto(p)}</td><td style="display:flex;gap:6px"><button class="btn-warning" data-codigo="${textoSeguro(p[0])}" onclick="abrirEditar(this.dataset.codigo)">✏️</button><button class="btn-danger" data-codigo="${textoSeguro(p[0])}" onclick="eliminarProducto(this.dataset.codigo,this)">🗑️</button></td></tr>`;
   }).join('');
 }
 function filtrarTablaProductos(){
@@ -81,15 +81,16 @@ function filtrarTablaProductos(){
 function actualizarMargenBrutoCampo(costoId,ventaId,salidaId){const c=Number(document.getElementById(costoId).value),v=Number(document.getElementById(ventaId).value);document.getElementById(salidaId).value=(c>0&&v>0)?calcMargenBruto(c,v):''}
 function calcularPrecioVenta(){const c=Number(document.getElementById('prod-pcosto').value),mv=document.getElementById('prod-margen').value,m=Number(mv);document.getElementById('prod-pventa').value=(c>0&&mv!==''&&m>=0)?Math.round(c*(1+m/100)):'';actualizarMargenBrutoCampo('prod-pcosto','prod-pventa','prod-margen-bruto')}
 function calcularMargenProducto(){const c=Number(document.getElementById('prod-pcosto').value),v=Number(document.getElementById('prod-pventa').value);document.getElementById('prod-margen').value=(c>0&&v>0)?Math.round(((v/c)-1)*1000)/10:'';actualizarMargenBrutoCampo('prod-pcosto','prod-pventa','prod-margen-bruto')}
-function abrirNuevoProducto(){document.getElementById('modal-nuevo-producto').classList.add('open');setTimeout(()=>document.getElementById('prod-codigo')?.focus(),50)}
+function abrirNuevoProducto(){actualizarVistaCatalogoProducto('prod');document.getElementById('modal-nuevo-producto').classList.add('open');setTimeout(()=>document.getElementById('prod-codigo')?.focus(),50)}
 
 async function agregarProducto(){
   const codigo=document.getElementById('prod-codigo').value.trim(),descripcion=document.getElementById('prod-desc').value.trim(),proveedor=document.getElementById('prod-proveedor').value,categoria=document.getElementById('prod-categoria').value,estado_comercial=document.getElementById('prod-estado-comercial').value,precio_costo=Number(document.getElementById('prod-pcosto').value),margen_pct=Number(document.getElementById('prod-margen').value)||0,precio_venta=Number(document.getElementById('prod-pventa').value),stock=Number(document.getElementById('prod-stock').value)||0,stock_minimo=Number(document.getElementById('prod-stock-min').value)||0;
+  let catalogo;try{catalogo=leerFormularioCatalogoProducto('prod')}catch(e){showToast(e.message,'error');return}
   if(!codigo||!descripcion){showToast('Completá código y descripción','error');return}
   if(!precio_costo){showToast('Ingresá el precio de costo','error');return}
   if(!precio_venta){showToast('Ingresá el recargo o el precio de venta','error');return}
   try{const data=await cacheGet('getProductos');if(data.slice(1).some(p=>p[0].toString().trim().toLowerCase()===codigo.toLowerCase())){showToast(`El código ${codigo} ya existe`,'error');return}}catch(e){showToast('No se pudo verificar el código','error');return}
-  try{await apiPost('agregarProducto',{codigo,descripcion,proveedor,precio_venta,precio_costo,margen_pct,stock,stock_minimo,categoria,estado_comercial});cache.invalidar('getHistorialCostos');await refrescarProductosUI();showToast('Producto guardado');cerrarModal('modal-nuevo-producto');['prod-codigo','prod-desc','prod-pcosto','prod-margen','prod-pventa','prod-margen-bruto','prod-stock','prod-stock-min'].forEach(id=>document.getElementById(id).value='');document.getElementById('prod-proveedor').value='';document.getElementById('prod-categoria').value='';document.getElementById('prod-estado-comercial').value='activo'}catch(e){showToast(e?.message||'Error al guardar el producto','error')}
+  try{await comprobarApiCatalogoProductos();await apiPost('agregarProducto',{codigo,descripcion,proveedor,precio_venta,precio_costo,margen_pct,stock,stock_minimo,categoria,estado_comercial,...catalogo});cache.invalidar('getHistorialCostos');await refrescarProductosUI();showToast('Producto guardado');cerrarModal('modal-nuevo-producto');['prod-codigo','prod-desc','prod-pcosto','prod-margen','prod-pventa','prod-margen-bruto','prod-stock','prod-stock-min'].forEach(id=>document.getElementById(id).value='');document.getElementById('prod-proveedor').value='';document.getElementById('prod-categoria').value='';document.getElementById('prod-estado-comercial').value='activo';limpiarFormularioCatalogoProducto('prod')}catch(e){showToast(e?.message||'Error al guardar el producto','error')}
 }
 async function eliminarProducto(codigo,btn){
   if(!confirm(`¿Seguro que querés eliminar ${codigo}?`))return;
@@ -108,6 +109,7 @@ function abrirEditar(codigo){
   document.getElementById('edit-pventa').value=pvCalculado;
   document.getElementById('edit-stock-min').value=p[6]||'';document.getElementById('edit-categoria').value=p[7]||'';
   document.getElementById('edit-estado-comercial').value=estadoComercialProducto(p);
+  document.getElementById('edit-foto').value=p[10]||'';document.getElementById('edit-descripcion-publica').value=p[11]||'';document.getElementById('edit-visible').value=String(productoVisibleCatalogo(p));actualizarVistaCatalogoProducto('edit');
   document.getElementById('edit-margen').value=margenGuardado||'';
   document.getElementById('edit-margen-bruto').value=calcMargenBruto(Number(p[4]),Number(p[3]));
   document.getElementById('modal-editar').classList.add('open');
@@ -116,9 +118,10 @@ function calcularPrecioVentaEdit(){const c=Number(document.getElementById('edit-
 function calcularMargenProductoEdit(){const c=Number(document.getElementById('edit-pcosto').value),v=Number(document.getElementById('edit-pventa').value);document.getElementById('edit-margen').value=(c>0&&v>0)?Math.round(((v/c)-1)*1000)/10:'';actualizarMargenBrutoCampo('edit-pcosto','edit-pventa','edit-margen-bruto')}
 async function guardarEdicion(){
   const codigo=document.getElementById('edit-codigo').value.trim(),descripcion=document.getElementById('edit-desc').value.trim(),proveedor=document.getElementById('edit-proveedor').value,categoria=document.getElementById('edit-categoria').value,estado_comercial=document.getElementById('edit-estado-comercial').value,precio_costo=Number(document.getElementById('edit-pcosto').value),margen_pct=Number(document.getElementById('edit-margen').value)||0,precio_venta=Number(document.getElementById('edit-pventa').value),stock_minimo=Number(document.getElementById('edit-stock-min').value)||0;
+  let catalogo;try{catalogo=leerFormularioCatalogoProducto('edit')}catch(e){showToast(e.message,'error');return}
   if(!descripcion){showToast('Completá la descripción','error');return}
   if(!precio_costo||!precio_venta){showToast('Completá costo y precio de venta','error');return}
-  try{await apiPost('editarProducto',{codigo,descripcion,proveedor,precio_venta,precio_costo,margen_pct,stock_minimo,categoria,estado_comercial});cache.invalidar('getHistorialCostos');await refrescarProductosUI();showToast('Producto actualizado');cerrarModal('modal-editar')}catch(e){showToast(e?.message||'Error al actualizar el producto','error')}
+  try{await comprobarApiCatalogoProductos();await apiPost('editarProducto',{codigo,descripcion,proveedor,precio_venta,precio_costo,margen_pct,stock_minimo,categoria,estado_comercial,...catalogo});cache.invalidar('getHistorialCostos');await refrescarProductosUI();showToast('Producto actualizado');cerrarModal('modal-editar')}catch(e){showToast(e?.message||'Error al actualizar el producto','error')}
 }
 async function verHistorialProducto(codigo){
   const producto=productosData.find(p=>String(p[0])===String(codigo))||prodTablaData.find(p=>String(p[0])===String(codigo));
@@ -177,4 +180,38 @@ async function verHistorialProducto(codigo){
         ${movimientos.length?movimientos.map(m=>`<tr><td>${m.fecha||'—'}</td><td><strong style="color:${m.tipo==='Ingreso'?'var(--teal)':'var(--navy)'}">${m.tipo}</strong><div style="font-size:10px;color:var(--text-light)">${m.referencia}</div></td><td>${m.detalle}</td><td>${m.tipo==='Ingreso'?'+':'−'}${m.cantidad}</td><td>${formatPeso(m.importe)}</td><td><span class="badge ${m.estado==='Cancelada'?'badge-zero':'badge-ok'}">${m.estado}</span></td></tr>`).join(''):'<tr><td colspan="6" style="text-align:center;color:var(--text-light);padding:24px">Todavía no hay ingresos ni ventas registrados para este producto.</td></tr>'}
       </tbody></table>`;
   }catch(e){document.getElementById('hist-prod-body').innerHTML=`<div style="color:var(--error);padding:20px;text-align:center">${e?.message||'No se pudo cargar el historial'}</div>`;}
+}
+
+
+// Las diez primeras columnas se conservan para Stock, Ventas e importación.
+function productoVisibleCatalogo(p){return p?.[12]===true||String(p?.[12]||'').toLowerCase()==='true'}
+function productoDisponibleCatalogo(p){return productoVisibleCatalogo(p)&&Number(p?.[5])>0}
+function badgeCatalogoProducto(p){return !productoVisibleCatalogo(p)?'<span class="badge badge-zero">Oculto</span>':Number(p[5])>0?'<span class="badge badge-ok">Habilitado</span>':'<span class="badge badge-low">Sin stock</span>'}
+function validarFotoCatalogoProducto(valor){
+  const foto=String(valor||'').trim();
+  if(!foto)return '';
+  let url;try{url=new URL(foto)}catch(e){throw new Error('La foto debe tener un enlace HTTPS válido.')}
+  if(foto.length>2000||url.protocol!=='https:'||!url.hostname||url.username||url.password||/[\s<>"'\\]/.test(foto))throw new Error('La foto debe tener un enlace HTTPS válido.');
+  return foto;
+}
+function leerFormularioCatalogoProducto(prefijo){
+  const foto_principal=validarFotoCatalogoProducto(document.getElementById(prefijo+'-foto').value);
+  const descripcion_publica=document.getElementById(prefijo+'-descripcion-publica').value.trim();
+  if(descripcion_publica.length>500||/^[=+@]/.test(descripcion_publica))throw new Error('Revisá la descripción del catálogo (máximo 500 caracteres).');
+  return {foto_principal,descripcion_publica,visible_catalogo:document.getElementById(prefijo+'-visible').value==='true'};
+}
+function actualizarVistaCatalogoProducto(prefijo){
+  const imagen=document.getElementById(prefijo+'-foto-preview'),estado=document.getElementById(prefijo+'-foto-estado');
+  imagen.onload=null;imagen.onerror=null;imagen.removeAttribute('src');imagen.style.display='none';estado.textContent='';
+  let foto;try{foto=validarFotoCatalogoProducto(document.getElementById(prefijo+'-foto').value)}catch(e){estado.textContent=e.message;return}
+  if(!foto)return;
+  imagen.onload=()=>{imagen.style.display='block';estado.textContent=''};
+  imagen.onerror=()=>{imagen.style.display='none';estado.textContent='No se pudo mostrar la foto. Revisá que el enlace sea público y apunte a una imagen.'};
+  imagen.src=foto;
+}
+function limpiarFormularioCatalogoProducto(prefijo){document.getElementById(prefijo+'-foto').value='';document.getElementById(prefijo+'-descripcion-publica').value='';document.getElementById(prefijo+'-visible').value='false';actualizarVistaCatalogoProducto(prefijo)}
+
+async function comprobarApiCatalogoProductos(){
+  const respuesta=await apiGet('getConfiguracionCatalogoProductos');
+  if(respuesta?.version!==1)throw new Error('La configuración del catálogo todavía no está disponible. Actualizá el entorno de pruebas antes de guardar.');
 }

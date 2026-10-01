@@ -87,6 +87,8 @@ function handleRequest(e) {
   }
 }
  
+    if (action === 'getConfiguracionCatalogoProductos') { return jsonResponse({version: 1}); }
+
     if (action === 'getProductos') { return jsonResponse(ss.getSheetByName('Productos').getDataRange().getValues()); }
     if (action === 'getProveedores') { return jsonResponse(ss.getSheetByName('Proveedores').getDataRange().getValues()); }
     if (action === 'getIngresos') { return jsonResponse(ss.getSheetByName('Ingresos').getDataRange().getValues()); }
@@ -402,6 +404,9 @@ if (action === 'agregarProducto') {
       'Historial_Costos'
     );
 
+  const catalogo = validarDatosCatalogoProducto_(b);
+  prepararColumnasCatalogoProductos_(sheetProductos);
+
   const recargo =
     Number(b.margen_pct) || 0;
 
@@ -462,7 +467,10 @@ sheetProductos.appendRow([
     'activo'
   )
     .trim()
-    .toLowerCase()
+    .toLowerCase(),
+  catalogo.foto_principal || '',
+  catalogo.descripcion_publica || '',
+  catalogo.visible_catalogo === true
 ]);
 
   sheetHist.appendRow([
@@ -487,6 +495,7 @@ sheetProductos.appendRow([
  
 if (action === 'editarProducto') {
   const b = JSON.parse(e.postData.contents);
+  const catalogo = validarDatosCatalogoProducto_(b);
   const sheet = ss.getSheetByName('Productos');
   const sheetHist = ss.getSheetByName('Historial_Costos');
   const datos = sheet.getDataRange().getValues();
@@ -496,6 +505,7 @@ if (action === 'editarProducto') {
       String(datos[i][0]).trim() ===
       String(b.codigo).trim()
     ) {
+      if (Object.keys(catalogo).length) prepararColumnasCatalogoProductos_(sheet);
       const costoAnterior =
         Number(datos[i][4]) || 0;
 
@@ -649,6 +659,10 @@ if (action === 'editarProducto') {
             ? estadoComercial
             : 'activo'
       ); 
+
+      ['foto_principal','descripcion_publica','visible_catalogo'].forEach(function(campo, indice) {
+        if (Object.prototype.hasOwnProperty.call(catalogo, campo)) sheet.getRange(i + 1, 11 + indice).setValue(catalogo[campo]);
+      });
 
       break;
     }
@@ -2515,4 +2529,35 @@ function actualizarConfiguracionCobroV2_(ss, config) {
   } finally {
     lock.releaseLock();
   }
+}
+
+
+// Campos del catálogo anexados sin desplazar las columnas operativas.
+function validarDatosCatalogoProducto_(entrada) {
+  const datos = {};
+  if (Object.prototype.hasOwnProperty.call(entrada, 'foto_principal')) {
+    const foto = String(entrada.foto_principal || '').trim();
+    if (foto && (foto.length > 2000 || !/^https:\/\/[a-z0-9.-]+(?::[0-9]+)?(?:[/?#]|$)/i.test(foto) || /[\s<>"'\\]/.test(foto))) throw new Error('La foto debe tener un enlace HTTPS válido.');
+    datos.foto_principal = foto;
+  }
+  if (Object.prototype.hasOwnProperty.call(entrada, 'descripcion_publica')) {
+    const descripcion = String(entrada.descripcion_publica || '').trim();
+    if (descripcion.length > 500 || /^[=+@]/.test(descripcion)) throw new Error('Revisá la descripción del catálogo (máximo 500 caracteres).');
+    datos.descripcion_publica = descripcion;
+  }
+  if (Object.prototype.hasOwnProperty.call(entrada, 'visible_catalogo')) {
+    if (typeof entrada.visible_catalogo !== 'boolean') throw new Error('La visibilidad del catálogo debe ser Sí o No.');
+    datos.visible_catalogo = entrada.visible_catalogo;
+  }
+  return datos;
+}
+function prepararColumnasCatalogoProductos_(hoja) {
+  const esperados = ['Foto_Principal', 'Descripcion_Publica', 'Visible_Catalogo'];
+  const encabezados = hoja.getDataRange().getValues()[0] || [];
+  esperados.forEach(function(nombre, indice) {
+    const actual = String(encabezados[10 + indice] || '').trim();
+    if (actual && actual !== nombre) throw new Error('La columna ' + (11 + indice) + ' de Productos ya está ocupada por ' + actual + '. Revisá el esquema antes de guardar.');
+    if (encabezados.some(function(valor, posicion) { return posicion !== 10 + indice && String(valor).trim() === nombre; })) throw new Error('La columna ' + nombre + ' está en una posición inesperada.');
+  });
+  if (esperados.some(function(nombre, indice) { return encabezados[10 + indice] !== nombre; })) hoja.getRange(1, 11, 1, 3).setValues([esperados]);
 }

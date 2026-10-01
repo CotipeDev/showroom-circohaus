@@ -27,6 +27,8 @@ Contrastar la configuración de Mercado Pago con reportes reales, especialmente 
 
 ### 4. Catálogo público y pedidos de Circo Haus
 
+Primera entrega preparada en código: campos de Productos para foto, descripción pública y visibilidad. Pendiente aplicar el backend en la copia y verificar allí. Ver [guía de pruebas](catalogo-productos-pruebas.md).
+
 Reemplazar el uso de Tienda Nube como catálogo con una vista pública alimentada por los productos y el stock existentes en Circo Hub. El cliente llega, por ejemplo, desde Instagram, busca por nombre o categoría, arma y modifica un carrito y completa nombre, teléfono y correo.
 
 - Mostrar sólo productos marcados como visibles y con stock mayor a cero; incorporar foto y descripción breve al catálogo existente, sin mantener una segunda base de productos.
